@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessibility Object Scanner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    #cam-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      border: 1px solid #333;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #scan-frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #scan-frame .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: #4ade80;
+      border-style: solid;
+      border-width: 0;
+    }
+
+    #scan-frame .tl {
+      top: 20px;
+      left: 20px;
+      border-top-width: 3px;
+      border-left-width: 3px;
+      border-top-left-radius: 4px;
+    }
+
+    #scan-frame .tr {
+      top: 20px;
+      right: 20px;
+      border-top-width: 3px;
+      border-right-width: 3px;
+      border-top-right-radius: 4px;
+    }
+
+    #scan-frame .bl {
+      bottom: 20px;
+      left: 20px;
+      border-bottom-width: 3px;
+      border-left-width: 3px;
+      border-bottom-left-radius: 4px;
+    }
+
+    #scan-frame .br {
+      bottom: 20px;
+      right: 20px;
+      border-bottom-width: 3px;
+      border-right-width: 3px;
+      border-bottom-right-radius: 4px;
+    }
+
+    #scan-line {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4ade80, transparent);
+      top: 20px;
+      display: none;
+      animation: scandown 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scandown {
+      0% {
+        top: 20px;
+        opacity: 1;
+      }
+
+      90% {
+        top: calc(100% - 22px);
+        opacity: 1;
+      }
+
+      100% {
+        top: calc(100% - 22px);
+        opacity: 0;
+      }
+    }
+
+    #scan-line.active {
+      display: block;
+    }
+
+    #cam-start {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #111;
+    }
+
+    #cam-start p {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      max-width: 260px;
+    }
+
+    #start-btn {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #start-btn:hover {
+      background: #e0e0e0;
+    }
+
+    #controls {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 14px;
+    }
+
+    #scan-btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #scan-btn:hover:not(:disabled) {
+      background: #2a2a2a;
+    }
+
+    #scan-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #555;
+      flex-shrink: 0;
+    }
+
+    #status-dot.active {
+      background: #4ade80;
+    }
+
+    #status-dot.scanning {
+      background: #facc15;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    #result-panel {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 14px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    #result-panel.show {
+      display: block;
+    }
+
+    #detected-text {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #f0f0f0;
+    }
+
+    #ai-result {
+      font-size: 13px;
+      color: #999;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    #label-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    #label-input {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #f0f0f0;
+      outline: none;
+    }
+
+    #label-input:focus {
+      border-color: #555;
+    }
+
+    #save-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #fff;
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #save-btn:hover {
+      background: #e0e0e0;
+    }
+
+    #saved-labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .pill strong {
+      font-weight: 500;
+      color: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Accessibility Object Scanner</h1>
+  <div id="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <svg id="overlay" xmlns="http://www.w3.org/2000/svg"
+      style="position:absolute;inset:0;width:100%;height:100%;"></svg>
+    <div id="scan-frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div id="scan-line"></div>
+    </div>
+    <div id="cam-start">
+      <button id="start-btn">Enable Camera</button>
+      <p>Allow camera access to start scanning objects</p>
+    </div>
+  </div>
+  <div id="status-bar">
+    <div id="status-dot"></div>
+    <span id="status-text">Camera off</span>
+  </div>
+  <div id="controls">
+    <button id="scan-btn" disabled>Scan Object</button>
+  </div>
+  <div id="result-panel">
+    <div id="detected-text"></div>
+    <div id="ai-result"></div>
+    <div id="label-row">
+      <input id="label-input" type="text" placeholder="Type a label for this object..." />
+      <button id="save-btn">Save Label</button>
+    </div>
+    <div id="saved-labels"></div>
+  </div>
+
+  <script>
+    // =============================================
+    // PUT YOUR OPENAI API KEY HERE
+    const API_KEY = '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';
+    // =============================================
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+    const camStart = document.getElementById('cam-start');
+    const scanBtn = document.getElementById('scan-btn');
+    const scanLine = document.getElementById('scan-line');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const resultPanel = document.getElementById('result-panel');
+    const detectedText = document.getElementById('detected-text');
+    const aiResult = document.getElementById('ai-result');
+    const labelInput = document.getElementById('label-input');
+    const saveBtn = document.getElementById('save-btn');
+    const savedLabelsDiv = document.getElementById('saved-labels');
+
+    let savedLabels = [];
+    let lastDetections = [];
+    let stream = null;
+
+    function setStatus(text, mode) {
+      statusText.textContent = text;
+      statusDot.className = mode || '';
+    }
+
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        camStart.style.display = 'none';
+        scanBtn.disabled = false;
+        setStatus('Camera active — point at an object and tap Scan', 'active');
+      } catch (e) {
+        camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
+      }
+    });
+
+    function captureFrame() {
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    }
+
+    function checkSavedLabels(detections) {
+      const found = [];
+      const lc = detections.map(d => d.toLowerCase());
+      for (const saved of savedLabels) {
+        for (const kw of saved.keywords) {
+          if (lc.some(d => d.includes(kw.toLowerCase()) || kw.toLowerCase().includes(d))) {
+            found.push(saved);
+            break;
+          }
+        }
+      }
+      return found;
+    }
+
+    function showOverlayLabels(matches) {
+      overlay.innerHTML = '';
+      if (!matches.length) return;
+      const vw = video.offsetWidth;
+      const vh = video.offsetHeight;
+      matches.forEach((m, i) => {
+        const cx = vw * (0.3 + i * 0.25);
+        const cy = vh * 0.4;
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+        dot.setAttribute('r', 7); dot.setAttribute('fill', '#4ade80');
+        dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
+        overlay.appendChild(dot);
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
+        fo.setAttribute('width', 140); fo.setAttribute('height', 36);
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.8);color:#fff;font-size:13px;font-weight:500;padding:5px 10px;border-radius:14px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</div>`;
+        overlay.appendChild(fo);
+      });
+    }
+
+    function renderSavedPills() {
+      savedLabelsDiv.innerHTML = '';
+      for (const s of savedLabels) {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.innerHTML = `<strong>${s.name}</strong><span>${s.keywords.join(', ')}</span>`;
+        savedLabelsDiv.appendChild(pill);
+      }
+    }
+
+    scanBtn.addEventListener('click', async () => {
+      if (!stream) return;
+      scanBtn.disabled = true;
+      scanLine.classList.add('active');
+      setStatus('Scanning...', 'scanning');
+      overlay.innerHTML = '';
+
+      let base64;
+      try { base64 = captureFrame(); }
+      catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
+
+      resultPanel.className = 'show';
+      detectedText.innerHTML = 'Analyzing image...';
+      aiResult.textContent = '';
+
+      try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            max_tokens: 500,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+                { type: 'text', text: 'You are an accessibility assistant helping people with challenges identify objects. List the main objects you see. Respond ONLY with raw JSON, no markdown: {"objects": ["object1", "object2"], "description": "one friendly sentence describing the scene"}' }
+              ]
+            }]
+          })
+        });
+
+        const data = await resp.json();
+        const text = data.choices?.[0]?.message?.content || '';
+        let parsed;
+        try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()); }
+        catch (e) { parsed = { objects: [], description: text }; }
+
+        lastDetections = parsed.objects || [];
+        const matches = checkSavedLabels(lastDetections);
+        showOverlayLabels(matches);
+
+        const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing specific detected';
+        detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
+        if (matches.length) {
+          detectedText.innerHTML += ` — <span style="color:#4ade80">recognized: ${matches.map(m => m.name).join(', ')}</span>`;
+        }
+        aiResult.textContent = parsed.description || '';
+        labelInput.placeholder = lastDetections.length ? `e.g. "${lastDetections[0]}"` : 'Type a label...';
+        setStatus('Scan complete', 'active');
+
+      } catch (e) {
+        detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key and internet connection</span>';
+        console.error(e);
+        setStatus('Error', '');
+      }
+
+      scanLine.classList.remove('active');
+      scanBtn.disabled = false;
+    });
+
+    saveBtn.addEventListener('click', () => {
+      const name = labelInput.value.trim();
+      if (!name) return;
+      const keywords = [...new Set([...lastDetections.map(d => d.toLowerCase()), name.toLowerCase()])];
+      const existing = savedLabels.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+      if (existing >= 0) {
+        savedLabels[existing].keywords = [...new Set([...savedLabels[existing].keywords, ...keywords])];
+      } else {
+        savedLabels.push({ name, keywords });
+      }
+      labelInput.value = '';
+      renderSavedPills();
+      showOverlayLabels(checkSavedLabels(lastDetections));
+    });
+
+    labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
+  </script>
+</body>
+
+</html>
