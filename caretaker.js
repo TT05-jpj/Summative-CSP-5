@@ -153,5 +153,71 @@
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) modalSave.click();
     });
 
+// ── Speech to text ────────────────────────────────────────────────────────
+// Uses the browser's built-in SpeechRecognition API — no API key needed.
+// When the mic button is clicked, it listens and dumps the spoken text
+// straight into the target input/textarea, then stops automatically.
+
+function setupMic(btnId, targetInput) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+
+  // Check browser support
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    btn.title = 'Speech recognition not supported in this browser';
+    btn.style.opacity = '0.4';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';       // change this if your caretaker speaks a different language
+  recognition.interimResults = false; // only give us the final result, not partial words
+  recognition.maxAlternatives = 1;
+
+  let listening = false;
+
+  btn.addEventListener('click', () => {
+    if (listening) {
+      recognition.stop();
+      return;
+    }
+    recognition.start();
+  });
+
+  recognition.addEventListener('start', () => {
+    listening = true;
+    btn.classList.add('listening');
+    btn.textContent = '⏹';   // show stop icon while recording
+  });
+
+  recognition.addEventListener('result', (e) => {
+    // e.results[0][0].transcript is the spoken text as a string
+    const spoken = e.results[0][0].transcript;
+    targetInput.value = spoken;   // drop it straight into the field
+  });
+
+  recognition.addEventListener('end', () => {
+    listening = false;
+    btn.classList.remove('listening');
+    btn.textContent = 'mic';  // restore mic icon
+  });
+
+  recognition.addEventListener('error', (e) => {
+    listening = false;
+    btn.classList.remove('listening');
+    btn.textContent = 'mic';
+    console.error('Speech error:', e.error);
+    if (e.error === 'not-allowed') {
+      alert('Microphone access was denied. Please allow it in your browser settings.');
+    }
+  });
+}
+
+// Wire up both mic buttons to their fields
+setupMic('mic-name',  document.getElementById('input-name'));
+setupMic('mic-instr', document.getElementById('input-instr'));
+
     // ── Init ──────────────────────────────────────────────────────────────────
     renderCards();

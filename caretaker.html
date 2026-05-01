@@ -31,11 +31,17 @@
       <h2 id="modal-title">Add Object</h2>
       <div class="field">
         <label>Object name</label>
-        <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
+        <div class="input-row">
+          <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
+          <button class="mic-btn" id="mic-name" type="button">mic</button>
+        </div>
       </div>
       <div class="field">
         <label>Instructions</label>
-        <textarea id="input-instr" placeholder='e.g. "Take one tablet with a full glass of water after meals."'></textarea>
+        <div class="input-row">
+          <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
+          <button class="mic-btn" id="mic-instr" type="button">mic</button>
+        </div>
       </div>
       <div id="modal-actions">
         <button id="modal-cancel">Cancel</button>
