@@ -326,10 +326,232 @@
       font-weight: 500;
       color: #f0f0f0;
     }
+
+    #caretaker-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      border: 1px solid #4ade80;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      font-family: inherit;
+    }
+
+    #caretaker-btn:hover {
+      background: #2a2a2a;
+    }
+
+    #caretaker-btn::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4ade80;
+    }
+
+    #settings-wrap {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+    }
+
+    #settings-btn {
+      width: 40px;
+      height: 40px;
+      background: #1a1a1a;
+      color: #f0f0f0;
+      border: 1px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    #settings-btn:hover {
+      background: #2a2a2a;
+    }
+
+    #settings-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: #f0f0f0;
+    }
+
+    #settings-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 240px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+      display: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    #settings-menu.open {
+      display: block;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 4px;
+    }
+
+    .settings-label {
+      font-size: 13px;
+      color: #f0f0f0;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #333;
+      border-radius: 22px;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: "";
+      position: absolute;
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      top: 3px;
+      background: #f0f0f0;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked+.toggle-slider {
+      background: #4ade80;
+    }
+
+    .toggle input:checked+.toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    body.accessibility-mode {
+      font-size: 18px;
+      color: #ffffff;
+    }
+
+    body.accessibility-mode h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    body.accessibility-mode #cam-start p {
+      font-size: 18px;
+      color: #ddd;
+      max-width: 320px;
+    }
+
+    body.accessibility-mode #start-btn {
+      font-size: 18px;
+      font-weight: 700;
+      padding: 12px 28px;
+    }
+
+    body.accessibility-mode #scan-btn {
+      font-size: 18px;
+      font-weight: 700;
+      padding: 14px;
+    }
+
+    body.accessibility-mode #status-bar {
+      font-size: 16px;
+      color: #ddd;
+    }
+
+    body.accessibility-mode #detected-text {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    body.accessibility-mode #ai-result {
+      font-size: 16px;
+      color: #ddd;
+    }
+
+    body.accessibility-mode #label-input {
+      font-size: 16px;
+      color: #fff;
+    }
+
+    body.accessibility-mode #save-btn {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    body.accessibility-mode .pill {
+      font-size: 15px;
+      color: #ddd;
+    }
+
+    body.accessibility-mode #caretaker-btn {
+      font-size: 17px;
+      font-weight: 700;
+      padding: 12px 22px;
+    }
+
+    body.accessibility-mode .settings-label {
+      font-size: 16px;
+      font-weight: 600;
+    }
   </style>
 </head>
 
 <body>
+  <div id="settings-wrap">
+    <button id="settings-btn" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+    <div id="settings-menu" role="menu">
+      <div class="settings-row">
+        <span class="settings-label">Accessibility mode</span>
+        <label class="toggle">
+          <input type="checkbox" id="a11y-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
   <h1>Accessibility Object Scanner</h1>
   <div id="cam-wrap">
     <video id="video" autoplay playsinline muted></video>
@@ -364,6 +586,7 @@
     </div>
     <div id="saved-labels"></div>
   </div>
+  <a id="caretaker-btn" href="caretaker.html">Caretaker Page</a>
 
   <script>
     // =============================================
@@ -542,8 +765,34 @@
     });
 
     labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
+
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsMenu = document.getElementById('settings-menu');
+    const a11yToggle = document.getElementById('a11y-toggle');
+
+    settingsBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = settingsMenu.classList.toggle('open');
+      settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', e => {
+      if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
+        settingsMenu.classList.remove('open');
+        settingsBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    if (localStorage.getItem('a11yMode') === '1') {
+      a11yToggle.checked = true;
+      document.body.classList.add('accessibility-mode');
+    }
+
+    a11yToggle.addEventListener('change', () => {
+      document.body.classList.toggle('accessibility-mode', a11yToggle.checked);
+      localStorage.setItem('a11yMode', a11yToggle.checked ? '1' : '0');
+    });
   </script>
 </body>
 
 </html>
-// Hello World
