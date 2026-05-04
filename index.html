@@ -1,74 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accessibility Object Scanner</title>
+  <title>Object Scanner</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #111; color: #f0f0f0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
-    h1 { font-size: 20px; font-weight: 500; margin-bottom: 20px; color: #fff; }
-    #cam-wrap { position: relative; width: 100%; max-width: 640px; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 4/3; border: 1px solid #333; }
-    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-    #canvas { display: none; }
-    #overlay { position: absolute; inset: 0; pointer-events: none; }
-    #scan-frame { position: absolute; inset: 0; pointer-events: none; }
-    #scan-frame .corner { position: absolute; width: 32px; height: 32px; border-color: #4ade80; border-style: solid; border-width: 0; }
-    #scan-frame .tl { top: 20px; left: 20px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 4px; }
-    #scan-frame .tr { top: 20px; right: 20px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 4px; }
-    #scan-frame .bl { bottom: 20px; left: 20px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 4px; }
-    #scan-frame .br { bottom: 20px; right: 20px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 4px; }
-    #scan-line { position: absolute; left: 20px; right: 20px; height: 2px; background: linear-gradient(90deg, transparent, #4ade80, transparent); top: 20px; display: none; animation: scandown 1.5s ease-in-out infinite; }
-    @keyframes scandown { 0% { top: 20px; opacity: 1; } 90% { top: calc(100% - 22px); opacity: 1; } 100% { top: calc(100% - 22px); opacity: 0; } }
-    #scan-line.active { display: block; }
-    #cam-start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #111; }
-    #cam-start p { font-size: 13px; color: #888; text-align: center; max-width: 260px; }
-    #start-btn { padding: 10px 24px; font-size: 14px; font-weight: 500; background: #fff; color: #111; border: none; border-radius: 8px; cursor: pointer; }
-    #start-btn:hover { background: #e0e0e0; }
-    #controls { display: flex; gap: 10px; width: 100%; max-width: 640px; margin-top: 14px; }
-    #scan-btn { flex: 1; padding: 12px; font-size: 15px; font-weight: 500; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 8px; cursor: pointer; }
-    #scan-btn:hover:not(:disabled) { background: #2a2a2a; }
-    #scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    #status-bar { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 640px; margin-top: 10px; font-size: 13px; color: #888; }
-    #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #555; flex-shrink: 0; }
-    #status-dot.active { background: #4ade80; }
-    #status-dot.scanning { background: #facc15; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    #result-panel { display: none; width: 100%; max-width: 640px; margin-top: 14px; background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 16px; }
-    #result-panel.show { display: block; }
-    #detected-text { font-size: 14px; margin-bottom: 8px; color: #f0f0f0; }
-    #ai-result { font-size: 13px; color: #999; margin-bottom: 14px; line-height: 1.5; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    /* top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .back-btn:hover {
+      color: #fff;
+    }
+
+    .topbar h1 {
+      font-size: 17px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    /* camera */
+    #cam-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      border: 1px solid #222;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* scan frame corners */
+    #scan-frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #scan-frame .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: #4ade80;
+      border-style: solid;
+      border-width: 0;
+    }
+
+    #scan-frame .tl {
+      top: 20px;
+      left: 20px;
+      border-top-width: 3px;
+      border-left-width: 3px;
+      border-top-left-radius: 4px;
+    }
+
+    #scan-frame .tr {
+      top: 20px;
+      right: 20px;
+      border-top-width: 3px;
+      border-right-width: 3px;
+      border-top-right-radius: 4px;
+    }
+
+    #scan-frame .bl {
+      bottom: 20px;
+      left: 20px;
+      border-bottom-width: 3px;
+      border-left-width: 3px;
+      border-bottom-left-radius: 4px;
+    }
+
+    #scan-frame .br {
+      bottom: 20px;
+      right: 20px;
+      border-bottom-width: 3px;
+      border-right-width: 3px;
+      border-bottom-right-radius: 4px;
+    }
+
+    #scan-line {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4ade80, transparent);
+      top: 20px;
+      display: none;
+      animation: scandown 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scandown {
+      0% {
+        top: 20px;
+        opacity: 1;
+      }
+
+      90% {
+        top: calc(100% - 22px);
+        opacity: 1;
+      }
+
+      100% {
+        top: calc(100% - 22px);
+        opacity: 0;
+      }
+    }
+
+    #scan-line.active {
+      display: block;
+    }
+
+    /* cam start screen */
+    #cam-start {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #111;
+    }
+
+    #cam-start p {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      max-width: 240px;
+    }
+
+    #start-btn {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #4ade80;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #start-btn:hover {
+      background: #22c55e;
+    }
+
+    /* status */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+    }
+
+    #status-dot.active {
+      background: #4ade80;
+    }
+
+    #status-dot.scanning {
+      background: #facc15;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    /* scan button */
+    #controls {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 12px;
+    }
+
+    #scan-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    #scan-btn:hover:not(:disabled) {
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    #scan-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* result */
+    #result-panel {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 14px;
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    #result-panel.show {
+      display: block;
+    }
+
+    #detected-text {
+      font-size: 14px;
+      color: #f0f0f0;
+      margin-bottom: 6px;
+    }
+
+    #ai-result {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
 
     /* instructions popup */
-    #instr-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
-    #instr-popup.show { display: flex; }
-    #instr-box { background: #1a1a1a; border: 1px solid #333; border-radius: 14px; padding: 28px 24px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; position: relative; }
-    #instr-box h2 { font-size: 18px; font-weight: 600; color: #4ade80; }
-    #instr-box p { font-size: 15px; color: #ccc; line-height: 1.7; }
-    #close-instr { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 22px; color: #666; cursor: pointer; line-height: 1; }
-    #close-instr:hover { color: #fff; }
+    #instr-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
 
-    #label-row { display: flex; gap: 8px; }
-    #label-input { flex: 1; padding: 8px 12px; font-size: 13px; background: #111; border: 1px solid #333; border-radius: 8px; color: #f0f0f0; outline: none; }
-    #label-input:focus { border-color: #555; }
-    #save-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; background: #fff; color: #111; border: none; border-radius: 8px; cursor: pointer; white-space: nowrap; }
-    #save-btn:hover { background: #e0e0e0; }
-    #saved-labels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-    .pill { display: flex; align-items: center; gap: 6px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 3px 10px; font-size: 12px; color: #999; }
-    .pill strong { font-weight: 500; color: #f0f0f0; }
-    #caretaker-link { margin-top: 20px; font-size: 13px; color: #555; }
-    #caretaker-link a { color: #888; text-decoration: none; }
-    #caretaker-link a:hover { color: #ccc; }
+    #instr-popup.show {
+      display: flex;
+    }
+
+    #instr-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+
+    #instr-box h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #4ade80;
+    }
+
+    #instr-box p {
+      font-size: 15px;
+      color: #ccc;
+      line-height: 1.7;
+    }
+
+    #close-instr {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #555;
+      cursor: pointer;
+    }
+
+    #close-instr:hover {
+      color: #fff;
+    }
+
+    #speak-again-btn {
+      padding: 10px;
+      font-size: 13px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ccc;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    #speak-again-btn:hover {
+      background: #2a2a2a;
+      color: #fff;
+    }
   </style>
 </head>
+
 <body>
 
-  <h1>Accessibility Object Scanner</h1>
+  <div class="topbar">
+    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
+    <h1>Object Scanner</h1>
+  </div>
 
   <div id="cam-wrap">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
-    <svg id="overlay" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;"></svg>
+    <svg id="overlay" xmlns="http://www.w3.org/2000/svg"
+      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></svg>
     <div id="scan-frame">
       <div class="corner tl"></div>
       <div class="corner tr"></div>
@@ -78,7 +389,7 @@
     </div>
     <div id="cam-start">
       <button id="start-btn">Enable Camera</button>
-      <p>Allow camera access to start scanning objects</p>
+      <p>Allow camera access to start scanning</p>
     </div>
   </div>
 
@@ -94,88 +405,81 @@
   <div id="result-panel">
     <div id="detected-text"></div>
     <div id="ai-result"></div>
-    <div id="label-row">
-      <input id="label-input" type="text" placeholder="Type a label for this object..." />
-      <button id="save-btn">Save Label</button>
-    </div>
-    <div id="saved-labels"></div>
   </div>
 
-  <!-- Instructions popup — shows caretaker instructions when object is recognized -->
+  <!-- Instructions popup -->
   <div id="instr-popup">
     <div id="instr-box">
       <button id="close-instr">×</button>
       <h2 id="instr-name"></h2>
       <p id="instr-text"></p>
+      <button id="speak-again-btn">🔊 Speak again</button>
     </div>
   </div>
 
-  <p id="caretaker-link">Caretaker? <a href="caretaker.html">Go to dashboard →</a></p>
-
   <script>
     const API_KEY = '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'; // paste your OpenAI key here
+    const STORAGE_KEY = 'accessibility_objects';
 
-    const STORAGE_KEY = 'accessibility_objects'; // same key caretaker.js uses
-
-    const video        = document.getElementById('video');
-    const canvas       = document.getElementById('canvas');
-    const overlay      = document.getElementById('overlay');
-    const startBtn     = document.getElementById('start-btn');
-    const camStart     = document.getElementById('cam-start');
-    const scanBtn      = document.getElementById('scan-btn');
-    const scanLine     = document.getElementById('scan-line');
-    const statusDot    = document.getElementById('status-dot');
-    const statusText   = document.getElementById('status-text');
-    const resultPanel  = document.getElementById('result-panel');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+    const camStart = document.getElementById('cam-start');
+    const scanBtn = document.getElementById('scan-btn');
+    const scanLine = document.getElementById('scan-line');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const resultPanel = document.getElementById('result-panel');
     const detectedText = document.getElementById('detected-text');
-    const aiResult     = document.getElementById('ai-result');
-    const labelInput   = document.getElementById('label-input');
-    const saveBtn      = document.getElementById('save-btn');
-    const savedLabelsDiv = document.getElementById('saved-labels');
-    const instrPopup   = document.getElementById('instr-popup');
-    const instrName    = document.getElementById('instr-name');
-    const instrText    = document.getElementById('instr-text');
-    const closeInstr   = document.getElementById('close-instr');
+    const aiResult = document.getElementById('ai-result');
+    const instrPopup = document.getElementById('instr-popup');
+    const instrName = document.getElementById('instr-name');
+    const instrText = document.getElementById('instr-text');
+    const closeInstr = document.getElementById('close-instr');
+    const speakAgainBtn = document.getElementById('speak-again-btn');
 
-    let localLabels    = [];  // labels saved directly on this page
     let lastDetections = [];
-    let stream         = null;
+    let stream = null;
+    let currentSpeakText = '';
 
-    // ── Load caretaker objects from localStorage ──────────────────────────────
+    function setStatus(text, mode) {
+      statusText.textContent = text;
+      statusDot.className = mode || '';
+    }
+
+    // ── Text to speech ────────────────────────────────────────────────────────
+    function speak(text) {
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.rate = 0.9;
+        utt.volume = 1;
+        utt.pitch = 1;
+        window.speechSynthesis.speak(utt);
+        currentSpeakText = text;
+      }, 100);
+    }
+    speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
+
+    // ── Load caretaker objects ────────────────────────────────────────────────
     function getCaretakerObjects() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
       catch { return []; }
     }
 
-    // ── Check detections against BOTH caretaker objects + local labels ────────
     function checkMatches(detections) {
       const lc = detections.map(d => d.toLowerCase());
       const matches = [];
-
-      // check caretaker objects first (they have instructions)
       for (const obj of getCaretakerObjects()) {
         if (lc.some(d => d.includes(obj.name.toLowerCase()) || obj.name.toLowerCase().includes(d))) {
-          matches.push({ name: obj.name, instructions: obj.instructions, source: 'caretaker' });
+          matches.push({ name: obj.name, instructions: obj.instructions });
         }
       }
-
-      // then check local labels
-      for (const saved of localLabels) {
-        const alreadyFound = matches.some(m => m.name.toLowerCase() === saved.name.toLowerCase());
-        if (!alreadyFound) {
-          for (const kw of saved.keywords) {
-            if (lc.some(d => d.includes(kw.toLowerCase()) || kw.toLowerCase().includes(d))) {
-              matches.push({ name: saved.name, source: 'local' });
-              break;
-            }
-          }
-        }
-      }
-
       return matches;
     }
 
-    // ── Draw green label badges on the camera overlay ─────────────────────────
+    // ── Overlay labels (tappable if instructions exist) ───────────────────────
     function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
@@ -190,46 +494,42 @@
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
-        fo.setAttribute('width', 140); fo.setAttribute('height', 36);
-        // if it has instructions, make it tappable
-        const hasInstr = m.source === 'caretaker' && m.instructions;
+        fo.setAttribute('x', cx - 75); fo.setAttribute('y', cy - 54);
+        fo.setAttribute('width', 150); fo.setAttribute('height', 38);
+        const hasInstr = !!m.instructions;
         fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml"
-          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g,"\\'")}','${m.instructions.replace(/'/g,"\\'")}')` : ''}"
-          style="background:rgba(0,0,0,0.82);color:#4ade80;font-size:13px;font-weight:600;padding:5px 10px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${hasInstr ? 'cursor:pointer;pointer-events:all;' : ''}">${m.name}${hasInstr ? ' ℹ️' : ''}</div>`;
+          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}"
+          style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 12px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;pointer-events:all;">
+          ${m.name}${hasInstr ? ' ℹ️' : ' 🔊'}
+        </div>`;
         overlay.appendChild(fo);
       });
     }
 
-    // ── Show instructions popup ───────────────────────────────────────────────
+    // ── Instructions popup ────────────────────────────────────────────────────
     function showInstructions(name, instructions) {
       instrName.textContent = name;
       instrText.textContent = instructions;
       instrPopup.classList.add('show');
+      speak(name + '. ' + instructions);
     }
+
     closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
     instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
 
-    // ── Status helper ─────────────────────────────────────────────────────────
-    function setStatus(text, mode) {
-      statusText.textContent = text;
-      statusDot.className = mode || '';
-    }
-
-    // ── Start camera ──────────────────────────────────────────────────────────
+    // ── Camera ────────────────────────────────────────────────────────────────
     startBtn.addEventListener('click', async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         camStart.style.display = 'none';
         scanBtn.disabled = false;
-        setStatus('Camera active — point at an object and tap Scan', 'active');
+        setStatus('Point at an object and tap Scan', 'active');
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
       }
     });
 
-    // ── Capture frame ─────────────────────────────────────────────────────────
     function captureFrame() {
       const w = video.videoWidth || 640;
       const h = video.videoHeight || 480;
@@ -238,7 +538,7 @@
       return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     }
 
-    // ── Scan button ───────────────────────────────────────────────────────────
+    // ── Scan ──────────────────────────────────────────────────────────────────
     scanBtn.addEventListener('click', async () => {
       if (!stream) return;
       scanBtn.disabled = true;
@@ -251,7 +551,7 @@
       catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
 
       resultPanel.className = 'show';
-      detectedText.innerHTML = 'Analyzing image...';
+      detectedText.innerHTML = 'Analyzing...';
       aiResult.textContent = '';
 
       try {
@@ -265,7 +565,7 @@
               role: 'user',
               content: [
                 { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-                { type: 'text', text: 'You are an accessibility assistant. List the main objects you see. Respond ONLY with raw JSON: {"objects": ["object1", "object2"], "description": "one friendly sentence describing the scene"}' }
+                { type: 'text', text: 'You are an accessibility assistant. Identify ONLY the single most prominent object — the one closest to the camera or most centered in the frame. Ignore background objects. Respond ONLY with raw JSON: {"objects": ["object1"], "description": "one friendly sentence about that object"}' }
               ]
             }]
           })
@@ -283,19 +583,22 @@
 
         const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
         detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
+        aiResult.textContent = parsed.description || '';
 
         if (matches.length) {
-          const names = matches.map(m => m.name).join(', ');
-          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${names}</span>`;
-          // if any match has instructions, auto-show the first one
+          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
           const withInstr = matches.find(m => m.instructions);
-          if (withInstr) showInstructions(withInstr.name, withInstr.instructions);
+          if (withInstr) {
+            showInstructions(withInstr.name, withInstr.instructions);
+          } else {
+            speak(matches[0].name);
+          }
+        } else {
+          // speak whatever was detected even if not saved
+          if (lastDetections.length) speak(lastDetections[0]);
         }
 
-        aiResult.textContent = parsed.description || '';
-        labelInput.placeholder = lastDetections.length ? `e.g. "${lastDetections[0]}"` : 'Type a label...';
         setStatus('Scan complete', 'active');
-
       } catch (e) {
         detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
         console.error(e);
@@ -305,34 +608,7 @@
       scanLine.classList.remove('active');
       scanBtn.disabled = false;
     });
-
-    // ── Save local label ──────────────────────────────────────────────────────
-    function renderSavedPills() {
-      savedLabelsDiv.innerHTML = '';
-      for (const s of localLabels) {
-        const pill = document.createElement('div');
-        pill.className = 'pill';
-        pill.innerHTML = `<strong>${s.name}</strong><span>${s.keywords.join(', ')}</span>`;
-        savedLabelsDiv.appendChild(pill);
-      }
-    }
-
-    saveBtn.addEventListener('click', () => {
-      const name = labelInput.value.trim();
-      if (!name) return;
-      const keywords = [...new Set([...lastDetections.map(d => d.toLowerCase()), name.toLowerCase()])];
-      const existing = localLabels.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
-      if (existing >= 0) {
-        localLabels[existing].keywords = [...new Set([...localLabels[existing].keywords, ...keywords])];
-      } else {
-        localLabels.push({ name, keywords });
-      }
-      labelInput.value = '';
-      renderSavedPills();
-      showOverlayLabels(checkMatches(lastDetections));
-    });
-
-    labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
   </script>
 </body>
+
 </html>
