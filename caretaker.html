@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caretaker Dashboard</title>
+    <link rel="stylesheet" href="caretaker.css" />
+</head>
+
+<body>
+
+    <header>
+        <h1>Caretaker Dashboard</h1>
+        <button id="add-btn">+ Add Object</button>
+    </header>
+
+    <!-- Card grid — same id pattern as your recipe site's reccontainer -->
+    <div id="object-container"></div>
+
+    <!-- View instructions popup — same pattern as your missing-popup -->
+    <div class="popup-overlay" id="view-popup">
+        <div class="popup-box">
+            <button id="close-view">×</button>
+            <h2 id="popup-obj-name"></h2>
+            <p id="popup-obj-instr"></p>
+            <img id="popup-obj-photo" alt="Scanned photo" style="display:none;width:100%;border-radius:8px;margin-top:12px;object-fit:cover;" />
+        </div>
+    </div>
+
+    <!-- Add / Edit modal -->
+    <div id="modal-overlay">
+        <div id="modal">
+            <h2 id="modal-title">Add Object</h2>
+            <div class="field">
+                <label>Object name</label>
+                <div class="input-row">
+                    <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
+                    <button class="mic-btn" id="mic-name" type="button">mic</button>
+                </div>
+            </div>
+            <div class="field">
+                <label>Instructions</label>
+                <div class="input-row">
+                    <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
+                    <button class="mic-btn" id="mic-instr" type="button">mic</button>
+                </div>
+            </div>
+            <div id="modal-actions">
+                <button id="modal-cancel">Cancel</button>
+                <button id="modal-save">Save</button>
+            </div>
+        </div>
+    </div>
+    <script src="caretaker.js"></script>
+</body>
+
+</html>
