@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accessibility Scanner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 500;
+      color: #444;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 48px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #555;
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      border-radius: 14px;
+      border: 1px solid #222;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .btn-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .btn-label {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .btn-desc {
+      font-size: 13px;
+      opacity: 0.5;
+    }
+
+    .btn-arrow {
+      font-size: 20px;
+      opacity: 0.3;
+    }
+
+    /* User button */
+    .btn-user {
+      background: #4ade80;
+      border-color: #4ade80;
+      color: #000;
+    }
+
+    .btn-user:hover {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .btn-user .btn-arrow {
+      color: #000;
+    }
+
+    /* Caretaker button */
+    .btn-caretaker {
+      background: #1a1a1a;
+      color: #f0f0f0;
+    }
+
+    .btn-caretaker:hover {
+      background: #222;
+      border-color: #444;
+    }
+
+    .footer {
+      margin-top: 56px;
+      font-size: 12px;
+      color: #333;
+    }
+  </style>
+</head>
+
+<body>
+
+  <p class="logo">Accessibility App</p>
+
+  <h1>Who are you?</h1>
+  <p class="subtitle">Choose your role to get started</p>
+
+  <div class="btn-group">
+    <a href="index.html" class="btn btn-user">
+      <div class="btn-left">
+        <span class="btn-label">I am a User</span>
+        <span class="btn-desc">Scan objects around me</span>
+      </div>
+      <span class="btn-arrow">→</span>
+    </a>
+
+    <a href="caretaker.html" class="btn btn-caretaker">
+      <div class="btn-left">
+        <span class="btn-label">I am a Caretaker</span>
+        <span class="btn-desc">Manage objects &amp; instructions</span>
+      </div>
+      <span class="btn-arrow">→</span>
+    </a>
+  </div>
+
+  <p class="footer">Select the option that applies to you</p>
+
+</body>
+
+</html>
