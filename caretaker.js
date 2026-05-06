@@ -5,7 +5,6 @@ const viewPopup = document.getElementById('view-popup');
 const closeView = document.getElementById('close-view');
 const popupObjName = document.getElementById('popup-obj-name');
 const popupObjInstr = document.getElementById('popup-obj-instr');
-const popupObjPhoto = document.getElementById('popup-obj-photo');
 
 const modalOverlay = document.getElementById('modal-overlay');
 const modalTitle = document.getElementById('modal-title');
@@ -25,15 +24,20 @@ function save() {
 
 function render() {
     objectContainer.innerHTML = '';
+    const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
     objects.forEach(obj => {
+        const photo = photos[obj.name.toLowerCase()];
         const card = document.createElement('div');
         card.className = 'object-card';
         card.innerHTML = `
-            <h3>${obj.name}</h3>
-            <div class="card-actions">
-                <button class="view-btn" data-id="${obj.id}">View Instructions</button>
-                <button class="edit-btn" data-id="${obj.id}">Edit</button>
-                <button class="delete-btn" data-id="${obj.id}">Delete</button>
+            <h3 style="font-size:20px;font-weight:600;color:#fff;text-transform:capitalize;">${obj.name}</h3>
+            ${photo ? `<img class="card-photo" src="${photo}" alt="${obj.name}" />` : ''}
+            <div class="card-btns">
+                <button class="btn-view" data-id="${obj.id}">View Instructions</button>
+                <div class="card-btns-row">
+                    <button class="btn-change" data-id="${obj.id}">Edit</button>
+                    <button class="btn-delete" data-id="${obj.id}">Delete</button>
+                </div>
             </div>
         `;
         objectContainer.appendChild(card);
@@ -85,22 +89,13 @@ objectContainer.addEventListener('click', e => {
     const obj = objects.find(o => o.id === id);
     if (!obj) return;
 
-    if (e.target.classList.contains('view-btn')) {
+    if (e.target.classList.contains('btn-view')) {
         popupObjName.textContent = obj.name;
         popupObjInstr.textContent = obj.instructions || 'No instructions added.';
-        const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
-        const photo = photos[obj.name.toLowerCase()];
-        if (photo) {
-            popupObjPhoto.src = photo;
-            popupObjPhoto.style.display = 'block';
-        } else {
-            popupObjPhoto.src = '';
-            popupObjPhoto.style.display = 'none';
-        }
         viewPopup.classList.add('active');
-    } else if (e.target.classList.contains('edit-btn')) {
+    } else if (e.target.classList.contains('btn-change')) {
         openModal(obj);
-    } else if (e.target.classList.contains('delete-btn')) {
+    } else if (e.target.classList.contains('btn-delete')) {
         objects = objects.filter(o => o.id !== id);
         save();
         render();
