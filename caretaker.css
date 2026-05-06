@@ -11,7 +11,6 @@ body {
   min-height: 100vh;
 }
 
-/* ── Header ── */
 header {
   display: flex;
   align-items: center;
@@ -45,7 +44,6 @@ header h1 {
   background: #f0ddc8;
 }
 
-/* ── Card grid — fixed 5 columns ── */
 #object-container {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -61,7 +59,6 @@ header h1 {
   padding: 80px 0;
 }
 
-/* ── Object card ── */
 .object-card {
   background: #2254c5;
   border: 1px solid #0a2070;
@@ -87,6 +84,202 @@ header h1 {
   flex-direction: column;
   gap: 10px;
   width: 100%;
+}
+
+.object-card .card-btns button {
+  width: 100%;
+  padding: 12px 0;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-view {
+  background: #f9ead9;
+  color: #03114F;
+}
+
+.btn-view:hover {
+  background: #f0ddc8;
+}
+
+.btn-change {
+  background: #f9ead9;
+  color: #03114F;
+  border: 1px solid #f0ddc8 !important;
+}
+
+.btn-change:hover {
+  background: #f0ddc8;
+}
+
+.btn-delete {
+  background: #f9ead9;
+  color: #03114F;
+  border: 1px solid #f0ddc8 !important;
+}
+
+.btn-delete:hover {
+  background: #2a1111;
+  color: #f87171;
+  border-color: #4a2222 !important;
+}
+
+.popup-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.popup-overlay.show {
+  display: flex;
+}
+
+.popup-box {
+  background: #03114F;
+  border: 1px solid #0a2070;
+  border-radius: 16px;
+  padding: 36px 30px;
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.popup-box h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  text-transform: capitalize;
+}
+
+.popup-box p {
+  font-size: 17px;
+  color: #aab0cc;
+  line-height: 1.7;
+}
+
+#close-view {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: #7a8ab0;
+  cursor: pointer;
+}
+
+#close-view:hover {
+  color: #fff;
+}
+
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#modal-overlay.show {
+  display: flex;
+}
+
+#modal {
+  background: #03114F;
+  border: 1px solid #0a2070;
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#modal h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.field label {
+  display: block;
+  font-size: 15px;
+  color: #aab0cc;
+  margin-bottom: 7px;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  background: #020d3a;
+  border: 1px solid #0a2070;
+  border-radius: 10px;
+  color: #f0f0f0;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: #2a4aaa;
+}
+
+.field textarea {
+  min-height: 110px;
+}
+
+#modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+#modal-cancel {
+  padding: 11px 20px;
+  font-size: 15px;
+  background: transparent;
+  color: #aab0cc;
+  border: 1px solid #0a2070;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#modal-cancel:hover {
+  color: #fff;
+  border-color: #2a4aaa;
+}
+
+#modal-save {
+  padding: 11px 26px;
+  font-size: 15px;
+  font-weight: 500;
+  background: #f9ead9;
+  color: #03114F;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#modal-save:hover {
+  background: #f0ddc8;
 }
 
 .object-card .card-btns button {
@@ -338,7 +531,6 @@ header h1 {
   }
 }
 
-/* ── Responsive fallback ── */
 @media (max-width: 1100px) {
   #object-container {
     grid-template-columns: repeat(3, 1fr);

@@ -4,8 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accessibility Object Scanner</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Object Scanner</title>
   <style>
     * {
       box-sizing: border-box;
@@ -15,31 +14,55 @@
 
     body {
       font-family: system-ui, sans-serif;
-      background: #111;
+      background: #0a0a0a;
       color: #f0f0f0;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 24px 16px;
+      padding: 16px;
     }
 
-    h1 {
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 20px;
+    /* top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .back-btn:hover {
       color: #fff;
     }
 
+    .topbar h1 {
+      font-size: 17px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    /* camera */
     #cam-wrap {
       position: relative;
       width: 100%;
       max-width: 640px;
-      border-radius: 12px;
+      border-radius: 14px;
       overflow: hidden;
       background: #000;
       aspect-ratio: 4/3;
-      border: 1px solid #333;
+      border: 1px solid #222;
     }
 
     #video {
@@ -59,6 +82,7 @@
       pointer-events: none;
     }
 
+    /* scan frame corners */
     #scan-frame {
       position: absolute;
       inset: 0;
@@ -138,6 +162,7 @@
       display: block;
     }
 
+    /* cam start screen */
     #cam-start {
       position: absolute;
       inset: 0;
@@ -153,69 +178,41 @@
       font-size: 13px;
       color: #888;
       text-align: center;
-      max-width: 260px;
+      max-width: 240px;
     }
 
     #start-btn {
       padding: 10px 24px;
       font-size: 14px;
       font-weight: 500;
-      background: #fff;
-      color: #111;
+      background: #4ade80;
+      color: #000;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
 
     #start-btn:hover {
-      background: #e0e0e0;
+      background: #22c55e;
     }
 
-    #controls {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-      max-width: 640px;
-      margin-top: 14px;
-    }
-
-    #scan-btn {
-      flex: 1;
-      padding: 12px;
-      font-size: 15px;
-      font-weight: 500;
-      background: #1a1a1a;
-      color: #fff;
-      border: 1px solid #333;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    #scan-btn:hover:not(:disabled) {
-      background: #2a2a2a;
-    }
-
-    #scan-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
+    /* status */
     #status-bar {
       display: flex;
       align-items: center;
       gap: 8px;
       width: 100%;
       max-width: 640px;
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 13px;
-      color: #888;
+      color: #666;
     }
 
     #status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #555;
+      background: #444;
       flex-shrink: 0;
     }
 
@@ -240,13 +237,43 @@
       }
     }
 
+    /* scan button */
+    #controls {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 12px;
+    }
+
+    #scan-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    #scan-btn:hover:not(:disabled) {
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    #scan-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* result */
     #result-panel {
       display: none;
       width: 100%;
       max-width: 640px;
       margin-top: 14px;
-      background: #1a1a1a;
-      border: 1px solid #333;
+      background: #141414;
+      border: 1px solid #222;
       border-radius: 12px;
       padding: 16px;
     }
@@ -257,308 +284,102 @@
 
     #detected-text {
       font-size: 14px;
-      margin-bottom: 8px;
       color: #f0f0f0;
+      margin-bottom: 6px;
     }
 
     #ai-result {
       font-size: 13px;
-      color: #999;
-      margin-bottom: 14px;
+      color: #666;
       line-height: 1.5;
     }
 
-    #label-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    #label-input {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: 13px;
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 8px;
-      color: #f0f0f0;
-      outline: none;
-    }
-
-    #label-input:focus {
-      border-color: #555;
-    }
-
-    #save-btn {
-      padding: 8px 16px;
-      font-size: 13px;
-      font-weight: 500;
-      background: #fff;
-      color: #111;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    #save-btn:hover {
-      background: #e0e0e0;
-    }
-
-    #saved-labels {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 12px;
-    }
-
-    .pill {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 12px;
-      color: #999;
-    }
-
-    .pill strong {
-      font-weight: 500;
-      color: #f0f0f0;
-    }
-
-    #caretaker-btn {
+    /* instructions popup */
+    #instr-popup {
+      display: none;
       position: fixed;
-      bottom: 20px;
-      left: 20px;
-      padding: 10px 18px;
-      font-size: 14px;
-      font-weight: 500;
-      background: #1a1a1a;
-      color: #f0f0f0;
-      border: 1px solid #4ade80;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 10;
-      font-family: inherit;
-    }
-
-    #caretaker-btn:hover {
-      background: #2a2a2a;
-    }
-
-    #caretaker-btn::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #4ade80;
-    }
-
-    #settings-wrap {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 20;
-    }
-
-    #settings-btn {
-      width: 40px;
-      height: 40px;
-      background: #1a1a1a;
-      color: #f0f0f0;
-      border: 1px solid #333;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
       align-items: center;
       justify-content: center;
-      padding: 0;
+      padding: 20px;
     }
 
-    #settings-btn:hover {
-      background: #2a2a2a;
-    }
-
-    #settings-btn svg {
-      width: 20px;
-      height: 20px;
-      stroke: #f0f0f0;
-    }
-
-    #settings-menu {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 240px;
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 12px;
-      display: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-
-    #settings-menu.open {
-      display: block;
-    }
-
-    .settings-row {
+    #instr-popup.show {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 4px;
     }
 
-    .settings-label {
-      font-size: 13px;
-      color: #f0f0f0;
-    }
-
-    .toggle {
+    #instr-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 22px;
-      flex-shrink: 0;
     }
 
-    .toggle input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: #333;
-      border-radius: 22px;
-      transition: background 0.2s;
-    }
-
-    .toggle-slider::before {
-      content: "";
-      position: absolute;
-      height: 16px;
-      width: 16px;
-      left: 3px;
-      top: 3px;
-      background: #f0f0f0;
-      border-radius: 50%;
-      transition: transform 0.2s;
-    }
-
-    .toggle input:checked+.toggle-slider {
-      background: #4ade80;
-    }
-
-    .toggle input:checked+.toggle-slider::before {
-      transform: translateX(18px);
-    }
-
-    body.accessibility-mode {
-      font-size: 18px;
-      color: #ffffff;
-    }
-
-    body.accessibility-mode h1 {
-      font-size: 28px;
-      font-weight: 700;
-    }
-
-    body.accessibility-mode #cam-start p {
-      font-size: 18px;
-      color: #ddd;
-      max-width: 320px;
-    }
-
-    body.accessibility-mode #start-btn {
-      font-size: 18px;
-      font-weight: 700;
-      padding: 12px 28px;
-    }
-
-    body.accessibility-mode #scan-btn {
-      font-size: 18px;
-      font-weight: 700;
-      padding: 14px;
-    }
-
-    body.accessibility-mode #status-bar {
-      font-size: 16px;
-      color: #ddd;
-    }
-
-    body.accessibility-mode #detected-text {
-      font-size: 17px;
+    #instr-box h2 {
+      font-size: 20px;
       font-weight: 600;
+      color: #4ade80;
     }
 
-    body.accessibility-mode #ai-result {
-      font-size: 16px;
-      color: #ddd;
+    #instr-box p {
+      font-size: 15px;
+      color: #ccc;
+      line-height: 1.7;
     }
 
-    body.accessibility-mode #label-input {
-      font-size: 16px;
+    #close-instr {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #555;
+      cursor: pointer;
+    }
+
+    #close-instr:hover {
       color: #fff;
     }
 
-    body.accessibility-mode #save-btn {
-      font-size: 16px;
-      font-weight: 700;
+    #speak-again-btn {
+      padding: 10px;
+      font-size: 13px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ccc;
+      cursor: pointer;
+      text-align: center;
     }
 
-    body.accessibility-mode .pill {
-      font-size: 15px;
-      color: #ddd;
-    }
-
-    body.accessibility-mode #caretaker-btn {
-      font-size: 17px;
-      font-weight: 700;
-      padding: 12px 22px;
-    }
-
-    body.accessibility-mode .settings-label {
-      font-size: 16px;
-      font-weight: 600;
+    #speak-again-btn:hover {
+      background: #2a2a2a;
+      color: #fff;
     }
   </style>
 </head>
 
 <body>
-  <div id="settings-wrap">
-    <button id="settings-btn" aria-label="Settings" aria-haspopup="true" aria-expanded="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-      </svg>
-    </button>
-    <div id="settings-menu" role="menu">
-      <div class="settings-row">
-        <span class="settings-label">Accessibility mode</span>
-        <label class="toggle">
-          <input type="checkbox" id="a11y-toggle" />
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
+
+  <div class="topbar">
+    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
+    <h1>Object Scanner</h1>
   </div>
-  <h1>Accessibility Object Scanner</h1>
+
   <div id="cam-wrap">
     <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas"></canvas>
     <svg id="overlay" xmlns="http://www.w3.org/2000/svg"
-      style="position:absolute;inset:0;width:100%;height:100%;"></svg>
+      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></svg>
     <div id="scan-frame">
       <div class="corner tl"></div>
       <div class="corner tr"></div>
@@ -568,34 +389,37 @@
     </div>
     <div id="cam-start">
       <button id="start-btn">Enable Camera</button>
-      <p>Allow camera access to start scanning objects</p>
+      <p>Allow camera access to start scanning</p>
     </div>
   </div>
+
   <div id="status-bar">
     <div id="status-dot"></div>
     <span id="status-text">Camera off</span>
   </div>
+
   <div id="controls">
     <button id="scan-btn" disabled>Scan Object</button>
   </div>
+
   <div id="result-panel">
     <div id="detected-text"></div>
     <div id="ai-result"></div>
-    <div id="label-row">
-      <input id="label-input" type="text" placeholder="Type a label for this object..." />
-      <button id="save-btn">Save Label</button>
-    </div>
-    <div id="saved-labels"></div>
   </div>
-  <a id="caretaker-btn" href="caretaker.html">Caretaker Page</a>
 
+  <!-- Instructions popup -->
+  <div id="instr-popup">
+    <div id="instr-box">
+      <button id="close-instr">×</button>
+      <h2 id="instr-name"></h2>
+      <p id="instr-text"></p>
+      <button id="speak-again-btn">🔊 Speak again</button>
+    </div>
+  </div>
 
-  <script src="script.js"></script>
   <script>
-    // =============================================
-    // PUT YOUR OPENAI API KEY HERE
-    const API_KEY = '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';
-    // =============================================
+    const API_KEY = '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'; // OpenAI key here
+    const STORAGE_KEY = 'accessibility_objects';
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -609,54 +433,91 @@
     const resultPanel = document.getElementById('result-panel');
     const detectedText = document.getElementById('detected-text');
     const aiResult = document.getElementById('ai-result');
-    const labelInput = document.getElementById('label-input');
-    const saveBtn = document.getElementById('save-btn');
-    const savedLabelsDiv = document.getElementById('saved-labels');
+    const instrPopup = document.getElementById('instr-popup');
+    const instrName = document.getElementById('instr-name');
+    const instrText = document.getElementById('instr-text');
+    const closeInstr = document.getElementById('close-instr');
+    const speakAgainBtn = document.getElementById('speak-again-btn');
 
-    let savedLabels = [];
     let lastDetections = [];
     let stream = null;
+    let currentSpeakText = '';
 
     function setStatus(text, mode) {
       statusText.textContent = text;
       statusDot.className = mode || '';
     }
 
-    startBtn.addEventListener('click', async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        camStart.style.display = 'none';
-        scanBtn.disabled = false;
-        setStatus('Camera active — point at an object and tap Scan', 'active');
-      } catch (e) {
-        camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
-      }
-    });
+    // ── Text to speech ────────────────────────────────────────────────────────
+    function speak(text) {
+      const userLang = localStorage.getItem('user_lang') || 'en';
 
-    function captureFrame() {
-      const w = video.videoWidth || 640;
-      const h = video.videoHeight || 480;
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
-      return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+      window.speechSynthesis.cancel();
+
+      // unlock browser audio
+      const unlockUtt = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(unlockUtt);
+
+      const translateAndSpeak = (textToSpeak) => {
+        if (userLang === 'en') {
+          speakWithOpenAI(textToSpeak);
+        } else {
+          fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToSpeak)}&langpair=en|${userLang}`)
+            .then(r => r.json())
+            .then(data => {
+              const translated = data.responseData.translatedText || textToSpeak;
+              currentSpeakText = translated;
+              speakWithOpenAI(translated);
+            })
+            .catch(() => speakWithOpenAI(textToSpeak));
+        }
+      };
+
+      function speakWithOpenAI(textToSay) {
+        fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'tts-1',
+            input: textToSay,
+            voice: 'alloy'
+          })
+        })
+          .then(r => r.blob())
+          .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+            currentSpeakText = textToSay;
+          })
+          .catch(e => console.error('TTS error:', e));
+      }
+
+      translateAndSpeak(text);
+    }
+    speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
+
+    // ── Load caretaker objects ────────────────────────────────────────────────
+    function getCaretakerObjects() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
     }
 
-    function checkSavedLabels(detections) {
-      const found = [];
+    function checkMatches(detections) {
       const lc = detections.map(d => d.toLowerCase());
-      for (const saved of savedLabels) {
-        for (const kw of saved.keywords) {
-          if (lc.some(d => d.includes(kw.toLowerCase()) || kw.toLowerCase().includes(d))) {
-            found.push(saved);
-            break;
-          }
+      const matches = [];
+      for (const obj of getCaretakerObjects()) {
+        if (lc.some(d => d.includes(obj.name.toLowerCase()) || obj.name.toLowerCase().includes(d))) {
+          matches.push({ name: obj.name, instructions: obj.instructions });
         }
       }
-      return found;
+      return matches;
     }
 
+    // ── Overlay labels (tappable if instructions exist) ───────────────────────
     function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
@@ -671,45 +532,71 @@
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
-        fo.setAttribute('width', 140); fo.setAttribute('height', 36);
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.8);color:#fff;font-size:13px;font-weight:500;padding:5px 10px;border-radius:14px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.name}</div>`;
+        fo.setAttribute('x', cx - 75); fo.setAttribute('y', cy - 54);
+        fo.setAttribute('width', 150); fo.setAttribute('height', 38);
+        const hasInstr = !!m.instructions;
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml"
+          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}"
+          style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 12px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;pointer-events:all;">
+          ${m.name}${hasInstr ? ' ℹ️' : ' 🔊'}
+        </div>`;
         overlay.appendChild(fo);
       });
     }
 
-    function renderSavedPills() {
-      savedLabelsDiv.innerHTML = '';
-      for (const s of savedLabels) {
-        const pill = document.createElement('div');
-        pill.className = 'pill';
-        pill.innerHTML = `<strong>${s.name}</strong><span>${s.keywords.join(', ')}</span>`;
-        savedLabelsDiv.appendChild(pill);
-      }
+    // ── Instructions popup ────────────────────────────────────────────────────
+    function showInstructions(name, instructions) {
+      instrName.textContent = name;
+      instrText.textContent = instructions;
+      instrPopup.classList.add('show');
+      speak(name + '. ' + instructions);
     }
 
+    closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
+    instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        camStart.style.display = 'none';
+        scanBtn.disabled = false;
+        setStatus('Point at an object and tap Scan', 'active');
+      } catch (e) {
+        camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
+      }
+    });
+
+    function captureFrame() {
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    }
+
+    // ── Scan ──────────────────────────────────────────────────────────────────
     scanBtn.addEventListener('click', async () => {
       if (!stream) return;
       scanBtn.disabled = true;
       scanLine.classList.add('active');
       setStatus('Scanning...', 'scanning');
       overlay.innerHTML = '';
-
+      const unlockUtt = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(unlockUtt);
       let base64;
       try { base64 = captureFrame(); }
       catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
 
       resultPanel.className = 'show';
-      detectedText.innerHTML = 'Analyzing image...';
+      detectedText.innerHTML = 'Analyzing...';
       aiResult.textContent = '';
 
       try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
           body: JSON.stringify({
             model: 'gpt-4o',
             max_tokens: 500,
@@ -717,7 +604,7 @@
               role: 'user',
               content: [
                 { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-                { type: 'text', text: 'You are an accessibility assistant helping people with challenges identify objects. List the main objects you see. Respond ONLY with raw JSON, no markdown: {"objects": ["object1", "object2"], "description": "one friendly sentence describing the scene"}' }
+                { type: 'text', text: 'You are an accessibility assistant. Identify ONLY the single most prominent object — the one closest to the camera or most centered in the frame. Ignore background objects. Respond ONLY with raw JSON: {"objects": ["name of object"], "description": "one friendly sentence about that object"}' }
               ]
             }]
           })
@@ -730,70 +617,35 @@
         catch (e) { parsed = { objects: [], description: text }; }
 
         lastDetections = parsed.objects || [];
-        const matches = checkSavedLabels(lastDetections);
+        const matches = checkMatches(lastDetections);
         showOverlayLabels(matches);
 
-        const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing specific detected';
+        const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
         detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
-        if (matches.length) {
-          detectedText.innerHTML += ` — <span style="color:#4ade80">recognized: ${matches.map(m => m.name).join(', ')}</span>`;
-        }
         aiResult.textContent = parsed.description || '';
-        labelInput.placeholder = lastDetections.length ? `e.g. "${lastDetections[0]}"` : 'Type a label...';
-        setStatus('Scan complete', 'active');
 
+        if (matches.length) {
+          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
+          const withInstr = matches.find(m => m.instructions);
+          if (withInstr) {
+            showInstructions(withInstr.name, withInstr.instructions);
+          } else {
+            speak(matches[0].name);
+          }
+        } else {
+          // speak whatever was detected even if not saved
+          if (lastDetections.length) speak(lastDetections[0]);
+        }
+
+        setStatus('Scan complete', 'active');
       } catch (e) {
-        detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key and internet connection</span>';
+        detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
         console.error(e);
         setStatus('Error', '');
       }
 
       scanLine.classList.remove('active');
       scanBtn.disabled = false;
-    });
-
-    saveBtn.addEventListener('click', () => {
-      const name = labelInput.value.trim();
-      if (!name) return;
-      const keywords = [...new Set([...lastDetections.map(d => d.toLowerCase()), name.toLowerCase()])];
-      const existing = savedLabels.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
-      if (existing >= 0) {
-        savedLabels[existing].keywords = [...new Set([...savedLabels[existing].keywords, ...keywords])];
-      } else {
-        savedLabels.push({ name, keywords });
-      }
-      labelInput.value = '';
-      renderSavedPills();
-      showOverlayLabels(checkSavedLabels(lastDetections));
-    });
-
-    labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
-
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsMenu = document.getElementById('settings-menu');
-    const a11yToggle = document.getElementById('a11y-toggle');
-
-    settingsBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      const open = settingsMenu.classList.toggle('open');
-      settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-
-    document.addEventListener('click', e => {
-      if (!settingsMenu.contains(e.target) && e.target !== settingsBtn) {
-        settingsMenu.classList.remove('open');
-        settingsBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    if (localStorage.getItem('a11yMode') === '1') {
-      a11yToggle.checked = true;
-      document.body.classList.add('accessibility-mode');
-    }
-
-    a11yToggle.addEventListener('change', () => {
-      document.body.classList.toggle('accessibility-mode', a11yToggle.checked);
-      localStorage.setItem('a11yMode', a11yToggle.checked ? '1' : '0');
     });
   </script>
 </body>
