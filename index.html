@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accessibility Scanner</title>
+  <title>Object Scanner</title>
   <style>
     * {
       box-sizing: border-box;
@@ -20,139 +20,634 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px;
+      padding: 16px;
     }
 
-    .logo {
-      font-size: 15px;
-      font-weight: 500;
-      color: #444;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-bottom: 48px;
+    /* top bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 16px;
+      gap: 12px;
     }
 
-    h1 {
-      font-size: 32px;
-      font-weight: 600;
+    .back-btn {
+      background: none;
+      border: none;
+      color: #666;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+
+    .back-btn:hover {
       color: #fff;
-      text-align: center;
-      margin-bottom: 12px;
-      line-height: 1.2;
     }
 
-    .subtitle {
-      font-size: 15px;
-      color: #555;
-      text-align: center;
-      margin-bottom: 56px;
+    .topbar h1 {
+      font-size: 17px;
+      font-weight: 500;
+      color: #fff;
     }
 
-    .btn-group {
+    /* camera */
+    #cam-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      border: 1px solid #222;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    #canvas {
+      display: none;
+    }
+
+    #overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* scan frame corners */
+    #scan-frame {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #scan-frame .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: #4ade80;
+      border-style: solid;
+      border-width: 0;
+    }
+
+    #scan-frame .tl {
+      top: 20px;
+      left: 20px;
+      border-top-width: 3px;
+      border-left-width: 3px;
+      border-top-left-radius: 4px;
+    }
+
+    #scan-frame .tr {
+      top: 20px;
+      right: 20px;
+      border-top-width: 3px;
+      border-right-width: 3px;
+      border-top-right-radius: 4px;
+    }
+
+    #scan-frame .bl {
+      bottom: 20px;
+      left: 20px;
+      border-bottom-width: 3px;
+      border-left-width: 3px;
+      border-bottom-left-radius: 4px;
+    }
+
+    #scan-frame .br {
+      bottom: 20px;
+      right: 20px;
+      border-bottom-width: 3px;
+      border-right-width: 3px;
+      border-bottom-right-radius: 4px;
+    }
+
+    #scan-line {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4ade80, transparent);
+      top: 20px;
+      display: none;
+      animation: scandown 1.5s ease-in-out infinite;
+    }
+
+    @keyframes scandown {
+      0% {
+        top: 20px;
+        opacity: 1;
+      }
+
+      90% {
+        top: calc(100% - 22px);
+        opacity: 1;
+      }
+
+      100% {
+        top: calc(100% - 22px);
+        opacity: 0;
+      }
+    }
+
+    #scan-line.active {
+      display: block;
+    }
+
+    /* cam start screen */
+    #cam-start {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #111;
+    }
+
+    #cam-start p {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      max-width: 240px;
+    }
+
+    #start-btn {
+      padding: 10px 24px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #4ade80;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #start-btn:hover {
+      background: #22c55e;
+    }
+
+    /* status */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    #status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+    }
+
+    #status-dot.active {
+      background: #4ade80;
+    }
+
+    #status-dot.scanning {
+      background: #facc15;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    /* scan button */
+    #controls {
+      width: 100%;
+      max-width: 640px;
+      margin-top: 12px;
+    }
+
+    #scan-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    #scan-btn:hover:not(:disabled) {
+      border-color: #4ade80;
+      color: #4ade80;
+    }
+
+    #scan-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* result */
+    #result-panel {
+      display: none;
+      width: 100%;
+      max-width: 640px;
+      margin-top: 14px;
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    #result-panel.show {
+      display: block;
+    }
+
+    #detected-text {
+      font-size: 14px;
+      color: #f0f0f0;
+      margin-bottom: 6px;
+    }
+
+    #ai-result {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    /* instructions popup */
+    #instr-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #instr-popup.show {
+      display: flex;
+    }
+
+    #instr-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
       gap: 14px;
-      width: 100%;
-      max-width: 320px;
+      position: relative;
     }
 
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      border-radius: 14px;
-      border: 1px solid #222;
-      cursor: pointer;
-      text-decoration: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-
-    .btn-left {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-    }
-
-    .btn-label {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .btn-desc {
-      font-size: 13px;
-      opacity: 0.5;
-    }
-
-    .btn-arrow {
+    #instr-box h2 {
       font-size: 20px;
-      opacity: 0.3;
+      font-weight: 600;
+      color: #4ade80;
     }
 
-    /* User button */
-    .btn-user {
-      background: #4ade80;
-      border-color: #4ade80;
-      color: #000;
+    #instr-box p {
+      font-size: 15px;
+      color: #ccc;
+      line-height: 1.7;
     }
 
-    .btn-user:hover {
-      background: #22c55e;
-      border-color: #22c55e;
+    #close-instr {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #555;
+      cursor: pointer;
     }
 
-    .btn-user .btn-arrow {
-      color: #000;
+    #close-instr:hover {
+      color: #fff;
     }
 
-    /* Caretaker button */
-    .btn-caretaker {
-      background: #1a1a1a;
-      color: #f0f0f0;
-    }
-
-    .btn-caretaker:hover {
+    #speak-again-btn {
+      padding: 10px;
+      font-size: 13px;
       background: #222;
-      border-color: #444;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #ccc;
+      cursor: pointer;
+      text-align: center;
     }
 
-    .footer {
-      margin-top: 56px;
-      font-size: 12px;
-      color: #333;
+    #speak-again-btn:hover {
+      background: #2a2a2a;
+      color: #fff;
     }
   </style>
 </head>
 
 <body>
 
-  <p class="logo">Accessibility App</p>
-
-  <h1>Who are you?</h1>
-  <p class="subtitle">Choose your role to get started</p>
-
-  <div class="btn-group">
-    <a href="index.html" class="btn btn-user">
-      <div class="btn-left">
-        <span class="btn-label">I am a User</span>
-        <span class="btn-desc">Scan objects around me</span>
-      </div>
-      <span class="btn-arrow">→</span>
-    </a>
-
-    <a href="caretaker.html" class="btn btn-caretaker">
-      <div class="btn-left">
-        <span class="btn-label">I am a Caretaker</span>
-        <span class="btn-desc">Manage objects &amp; instructions</span>
-      </div>
-      <span class="btn-arrow">→</span>
-    </a>
+  <div class="topbar">
+    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
+    <h1>Object Scanner</h1>
   </div>
 
-  <p class="footer">Select the option that applies to you</p>
+  <div id="cam-wrap">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <svg id="overlay" xmlns="http://www.w3.org/2000/svg"
+      style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></svg>
+    <div id="scan-frame">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div id="scan-line"></div>
+    </div>
+    <div id="cam-start">
+      <button id="start-btn">Enable Camera</button>
+      <p>Allow camera access to start scanning</p>
+    </div>
+  </div>
 
+  <div id="status-bar">
+    <div id="status-dot"></div>
+    <span id="status-text">Camera off</span>
+  </div>
+
+  <div id="controls">
+    <button id="scan-btn" disabled>Scan Object</button>
+  </div>
+
+  <div id="result-panel">
+    <div id="detected-text"></div>
+    <div id="ai-result"></div>
+  </div>
+
+  <!-- Instructions popup -->
+  <div id="instr-popup">
+    <div id="instr-box">
+      <button id="close-instr">×</button>
+      <h2 id="instr-name"></h2>
+      <p id="instr-text"></p>
+      <button id="speak-again-btn">🔊 Speak again</button>
+    </div>
+  </div>
+
+  <script>
+    const API_KEY = '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'; // OpenAI key here
+    const STORAGE_KEY = 'accessibility_objects';
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const overlay = document.getElementById('overlay');
+    const startBtn = document.getElementById('start-btn');
+    const camStart = document.getElementById('cam-start');
+    const scanBtn = document.getElementById('scan-btn');
+    const scanLine = document.getElementById('scan-line');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const resultPanel = document.getElementById('result-panel');
+    const detectedText = document.getElementById('detected-text');
+    const aiResult = document.getElementById('ai-result');
+    const instrPopup = document.getElementById('instr-popup');
+    const instrName = document.getElementById('instr-name');
+    const instrText = document.getElementById('instr-text');
+    const closeInstr = document.getElementById('close-instr');
+    const speakAgainBtn = document.getElementById('speak-again-btn');
+
+    let lastDetections = [];
+    let stream = null;
+    let currentSpeakText = '';
+
+    function setStatus(text, mode) {
+      statusText.textContent = text;
+      statusDot.className = mode || '';
+    }
+
+    // ── Text to speech ────────────────────────────────────────────────────────
+    function speak(text) {
+      const userLang = localStorage.getItem('user_lang') || 'en';
+
+      window.speechSynthesis.cancel();
+
+      // unlock browser audio
+      const unlockUtt = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(unlockUtt);
+
+      const translateAndSpeak = (textToSpeak) => {
+        if (userLang === 'en') {
+          speakWithOpenAI(textToSpeak);
+        } else {
+          fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToSpeak)}&langpair=en|${userLang}`)
+            .then(r => r.json())
+            .then(data => {
+              const translated = data.responseData.translatedText || textToSpeak;
+              currentSpeakText = translated;
+              speakWithOpenAI(translated);
+            })
+            .catch(() => speakWithOpenAI(textToSpeak));
+        }
+      };
+
+      function speakWithOpenAI(textToSay) {
+        fetch('https://api.openai.com/v1/audio/speech', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'tts-1',
+            input: textToSay,
+            voice: 'alloy'
+          })
+        })
+          .then(r => r.blob())
+          .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+            currentSpeakText = textToSay;
+          })
+          .catch(e => console.error('TTS error:', e));
+      }
+
+      translateAndSpeak(text);
+    }
+    speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
+
+    // ── Load caretaker objects ────────────────────────────────────────────────
+    function getCaretakerObjects() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function checkMatches(detections) {
+      const lc = detections.map(d => d.toLowerCase());
+      const matches = [];
+      for (const obj of getCaretakerObjects()) {
+        if (lc.some(d => d.includes(obj.name.toLowerCase()) || obj.name.toLowerCase().includes(d))) {
+          matches.push({ name: obj.name, instructions: obj.instructions });
+        }
+      }
+      return matches;
+    }
+
+    // ── Overlay labels (tappable if instructions exist) ───────────────────────
+    function showOverlayLabels(matches) {
+      overlay.innerHTML = '';
+      if (!matches.length) return;
+      const vw = video.offsetWidth;
+      const vh = video.offsetHeight;
+      matches.forEach((m, i) => {
+        const cx = vw * (0.3 + i * 0.25);
+        const cy = vh * 0.4;
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+        dot.setAttribute('r', 7); dot.setAttribute('fill', '#4ade80');
+        dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
+        overlay.appendChild(dot);
+        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        fo.setAttribute('x', cx - 75); fo.setAttribute('y', cy - 54);
+        fo.setAttribute('width', 150); fo.setAttribute('height', 38);
+        const hasInstr = !!m.instructions;
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml"
+          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}"
+          style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 12px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;pointer-events:all;">
+          ${m.name}${hasInstr ? ' ℹ️' : ' 🔊'}
+        </div>`;
+        overlay.appendChild(fo);
+      });
+    }
+
+    // ── Instructions popup ────────────────────────────────────────────────────
+    function showInstructions(name, instructions) {
+      instrName.textContent = name;
+      instrText.textContent = instructions;
+      instrPopup.classList.add('show');
+      speak(name + '. ' + instructions);
+    }
+
+    closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
+    instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+    startBtn.addEventListener('click', async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        camStart.style.display = 'none';
+        scanBtn.disabled = false;
+        setStatus('Point at an object and tap Scan', 'active');
+      } catch (e) {
+        camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
+      }
+    });
+
+    function captureFrame() {
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+      return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+    }
+
+    // ── Scan ──────────────────────────────────────────────────────────────────
+    scanBtn.addEventListener('click', async () => {
+      if (!stream) return;
+      scanBtn.disabled = true;
+      scanLine.classList.add('active');
+      setStatus('Scanning...', 'scanning');
+      overlay.innerHTML = '';
+      const unlockUtt = new SpeechSynthesisUtterance('');
+      window.speechSynthesis.speak(unlockUtt);
+      let base64;
+      try { base64 = captureFrame(); }
+      catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
+
+      resultPanel.className = 'show';
+      detectedText.innerHTML = 'Analyzing...';
+      aiResult.textContent = '';
+
+      try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            max_tokens: 500,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+                { type: 'text', text: 'You are an accessibility assistant. Identify ONLY the single most prominent object — the one closest to the camera or most centered in the frame. Ignore background objects. Respond ONLY with raw JSON: {"objects": ["name of object"], "description": "one friendly sentence about that object"}' }
+              ]
+            }]
+          })
+        });
+
+        const data = await resp.json();
+        const text = data.choices?.[0]?.message?.content || '';
+        let parsed;
+        try { parsed = JSON.parse(text.replace(/```json|```/g, '').trim()); }
+        catch (e) { parsed = { objects: [], description: text }; }
+
+        lastDetections = parsed.objects || [];
+        const matches = checkMatches(lastDetections);
+        showOverlayLabels(matches);
+
+        const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
+        detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
+        aiResult.textContent = parsed.description || '';
+
+        if (matches.length) {
+          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
+          const withInstr = matches.find(m => m.instructions);
+          if (withInstr) {
+            showInstructions(withInstr.name, withInstr.instructions);
+          } else {
+            speak(matches[0].name);
+          }
+        } else {
+          // speak whatever was detected even if not saved
+          if (lastDetections.length) speak(lastDetections[0]);
+        }
+
+        setStatus('Scan complete', 'active');
+      } catch (e) {
+        detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
+        console.error(e);
+        setStatus('Error', '');
+      }
+
+      scanLine.classList.remove('active');
+      scanBtn.disabled = false;
+    });
+  </script>
 </body>
 
 </html>
