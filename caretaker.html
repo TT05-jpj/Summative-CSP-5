@@ -2,56 +2,153 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Caretaker Dashboard</title>
-    <link rel="stylesheet" href="caretaker.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caretaker Dashboard</title>
+  <link rel="stylesheet" href="caretaker.css" />
 </head>
 
 <body>
 
-    <header>
-        <h1>Caretaker Dashboard</h1>
-        <button id="add-btn">+ Add Object</button>
-    </header>
+  <header>
+    <h1>Caretaker Dashboard</h1>
+    <button id="add-btn">+ Add Object</button>
+    <a href="scanner.html"
+      style="padding:8px 16px;font-size:14px;font-weight:500;background:#4ade80;color:#000;border-radius:8px;text-decoration:none;">📷
+      Scanner</a>
+    <!-- Language Settings -->
+    <div id="lang-bar"
+      style="display:flex;align-items:center;gap:12px;padding:12px 28px;background:#142054;border-bottom:1px solid #0a2070;font-size:13px;color:#aab0cc;">
+      <span>🌐 Languages:</span>
+      <select id="caretaker-lang"
+        style="background:#020d3a;color:#fff;border:1px solid #0a2070;border-radius:6px;padding:4px 8px;font-size:13px;">
+        <option value="en">Caretaker: English</option>
+        <option value="es">Caretaker: Spanish</option>
+        <option value="fr">Caretaker: French</option>
+        <option value="de">Caretaker: German</option>
+        <option value="it">Caretaker: Italian</option>
+        <option value="pt">Caretaker: Portuguese</option>
+        <option value="zh">Caretaker: Chinese</option>
+        <option value="ja">Caretaker: Japanese</option>
+        <option value="ko">Caretaker: Korean</option>
+        <option value="ar">Caretaker: Arabic</option>
+        <option value="hi">Caretaker: Hindi</option>
+        <option value="ta">Caretaker: Tamil</option>
+        <option value="te">Caretaker: Telugu</option>
+        <option value="bn">Caretaker: Bengali</option>
+        <option value="ur">Caretaker: Urdu</option>
+        <option value="ru">Caretaker: Russian</option>
+        <option value="tr">Caretaker: Turkish</option>
+        <option value="vi">Caretaker: Vietnamese</option>
+        <option value="th">Caretaker: Thai</option>
+        <option value="pl">Caretaker: Polish</option>
+        <option value="nl">Caretaker: Dutch</option>
+        <option value="sv">Caretaker: Swedish</option>
+        <option value="ro">Caretaker: Romanian</option>
+        <option value="el">Caretaker: Greek</option>
+        <option value="he">Caretaker: Hebrew</option>
+        <option value="fa">Caretaker: Persian</option>
+        <option value="sw">Caretaker: Swahili</option>
+        <option value="tl">Caretaker: Filipino</option>
+        <option value="ms">Caretaker: Malay</option>
+        <option value="id">Caretaker: Indonesian</option>
+      </select>
 
-    <!-- Card grid — same id pattern as your recipe site's reccontainer -->
-    <div id="object-container"></div>
-
-    <!-- View instructions popup — same pattern as your missing-popup -->
-    <div class="popup-overlay" id="view-popup">
-        <div class="popup-box">
-            <button id="close-view">×</button>
-            <h2 id="popup-obj-name"></h2>
-            <p id="popup-obj-instr"></p>
-        </div>
+      <select id="user-lang"
+        style="background:#020d3a;color:#fff;border:1px solid #0a2070;border-radius:6px;padding:4px 8px;font-size:13px;">
+        <option value="en">User: English</option>
+        <option value="es">User: Spanish</option>
+        <option value="fr">User: French</option>
+        <option value="de">User: German</option>
+        <option value="it">User: Italian</option>
+        <option value="pt">User: Portuguese</option>
+        <option value="zh">User: Chinese</option>
+        <option value="ja">User: Japanese</option>
+        <option value="ko">User: Korean</option>
+        <option value="ar">User: Arabic</option>
+        <option value="hi">User: Hindi</option>
+        <option value="ta">User: Tamil</option>
+        <option value="te">User: Telugu</option>
+        <option value="bn">User: Bengali</option>
+        <option value="ur">User: Urdu</option>
+        <option value="ru">User: Russian</option>
+        <option value="tr">User: Turkish</option>
+        <option value="vi">User: Vietnamese</option>
+        <option value="th">User: Thai</option>
+        <option value="pl">User: Polish</option>
+        <option value="nl">User: Dutch</option>
+        <option value="sv">User: Swedish</option>
+        <option value="ro">User: Romanian</option>
+        <option value="el">User: Greek</option>
+        <option value="he">User: Hebrew</option>
+        <option value="fa">User: Persian</option>
+        <option value="sw">User: Swahili</option>
+        <option value="tl">User: Filipino</option>
+        <option value="ms">User: Malay</option>
+        <option value="id">User: Indonesian</option>
+      </select>
+      <span id="lang-saved" style="color:#4ade80;display:none;">✓ Saved</span>
     </div>
+  </header>
 
-    <!-- Add / Edit modal -->
-    <div id="modal-overlay">
-        <div id="modal">
-            <h2 id="modal-title">Add Object</h2>
-            <div class="field">
-                <label>Object name</label>
-                <div class="input-row">
-                    <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
-                    <button class="mic-btn" id="mic-name" type="button">mic</button>
-                </div>
-            </div>
-            <div class="field">
-                <label>Instructions</label>
-                <div class="input-row">
-                    <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
-                    <button class="mic-btn" id="mic-instr" type="button">mic</button>
-                </div>
-            </div>
-            <div id="modal-actions">
-                <button id="modal-cancel">Cancel</button>
-                <button id="modal-save">Save</button>
-            </div>
-        </div>
+  <!-- Card grid — same id pattern as your recipe site's reccontainer -->
+  <div id="object-container"></div>
+
+  <!-- View instructions popup — same pattern as your missing-popup -->
+  <div class="popup-overlay" id="view-popup">
+    <div class="popup-box">
+      <button id="close-view">×</button>
+      <h2 id="popup-obj-name"></h2>
+      <p id="popup-obj-instr"></p>
     </div>
-    <script src="caretaker.js"></script>
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div id="modal-overlay">
+    <div id="modal">
+      <h2 id="modal-title">Add Object</h2>
+      <div class="field">
+        <label>Object name</label>
+        <div class="input-row">
+          <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
+          <button class="mic-btn" id="mic-name" type="button">mic</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Instructions</label>
+        <div class="input-row">
+          <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
+          <button class="mic-btn" id="mic-instr" type="button">mic</button>
+        </div>
+      </div>
+      <div id="modal-actions">
+        <button id="modal-cancel">Cancel</button>
+        <button id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const ctLang = document.getElementById('caretaker-lang');
+    const usLang = document.getElementById('user-lang');
+    const langSaved = document.getElementById('lang-saved');
+
+    // load saved languages
+    ctLang.value = localStorage.getItem('caretaker_lang') || 'en';
+    usLang.value = localStorage.getItem('user_lang') || 'en';
+
+    // save whenever changed
+    ctLang.addEventListener('change', () => {
+      localStorage.setItem('caretaker_lang', ctLang.value);
+      langSaved.style.display = 'inline';
+      setTimeout(() => langSaved.style.display = 'none', 2000);
+    });
+    usLang.addEventListener('change', () => {
+      localStorage.setItem('user_lang', usLang.value);
+      langSaved.style.display = 'inline';
+      setTimeout(() => langSaved.style.display = 'none', 2000);
+    });
+  </script>
+  <script src="caretaker.js"></script>
 </body>
 
 </html>

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Object Scanner</title>
+  <title>Caretaker Scanner</title>
   <style>
     * {
       box-sizing: border-box;
@@ -23,7 +23,6 @@
       padding: 16px;
     }
 
-    /* top bar */
     .topbar {
       display: flex;
       align-items: center;
@@ -51,9 +50,27 @@
       font-size: 17px;
       font-weight: 500;
       color: #fff;
+      flex: 1;
     }
 
-    /* camera */
+    .dashboard-btn {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #1a1a1a;
+      color: #ccc;
+      border: 1px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .dashboard-btn:hover {
+      background: #222;
+      color: #fff;
+      border-color: #555;
+    }
+
     #cam-wrap {
       position: relative;
       width: 100%;
@@ -82,7 +99,33 @@
       pointer-events: none;
     }
 
-    /* scan frame corners */
+    /* dashboard icon button ON the camera */
+    #cam-dashboard-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #333;
+      color: #ccc;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 10;
+      text-decoration: none;
+      display: none;
+    }
+
+    #cam-dashboard-btn:hover {
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+    }
+
+    #cam-dashboard-btn.visible {
+      display: block;
+    }
+
     #scan-frame {
       position: absolute;
       inset: 0;
@@ -162,7 +205,6 @@
       display: block;
     }
 
-    /* cam start screen */
     #cam-start {
       position: absolute;
       inset: 0;
@@ -185,18 +227,17 @@
       padding: 10px 24px;
       font-size: 14px;
       font-weight: 500;
-      background: #4ade80;
-      color: #000;
+      background: #fff;
+      color: #111;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
 
     #start-btn:hover {
-      background: #22c55e;
+      background: #e0e0e0;
     }
 
-    /* status */
     #status-bar {
       display: flex;
       align-items: center;
@@ -237,7 +278,6 @@
       }
     }
 
-    /* scan button */
     #controls {
       width: 100%;
       max-width: 640px;
@@ -246,8 +286,8 @@
 
     #scan-btn {
       width: 100%;
-      padding: 16px;
-      font-size: 16px;
+      padding: 14px;
+      font-size: 15px;
       font-weight: 500;
       background: #1a1a1a;
       color: #fff;
@@ -266,7 +306,6 @@
       cursor: not-allowed;
     }
 
-    /* result */
     #result-panel {
       display: none;
       width: 100%;
@@ -276,16 +315,17 @@
       border: 1px solid #222;
       border-radius: 12px;
       padding: 16px;
+      gap: 12px;
+      flex-direction: column;
     }
 
     #result-panel.show {
-      display: block;
+      display: flex;
     }
 
     #detected-text {
       font-size: 14px;
       color: #f0f0f0;
-      margin-bottom: 6px;
     }
 
     #ai-result {
@@ -294,76 +334,98 @@
       line-height: 1.5;
     }
 
-    /* instructions popup */
-    #instr-popup {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 100;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+    .field-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
     }
 
-    #instr-popup.show {
+    #label-row {
       display: flex;
+      gap: 8px;
     }
 
-    #instr-box {
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 16px;
-      padding: 28px 24px;
-      width: 100%;
-      max-width: 400px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      position: relative;
-    }
-
-    #instr-box h2 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #4ade80;
-    }
-
-    #instr-box p {
-      font-size: 15px;
-      color: #ccc;
-      line-height: 1.7;
-    }
-
-    #close-instr {
-      position: absolute;
-      top: 14px;
-      right: 16px;
-      background: none;
-      border: none;
-      font-size: 22px;
-      color: #555;
-      cursor: pointer;
-    }
-
-    #close-instr:hover {
-      color: #fff;
-    }
-
-    #speak-again-btn {
-      padding: 10px;
+    #label-input {
+      flex: 1;
+      padding: 8px 12px;
       font-size: 13px;
-      background: #222;
-      border: 1px solid #333;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
       border-radius: 8px;
-      color: #ccc;
-      cursor: pointer;
-      text-align: center;
+      color: #f0f0f0;
+      outline: none;
     }
 
-    #speak-again-btn:hover {
-      background: #2a2a2a;
-      color: #fff;
+    #label-input:focus {
+      border-color: #4ade80;
+    }
+
+    #instr-input {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 13px;
+      background: #0a0a0a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      color: #f0f0f0;
+      outline: none;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    #instr-input:focus {
+      border-color: #4ade80;
+    }
+
+    #save-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      background: #4ade80;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      align-self: flex-end;
+    }
+
+    #save-btn:hover {
+      background: #22c55e;
+    }
+
+    #saved-labels {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #1a1a1a;
+      border: 1px solid #222;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .pill strong {
+      font-weight: 500;
+      color: #f0f0f0;
+    }
+
+    #save-confirm {
+      font-size: 13px;
+      color: #4ade80;
+      display: none;
+    }
+
+    #save-confirm.show {
+      display: block;
     }
   </style>
 </head>
@@ -372,7 +434,8 @@
 
   <div class="topbar">
     <button class="back-btn" onclick="window.location.href='home.html'">←</button>
-    <h1>Object Scanner</h1>
+    <h1>Caretaker Scanner</h1>
+    <a href="caretaker.html" class="dashboard-btn">Dashboard →</a>
   </div>
 
   <div id="cam-wrap">
@@ -387,6 +450,7 @@
       <div class="corner br"></div>
       <div id="scan-line"></div>
     </div>
+    <a href="caretaker.html" id="cam-dashboard-btn">📋 All saved objects</a>
     <div id="cam-start">
       <button id="start-btn">Enable Camera</button>
       <p>Allow camera access to start scanning</p>
@@ -405,20 +469,26 @@
   <div id="result-panel">
     <div id="detected-text"></div>
     <div id="ai-result"></div>
-  </div>
 
-  <!-- Instructions popup -->
-  <div id="instr-popup">
-    <div id="instr-box">
-      <button id="close-instr">×</button>
-      <h2 id="instr-name"></h2>
-      <p id="instr-text"></p>
-      <button id="speak-again-btn">🔊 Speak again</button>
+    <div>
+      <p class="field-label">Object name</p>
+      <div id="label-row">
+        <input id="label-input" type="text" placeholder='e.g. "pill bottle"' />
+      </div>
     </div>
+
+    <div>
+      <p class="field-label">Instructions for user (optional)</p>
+      <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+    </div>
+
+    <button id="save-btn">Save Object</button>
+    <div id="save-confirm">✓ Saved! User will see this when they scan it.</div>
+    <div id="saved-labels"></div>
   </div>
 
   <script>
-    const API_KEY = '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'; // OpenAI key here
+    const API_KEY = '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'; // paste your OpenAI key here
     const STORAGE_KEY = 'accessibility_objects';
 
     const video = document.getElementById('video');
@@ -433,91 +503,41 @@
     const resultPanel = document.getElementById('result-panel');
     const detectedText = document.getElementById('detected-text');
     const aiResult = document.getElementById('ai-result');
-    const instrPopup = document.getElementById('instr-popup');
-    const instrName = document.getElementById('instr-name');
-    const instrText = document.getElementById('instr-text');
-    const closeInstr = document.getElementById('close-instr');
-    const speakAgainBtn = document.getElementById('speak-again-btn');
+    const labelInput = document.getElementById('label-input');
+    const instrInput = document.getElementById('instr-input');
+    const saveBtn = document.getElementById('save-btn');
+    const savedLabelsDiv = document.getElementById('saved-labels');
+    const saveConfirm = document.getElementById('save-confirm');
+    const camDashBtn = document.getElementById('cam-dashboard-btn');
 
     let lastDetections = [];
     let stream = null;
-    let currentSpeakText = '';
 
     function setStatus(text, mode) {
       statusText.textContent = text;
       statusDot.className = mode || '';
     }
 
-    // ── Text to speech ────────────────────────────────────────────────────────
-    function speak(text) {
-      const userLang = localStorage.getItem('user_lang') || 'en';
-
-      window.speechSynthesis.cancel();
-
-      // unlock browser audio
-      const unlockUtt = new SpeechSynthesisUtterance('');
-      window.speechSynthesis.speak(unlockUtt);
-
-      const translateAndSpeak = (textToSpeak) => {
-        if (userLang === 'en') {
-          speakWithOpenAI(textToSpeak);
-        } else {
-          fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToSpeak)}&langpair=en|${userLang}`)
-            .then(r => r.json())
-            .then(data => {
-              const translated = data.responseData.translatedText || textToSpeak;
-              currentSpeakText = translated;
-              speakWithOpenAI(translated);
-            })
-            .catch(() => speakWithOpenAI(textToSpeak));
-        }
-      };
-
-      function speakWithOpenAI(textToSay) {
-        fetch('https://api.openai.com/v1/audio/speech', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'tts-1',
-            input: textToSay,
-            voice: 'alloy'
-          })
-        })
-          .then(r => r.blob())
-          .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.play();
-            currentSpeakText = textToSay;
-          })
-          .catch(e => console.error('TTS error:', e));
-      }
-
-      translateAndSpeak(text);
-    }
-    speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
-
-    // ── Load caretaker objects ────────────────────────────────────────────────
-    function getCaretakerObjects() {
+    function getObjects() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
       catch { return []; }
     }
 
-    function checkMatches(detections) {
-      const lc = detections.map(d => d.toLowerCase());
-      const matches = [];
-      for (const obj of getCaretakerObjects()) {
-        if (lc.some(d => d.includes(obj.name.toLowerCase()) || obj.name.toLowerCase().includes(d))) {
-          matches.push({ name: obj.name, instructions: obj.instructions });
-        }
-      }
-      return matches;
+    function saveObjects(objects) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(objects));
     }
 
-    // ── Overlay labels (tappable if instructions exist) ───────────────────────
+    function renderSavedPills() {
+      const objects = getObjects();
+      savedLabelsDiv.innerHTML = '';
+      for (const s of objects) {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.innerHTML = `<strong>${s.name}</strong>${s.instructions ? `<span>${s.instructions.slice(0, 30)}...</span>` : ''}`;
+        savedLabelsDiv.appendChild(pill);
+      }
+    }
+
     function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
@@ -532,37 +552,29 @@
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        fo.setAttribute('x', cx - 75); fo.setAttribute('y', cy - 54);
-        fo.setAttribute('width', 150); fo.setAttribute('height', 38);
-        const hasInstr = !!m.instructions;
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml"
-          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}"
-          style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 12px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;pointer-events:all;">
-          ${m.name}${hasInstr ? ' ℹ️' : ' 🔊'}
-        </div>`;
+        fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
+        fo.setAttribute('width', 140); fo.setAttribute('height', 36);
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 10px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ${m.name}</div>`;
         overlay.appendChild(fo);
       });
     }
 
-    // ── Instructions popup ────────────────────────────────────────────────────
-    function showInstructions(name, instructions) {
-      instrName.textContent = name;
-      instrText.textContent = instructions;
-      instrPopup.classList.add('show');
-      speak(name + '. ' + instructions);
+    function checkMatches(detections) {
+      const lc = detections.map(d => d.toLowerCase());
+      return getObjects().filter(obj =>
+        lc.some(d => d.includes(obj.name.toLowerCase()) || obj.name.toLowerCase().includes(d))
+      );
     }
 
-    closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
-    instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
-
-    // ── Camera ────────────────────────────────────────────────────────────────
     startBtn.addEventListener('click', async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
         camStart.style.display = 'none';
         scanBtn.disabled = false;
+        camDashBtn.classList.add('visible');
         setStatus('Point at an object and tap Scan', 'active');
+        renderSavedPills();
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
       }
@@ -576,15 +588,14 @@
       return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     }
 
-    // ── Scan ──────────────────────────────────────────────────────────────────
     scanBtn.addEventListener('click', async () => {
       if (!stream) return;
       scanBtn.disabled = true;
       scanLine.classList.add('active');
       setStatus('Scanning...', 'scanning');
       overlay.innerHTML = '';
-      const unlockUtt = new SpeechSynthesisUtterance('');
-      window.speechSynthesis.speak(unlockUtt);
+      saveConfirm.className = '';
+
       let base64;
       try { base64 = captureFrame(); }
       catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
@@ -592,6 +603,8 @@
       resultPanel.className = 'show';
       detectedText.innerHTML = 'Analyzing...';
       aiResult.textContent = '';
+      labelInput.value = '';
+      instrInput.value = '';
 
       try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -622,22 +635,13 @@
 
         const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
         detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
-        aiResult.textContent = parsed.description || '';
-
         if (matches.length) {
-          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
-          const withInstr = matches.find(m => m.instructions);
-          if (withInstr) {
-            showInstructions(withInstr.name, withInstr.instructions);
-          } else {
-            speak(matches[0].name);
-          }
-        } else {
-          // speak whatever was detected even if not saved
-          if (lastDetections.length) speak(lastDetections[0]);
+          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Already saved: ${matches.map(m => m.name).join(', ')}</span>`;
         }
+        aiResult.textContent = parsed.description || '';
+        if (lastDetections.length) labelInput.value = lastDetections[0];
+        setStatus('Scan complete — add a label and save', 'active');
 
-        setStatus('Scan complete', 'active');
       } catch (e) {
         detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
         console.error(e);
@@ -647,6 +651,27 @@
       scanLine.classList.remove('active');
       scanBtn.disabled = false;
     });
+
+    saveBtn.addEventListener('click', () => {
+      const name = labelInput.value.trim();
+      if (!name) { labelInput.focus(); return; }
+      const instructions = instrInput.value.trim();
+      const objects = getObjects();
+      const existing = objects.findIndex(o => o.name.toLowerCase() === name.toLowerCase());
+      if (existing >= 0) {
+        objects[existing] = { name, instructions };
+      } else {
+        objects.push({ name, instructions });
+      }
+      saveObjects(objects);
+      labelInput.value = '';
+      instrInput.value = '';
+      saveConfirm.className = 'show';
+      renderSavedPills();
+      setTimeout(() => saveConfirm.className = '', 3000);
+    });
+
+    labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') instrInput.focus(); });
   </script>
 </body>
 
