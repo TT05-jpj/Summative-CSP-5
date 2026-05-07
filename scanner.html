@@ -14,8 +14,8 @@
 
     body {
       font-family: system-ui, sans-serif;
-      background: #0a0a0a;
-      color: #f0f0f0;
+      background: #ffffff;
+      color: #03114F;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -30,12 +30,13 @@
       max-width: 640px;
       margin-bottom: 16px;
       gap: 12px;
+      background: #142054;
     }
 
     .back-btn {
       background: none;
       border: none;
-      color: #666;
+      color: #aab0cc;
       font-size: 22px;
       cursor: pointer;
       padding: 4px 8px;
@@ -57,18 +58,18 @@
       padding: 7px 14px;
       font-size: 13px;
       font-weight: 500;
-      background: #1a1a1a;
-      color: #ccc;
-      border: 1px solid #333;
+      background: #ffffff;
+      color: #03114F;
+      border: 1px solid #0a2070;
       border-radius: 8px;
       cursor: pointer;
       text-decoration: none;
     }
 
     .dashboard-btn:hover {
-      background: #222;
-      color: #fff;
-      border-color: #555;
+      background: #e8e8e8;
+      color: #03114F;
+      border-color: #0a2070;
     }
 
     #cam-wrap {
@@ -79,7 +80,7 @@
       overflow: hidden;
       background: #000;
       aspect-ratio: 4/3;
-      border: 1px solid #222;
+      border: 1px solid #0a2070;
     }
 
     #video {
@@ -104,9 +105,9 @@
       position: absolute;
       top: 12px;
       right: 12px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid #333;
-      color: #ccc;
+      background: rgba(20, 32, 84, 0.85);
+      border: 1px solid #0a2070;
+      color: #ffffff;
       font-size: 12px;
       font-weight: 500;
       padding: 6px 12px;
@@ -118,8 +119,8 @@
     }
 
     #cam-dashboard-btn:hover {
-      background: rgba(0, 0, 0, 0.9);
-      color: #fff;
+      background: rgba(20, 32, 84, 1);
+      color: #ffffff;
     }
 
     #cam-dashboard-btn.visible {
@@ -213,12 +214,12 @@
       align-items: center;
       justify-content: center;
       gap: 14px;
-      background: #111;
+      background: #03114F;
     }
 
     #cam-start p {
       font-size: 13px;
-      color: #888;
+      color: #aab0cc;
       text-align: center;
       max-width: 240px;
     }
@@ -227,15 +228,15 @@
       padding: 10px 24px;
       font-size: 14px;
       font-weight: 500;
-      background: #fff;
-      color: #111;
+      background: #ffffff;
+      color: #03114F;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
 
     #start-btn:hover {
-      background: #e0e0e0;
+      background: #e8e8e8;
     }
 
     #status-bar {
@@ -246,14 +247,14 @@
       max-width: 640px;
       margin-top: 12px;
       font-size: 13px;
-      color: #666;
+      color: #03114F;
     }
 
     #status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #444;
+      background: #0a2070;
       flex-shrink: 0;
     }
 
@@ -289,9 +290,9 @@
       padding: 14px;
       font-size: 15px;
       font-weight: 500;
-      background: #1a1a1a;
+      background: #142054;
       color: #fff;
-      border: 1px solid #2a2a2a;
+      border: 1px solid #0a2070;
       border-radius: 12px;
       cursor: pointer;
     }
@@ -311,8 +312,8 @@
       width: 100%;
       max-width: 640px;
       margin-top: 14px;
-      background: #141414;
-      border: 1px solid #222;
+      background: #2254c5;
+      border: 1px solid #0a2070;
       border-radius: 12px;
       padding: 16px;
       gap: 12px;
@@ -325,18 +326,18 @@
 
     #detected-text {
       font-size: 14px;
-      color: #f0f0f0;
+      color: #fff;
     }
 
     #ai-result {
       font-size: 13px;
-      color: #666;
+      color: #aab0cc;
       line-height: 1.5;
     }
 
     .field-label {
       font-size: 12px;
-      color: #666;
+      color: #aab0cc;
       margin-bottom: 5px;
     }
 
@@ -349,23 +350,23 @@
       flex: 1;
       padding: 8px 12px;
       font-size: 13px;
-      background: #0a0a0a;
-      border: 1px solid #2a2a2a;
+      background: #020d3a;
+      border: 1px solid #0a2070;
       border-radius: 8px;
       color: #f0f0f0;
       outline: none;
     }
 
     #label-input:focus {
-      border-color: #4ade80;
+      border-color: #2254c5;
     }
 
     #instr-input {
       width: 100%;
       padding: 8px 12px;
       font-size: 13px;
-      background: #0a0a0a;
-      border: 1px solid #2a2a2a;
+      background: #020d3a;
+      border: 1px solid #0a2070;
       border-radius: 8px;
       color: #f0f0f0;
       outline: none;
@@ -375,15 +376,15 @@
     }
 
     #instr-input:focus {
-      border-color: #4ade80;
+      border-color: #2254c5;
     }
 
     #save-btn {
       padding: 8px 16px;
       font-size: 13px;
       font-weight: 500;
-      background: #4ade80;
-      color: #000;
+      background: #ffffff;
+      color: #03114F;
       border: none;
       border-radius: 8px;
       cursor: pointer;
@@ -392,7 +393,7 @@
     }
 
     #save-btn:hover {
-      background: #22c55e;
+      background: #e8e8e8;
     }
 
     #saved-labels {
@@ -405,17 +406,17 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      background: #1a1a1a;
-      border: 1px solid #222;
+      background: #142054;
+      border: 1px solid #0a2070;
       border-radius: 20px;
       padding: 3px 10px;
       font-size: 12px;
-      color: #888;
+      color: #aab0cc;
     }
 
     .pill strong {
       font-weight: 500;
-      color: #f0f0f0;
+      color: #fff;
     }
 
     #save-confirm {

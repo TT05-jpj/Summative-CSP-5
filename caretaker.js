@@ -17,7 +17,6 @@
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const container    = document.getElementById('object-container');
-    const addBtn       = document.getElementById('add-btn');
     const viewPopup    = document.getElementById('view-popup');
     const popupName    = document.getElementById('popup-obj-name');
     const popupInstr   = document.getElementById('popup-obj-instr');
@@ -33,13 +32,11 @@
     function renderCards() {
       container.innerHTML = '';
 
-      if (objects.length === 0) {
-        const msg = document.createElement('p');
-        msg.classList.add('warning');
-        msg.textContent = "No objects yet. Click + Add Object to get started.";
-        container.appendChild(msg);
-        return;
-      }
+      const addCard = document.createElement('div');
+      addCard.classList.add('object-card', 'add-card');
+      addCard.innerHTML = `<div class="add-card-plus">+</div><rh1>Add Object</rh1>`;
+      addCard.addEventListener('click', () => { window.location.href = 'scanner.html'; });
+      container.appendChild(addCard);
 
       const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
 
@@ -129,7 +126,6 @@
       editingIndex = null;
     }
 
-    addBtn.addEventListener('click', () => openModal());
     modalCancel.addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', e => {
       if (e.target === modalOverlay) closeModal();

@@ -6,7 +6,7 @@
 
 body {
   font-family: system-ui, sans-serif;
-  background: #f9ead9;
+  background: #ffffff;
   color: #f0f0f0;
   min-height: 100vh;
 }
@@ -33,7 +33,7 @@ header h1 {
   padding: 12px 28px;
   font-size: 17px;
   font-weight: 500;
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
   border: none;
   border-radius: 10px;
@@ -41,7 +41,7 @@ header h1 {
 }
 
 #add-btn:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 #object-container {
@@ -79,6 +79,29 @@ header h1 {
   text-transform: capitalize;
 }
 
+.add-card {
+  cursor: pointer;
+  border: 2px dashed #4ade80;
+  background: #1a2e1a;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.add-card:hover {
+  background: #203820;
+}
+
+.add-card-plus {
+  font-size: 48px;
+  font-weight: 300;
+  color: #4ade80;
+  line-height: 1;
+}
+
+.add-card rh1 {
+  color: #4ade80 !important;
+}
+
 .card-photo {
   width: 100%;
   border-radius: 10px;
@@ -110,28 +133,28 @@ header h1 {
 }
 
 .btn-view {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
 }
 
 .btn-view:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 .btn-change {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
-  border: 1px solid #f0ddc8 !important;
+  border: 1px solid #e8e8e8 !important;
 }
 
 .btn-change:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 .btn-delete {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
-  border: 1px solid #f0ddc8 !important;
+  border: 1px solid #e8e8e8 !important;
 }
 
 .btn-delete:hover {
@@ -284,7 +307,7 @@ header h1 {
   padding: 11px 26px;
   font-size: 15px;
   font-weight: 500;
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
   border: none;
   border-radius: 10px;
@@ -292,7 +315,7 @@ header h1 {
 }
 
 #modal-save:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 .object-card .card-btns button {
@@ -307,28 +330,28 @@ header h1 {
 }
 
 .btn-view {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
 }
 
 .btn-view:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 .btn-change {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
-  border: 1px solid #f0ddc8 !important;
+  border: 1px solid #e8e8e8 !important;
 }
 
 .btn-change:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 .btn-delete {
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
-  border: 1px solid #f0ddc8 !important;
+  border: 1px solid #e8e8e8 !important;
 }
 
 .btn-delete:hover {
@@ -484,7 +507,7 @@ header h1 {
   padding: 11px 26px;
   font-size: 15px;
   font-weight: 500;
-  background: #f9ead9;
+  background: #ffffff;
   color: #03114F;
   border: none;
   border-radius: 10px;
@@ -492,7 +515,7 @@ header h1 {
 }
 
 #modal-save:hover {
-  background: #f0ddc8;
+  background: #e8e8e8;
 }
 
 /* ── Mic / input row ── */
