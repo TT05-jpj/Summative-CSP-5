@@ -305,6 +305,103 @@
   display: block;
 }
 
+#result-panel {
+  display: none;
+  width: 100%;
+  max-width: 900px;
+  margin-top: 16px;
+  background: #142054;
+  border: 1px solid #0a2070;
+  border-radius: 14px;
+  padding: 22px;
+  gap: 16px;
+  flex-direction: column;
+}
+
+#result-panel.show { display: flex; }
+
+#label-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#label-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 17px;
+  background: #020d3a;
+  border: 1px solid #0a2070;
+  border-radius: 10px;
+  color: #f0f0f0;
+  outline: none;
+}
+
+#label-input:focus { border-color: #f9ead9; }
+
+.instr-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+#instr-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 17px;
+  background: #020d3a;
+  border: 1px solid #0a2070;
+  border-radius: 10px;
+  color: #f0f0f0;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 90px;
+}
+
+#instr-input:focus { border-color: #f9ead9; }
+
+.mic-btn {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #0a2070;
+  border: 1px solid #1a3a9a;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.mic-btn:hover { background: #1a3a9a; }
+.mic-btn.listening { background: #3a1a1a; border-color: #f87171; animation: pulse 1s infinite; }
+
+#save-btn {
+  padding: 14px 24px;
+  font-size: 17px;
+  font-weight: 500;
+  background: #f9ead9;
+  color: #03114F;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+
+#save-btn:hover { background: #f0ddc8; }
+
+#save-confirm {
+  font-size: 17px;
+  color: #f9ead9;
+  display: none;
+  align-self: flex-end;
+}
+
+#save-confirm.show { display: block; }
+
   </style>
 </head>
 
@@ -352,17 +449,20 @@
       <p class="field-label">Object name</p>
       <div id="label-row">
         <input id="label-input" type="text" placeholder='e.g. "pill bottle"' />
+        <button class="mic-btn" id="mic-label" type="button">🎤</button>
       </div>
     </div>
 
     <div>
       <p class="field-label">Instructions for user (optional)</p>
-      <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+      <div class="instr-row">
+        <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+        <button class="mic-btn" id="mic-instr" type="button">🎤</button>
+      </div>
     </div>
 
     <button id="save-btn">Save Object</button>
-    <div id="save-confirm">✓ Saved! User will see this when they scan it.</div>
-    <div id="saved-labels"></div>
+    <div id="save-confirm">✓ Saved!</div>
   </div>
 
   <script>
@@ -452,7 +552,6 @@
         scanBtn.disabled = false;
         camDashBtn.classList.add('visible');
         setStatus('Point at an object and tap Scan', 'active');
-        renderSavedPills();
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
       }
@@ -561,7 +660,6 @@
       labelInput.value = '';
       instrInput.value = '';
       saveConfirm.className = 'show';
-      renderSavedPills();
       setTimeout(() => saveConfirm.className = '', 3000);
     });
 
@@ -610,6 +708,54 @@
       }
 
       translateScanner();
+
+
+      function setupMic(btnId, targetInput) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          btn.style.opacity = '0.4';
+          btn.style.cursor = 'not-allowed';
+          return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        let listening = false;
+
+        btn.addEventListener('click', () => {
+          if (listening) { recognition.stop(); return; }
+          recognition.start();
+        });
+
+        recognition.addEventListener('start', () => {
+          listening = true;
+          btn.classList.add('listening');
+          btn.textContent = '⏹';
+        });
+
+        recognition.addEventListener('result', (e) => {
+          targetInput.value = e.results[0][0].transcript;
+        });
+
+        recognition.addEventListener('end', () => {
+          listening = false;
+          btn.classList.remove('listening');
+          btn.textContent = '🎤';
+        });
+
+        recognition.addEventListener('error', (e) => {
+          listening = false;
+          btn.classList.remove('listening');
+          btn.textContent = '🎤';
+          if (e.error === 'not-allowed') alert('Microphone access denied.');
+        });
+      }
+
+      setupMic('mic-label', document.getElementById('label-input'));
+      setupMic('mic-instr', document.getElementById('instr-input'));
   </script>
 </body>
 

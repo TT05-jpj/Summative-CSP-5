@@ -17,7 +17,6 @@ let editingIndex = null;
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
 const container = document.getElementById('object-container');
-const addBtn = document.getElementById('add-btn');
 const viewPopup = document.getElementById('view-popup');
 const popupName = document.getElementById('popup-obj-name');
 const popupInstr = document.getElementById('popup-obj-instr');
@@ -33,10 +32,23 @@ const modalSave = document.getElementById('modal-save');
 function renderCards() {
   container.innerHTML = '';
 
+  // ── Scanner card — always first ──
+  const scanCard = document.createElement('div');
+  scanCard.classList.add('object-card');
+  scanCard.style.cursor = 'pointer';
+  scanCard.innerHTML = `
+    <rh1 style="font-size:26px;"></rh1>
+    <div class="card-btns">
+      <button class="btn-view" style="font-size:20px;padding:16px 0;font-weight:800;height:150px;width:80%;margin:0 auto;display:block;">Add Object +</button>
+    </div>
+  `;
+  scanCard.addEventListener('click', () => window.location.href = 'scanner.html');
+  container.appendChild(scanCard);
+
   if (objects.length === 0) {
     const msg = document.createElement('p');
     msg.classList.add('warning');
-    msg.textContent = "No objects yet. Click + Add Object to get started.";
+    msg.textContent = "No objects yet. Use the scanner to add one.";
     container.appendChild(msg);
     return;
   }
@@ -127,11 +139,7 @@ function closeModal() {
   editingIndex = null;
 }
 
-addBtn.addEventListener('click', () => openModal());
-modalCancel.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', e => {
-  if (e.target === modalOverlay) closeModal();
-});
+
 
 // ── Save ──────────────────────────────────────────────────────────────────
 modalSave.addEventListener('click', () => {
