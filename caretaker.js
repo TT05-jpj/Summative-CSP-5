@@ -162,14 +162,44 @@ inputInstr.addEventListener('keydown', e => {
 
 // ── Speech to text ────────────────────────────────────────────────────────
 // Uses the browser's built-in SpeechRecognition API — no API key needed.
-// When the mic button is clicked, it listens and dumps the spoken text
-// straight into the target input/textarea, then stops automatically.
+// Recognition language follows the caretaker's selected language.
+
+const SPEECH_LANG_MAP = {
+  en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT',
+  pt: 'pt-PT', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA',
+  hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', ur: 'ur-PK',
+  ru: 'ru-RU', tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', pl: 'pl-PL',
+  nl: 'nl-NL', sv: 'sv-SE', ro: 'ro-RO', el: 'el-GR', he: 'he-IL',
+  fa: 'fa-IR', sw: 'sw-KE', tl: 'fil-PH', ms: 'ms-MY', id: 'id-ID',
+};
+
+function getSpeechLang() {
+  const code = localStorage.getItem('caretaker_lang') || 'en';
+  return SPEECH_LANG_MAP[code] || 'en-US';
+}
+
+// Ask the browser for microphone permission. Returns true if granted.
+// We immediately stop the tracks — SpeechRecognition opens its own stream.
+async function ensureMicPermission() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    return true;
+  } catch (err) {
+    if (err && err.name === 'NotAllowedError') {
+      alert('Microphone access was denied. Please allow it in your browser settings.');
+    } else {
+      alert('Could not access the microphone: ' + (err && err.message ? err.message : err));
+    }
+    return false;
+  }
+}
 
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
 
-  // Check browser support
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     btn.title = 'Speech recognition not supported in this browser';
@@ -179,50 +209,50 @@ function setupMic(btnId, targetInput) {
   }
 
   const recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';       // change this if your caretaker speaks a different language
-  recognition.interimResults = false; // only give us the final result, not partial words
+  recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
   let listening = false;
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     if (listening) {
       recognition.stop();
       return;
     }
-    recognition.start();
+    const ok = await ensureMicPermission();
+    if (!ok) return;
+    recognition.lang = getSpeechLang();
+    try { recognition.start(); }
+    catch (err) { console.error('Speech start failed:', err); }
   });
 
   recognition.addEventListener('start', () => {
     listening = true;
     btn.classList.add('listening');
-    btn.textContent = '⏹';   // show stop icon while recording
   });
 
   recognition.addEventListener('result', (e) => {
-    // e.results[0][0].transcript is the spoken text as a string
     const spoken = e.results[0][0].transcript;
-    targetInput.value = spoken;   // drop it straight into the field
+    targetInput.value = spoken;
   });
 
   recognition.addEventListener('end', () => {
     listening = false;
     btn.classList.remove('listening');
-    btn.textContent = 'mic';  // restore mic icon
   });
 
   recognition.addEventListener('error', (e) => {
     listening = false;
     btn.classList.remove('listening');
-    btn.textContent = 'mic';
     console.error('Speech error:', e.error);
-    if (e.error === 'not-allowed') {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
       alert('Microphone access was denied. Please allow it in your browser settings.');
+    } else if (e.error === 'language-not-supported') {
+      alert('Your browser does not support speech recognition for the selected language.');
     }
   });
 }
 
-// Wire up both mic buttons to their fields
 setupMic('mic-name', document.getElementById('input-name'));
 setupMic('mic-instr', document.getElementById('input-instr'));
 

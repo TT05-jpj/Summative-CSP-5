@@ -111,14 +111,18 @@
         <label>Object name</label>
         <div class="input-row">
           <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
-          <button class="mic-btn" id="mic-name" type="button">mic</button>
+          <button class="mic-btn" id="mic-name" type="button" aria-label="Speak object name">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div class="field">
         <label>Instructions</label>
         <div class="input-row">
           <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
-          <button class="mic-btn" id="mic-instr" type="button">mic</button>
+          <button class="mic-btn" id="mic-instr" type="button" aria-label="Speak instructions">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div id="modal-actions">
