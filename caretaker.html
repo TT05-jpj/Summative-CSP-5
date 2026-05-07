@@ -131,17 +131,62 @@
     const ctLang = document.getElementById('caretaker-lang');
     const usLang = document.getElementById('user-lang');
     const langSaved = document.getElementById('lang-saved');
-
-    // load saved languages
     ctLang.value = localStorage.getItem('caretaker_lang') || 'en';
     usLang.value = localStorage.getItem('user_lang') || 'en';
 
-    // save whenever changed
+    function translateText(text, targetLang) {
+      if (targetLang === 'en') return Promise.resolve(text);
+      return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(data => data[0].map(x => x[0]).join(''))
+        .catch(() => text);
+    }
+
+    async function translateDashboard(lang) {
+      if (lang === 'en') {
+        document.querySelector('header h1').textContent = 'Caretaker Dashboard';
+        document.getElementById('add-btn').textContent = '+ Add Object';
+        return;
+      }
+      const [title, addObj] = await Promise.all([
+        translateText('Caretaker Dashboard', lang),
+        translateText('+ Add Object', lang),
+      ]);
+      document.querySelector('header h1').textContent = title;
+      document.getElementById('add-btn').textContent = addObj;
+    }
+
+    // store translations for card buttons so renderCards can use them
+    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'CHANGE INSTRUCTIONS', delete: 'DELETE' };
+
+    async function loadTranslations(lang) {
+      if (lang === 'en') {
+        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'CHANGE INSTRUCTIONS', delete: 'DELETE' };
+        return;
+      }
+      const [view, change, del] = await Promise.all([
+        translateText('VIEW INSTRUCTIONS', lang),
+        translateText('CHANGE INSTRUCTIONS', lang),
+        translateText('DELETE', lang),
+      ]);
+      window.ctTranslations = { view: view.toUpperCase(), change: change.toUpperCase(), delete: del.toUpperCase() };
+    }
+
+    async function initTranslations() {
+      const lang = ctLang.value;
+      await Promise.all([translateDashboard(lang), loadTranslations(lang)]);
+      if (typeof renderCards === 'function') renderCards();
+    }
+
+    initTranslations();
+
     ctLang.addEventListener('change', () => {
       localStorage.setItem('caretaker_lang', ctLang.value);
       langSaved.style.display = 'inline';
       setTimeout(() => langSaved.style.display = 'none', 2000);
+      initTranslations();
     });
+
     usLang.addEventListener('change', () => {
       localStorage.setItem('user_lang', usLang.value);
       langSaved.style.display = 'inline';
