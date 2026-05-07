@@ -208,47 +208,121 @@ function setupMic(btnId, targetInput) {
     return;
   }
 
-  const recognition = new SpeechRecognition();
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  // 4s grace period at the start, 3s after the last transcribed word.
+  const INITIAL_TIMEOUT_MS = 4000;
+  const SILENCE_TIMEOUT_MS = 3000;
 
-  let listening = false;
+  // Per-click recognition instance — Chrome's SpeechRecognition gets into
+  // a stuck state if you reuse one object across sessions, so we recreate.
+  let activeRecognition = null;
+  let silenceTimer = null;
+  let baseText = '';   // text already in the input when listening started
+  let finalText = '';  // finalised transcript accumulated this session
+
+  function clearSilenceTimer() {
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+    }
+  }
+
+  function scheduleSilenceTimeout(ms) {
+    clearSilenceTimer();
+    silenceTimer = setTimeout(() => {
+      if (activeRecognition) {
+        // Stop visuals immediately — don't wait for the `end` event, which
+        // can be delayed or skipped on some Chrome states.
+        stopVisuals();
+        try { activeRecognition.stop(); } catch (_) { }
+      }
+    }, ms);
+  }
+
+  function stopVisuals() {
+    btn.classList.remove('listening');
+    btn.classList.remove('speaking');
+  }
 
   btn.addEventListener('click', async () => {
-    if (listening) {
-      recognition.stop();
+    if (activeRecognition) {
+      stopVisuals();
+      try { activeRecognition.stop(); } catch (_) { }
       return;
     }
+
     const ok = await ensureMicPermission();
     if (!ok) return;
-    recognition.lang = getSpeechLang();
-    try { recognition.start(); }
-    catch (err) { console.error('Speech start failed:', err); }
-  });
 
-  recognition.addEventListener('start', () => {
-    listening = true;
+    // Show pulse immediately so the user gets feedback the click registered,
+    // even if SpeechRecognition takes a moment (or fails) to fire `start`.
     btn.classList.add('listening');
-  });
 
-  recognition.addEventListener('result', (e) => {
-    const spoken = e.results[0][0].transcript;
-    targetInput.value = spoken;
-  });
+    const existing = targetInput.value.trim();
+    baseText = existing ? existing + ' ' : '';
+    finalText = '';
 
-  recognition.addEventListener('end', () => {
-    listening = false;
-    btn.classList.remove('listening');
-  });
+    const r = new SpeechRecognition();
+    r.interimResults = true;
+    r.continuous = true;
+    r.maxAlternatives = 1;
+    r.lang = getSpeechLang();
 
-  recognition.addEventListener('error', (e) => {
-    listening = false;
-    btn.classList.remove('listening');
-    console.error('Speech error:', e.error);
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      alert('Microphone access was denied. Please allow it in your browser settings.');
-    } else if (e.error === 'language-not-supported') {
-      alert('Your browser does not support speech recognition for the selected language.');
+    r.addEventListener('start', () => {
+      scheduleSilenceTimeout(INITIAL_TIMEOUT_MS);
+    });
+
+    // speechstart/end mark when actual speech (not just open mic) is detected.
+    r.addEventListener('speechstart', () => btn.classList.add('speaking'));
+    r.addEventListener('speechend', () => btn.classList.remove('speaking'));
+
+    r.addEventListener('result', (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalText += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      targetInput.value = (baseText + finalText + interim).trim();
+      // Each new word resets the 3s silence countdown.
+      scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
+    });
+
+    r.addEventListener('end', () => {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+    });
+
+    r.addEventListener('error', (ev) => {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+      console.error('Speech error:', ev.error);
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        alert('Microphone access was denied. Please allow it in your browser settings.');
+      } else if (ev.error === 'language-not-supported') {
+        alert('Your browser does not support speech recognition for the selected language.');
+      } else if (ev.error === 'no-speech') {
+        // Silent timeout from the engine — fine, just stop quietly.
+      } else if (ev.error === 'audio-capture') {
+        alert('No microphone was found. Check your device settings.');
+      } else if (ev.error === 'network') {
+        alert('Speech recognition needs a network connection and could not reach the service.');
+      }
+    });
+
+    activeRecognition = r;
+    try {
+      r.start();
+    } catch (err) {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+      console.error('Speech start failed:', err);
+      alert('Could not start speech recognition: ' + (err && err.message ? err.message : err));
     }
   });
 }

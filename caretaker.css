@@ -525,28 +525,31 @@ header h1 {
 .mic-btn.listening {
   background: #16a34a;
   border-color: #4ade80;
-  animation: micPulse 1.1s ease-in-out infinite;
+}
+
+.mic-btn.listening.speaking {
+  animation: micPulseActive 0.7s ease-in-out infinite;
 }
 
 .mic-btn.listening .mic-icon {
   filter: brightness(0) invert(1);
 }
 
-@keyframes micPulse {
+@keyframes micPulseActive {
   0% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
-    background: #16a34a;
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.95);
+    background: #15803d;
   }
   50% {
-    transform: scale(1.08);
-    box-shadow: 0 0 0 12px rgba(74, 222, 128, 0);
-    background: #22c55e;
+    transform: scale(1.18);
+    box-shadow: 0 0 0 20px rgba(74, 222, 128, 0);
+    background: #4ade80;
   }
   100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-    background: #16a34a;
+    background: #15803d;
   }
 }
 
