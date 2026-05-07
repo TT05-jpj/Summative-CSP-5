@@ -462,10 +462,10 @@
         if (userLang === 'en') {
           speakWithOpenAI(textToSpeak);
         } else {
-          fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToSpeak)}&langpair=en|${userLang}`)
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${userLang}&dt=t&q=${encodeURIComponent(textToSpeak)}`)
             .then(r => r.json())
             .then(data => {
-              const translated = data.responseData.translatedText || textToSpeak;
+              const translated = data[0].map(x => x[0]).join('') || textToSpeak;
               currentSpeakText = translated;
               speakWithOpenAI(translated);
             })
@@ -474,26 +474,37 @@
       };
 
       function speakWithOpenAI(textToSay) {
-        fetch('https://api.openai.com/v1/audio/speech', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'tts-1',
-            input: textToSay,
-            voice: 'alloy'
+        if (userLang === 'en') {
+          // use OpenAI for English (sounds better)
+          fetch('https://api.openai.com/v1/audio/speech', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+              model: 'tts-1',
+              input: textToSay,
+              voice: 'alloy'
+            })
           })
-        })
-          .then(r => r.blob())
-          .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.play();
-            currentSpeakText = textToSay;
-          })
-          .catch(e => console.error('TTS error:', e));
+            .then(r => r.blob())
+            .then(blob => {
+              const url = URL.createObjectURL(blob);
+              const audio = new Audio(url);
+              audio.play();
+              currentSpeakText = textToSay;
+            })
+            .catch(e => console.error('TTS error:', e));
+        } else {
+          // use browser native voice for other languages — proper accent
+          const utt = new SpeechSynthesisUtterance(textToSay);
+          utt.lang = userLang;
+          utt.rate = 0.9;
+          utt.volume = 1;
+          window.speechSynthesis.speak(utt);
+          currentSpeakText = textToSay;
+        }
       }
 
       translateAndSpeak(text);
@@ -524,22 +535,36 @@
       const vw = video.offsetWidth;
       const vh = video.offsetHeight;
       matches.forEach((m, i) => {
-        const cx = vw * (0.3 + i * 0.25);
-        const cy = vh * 0.4;
+        const cx = vw * 0.5;
+        const cy = vh * 0.38;
+
+        // dot
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
-        dot.setAttribute('r', 7); dot.setAttribute('fill', '#4ade80');
+        dot.setAttribute('r', 8); dot.setAttribute('fill', '#4ade80');
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
+
+        // line from dot up to bubble
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', cx); line.setAttribute('y1', cy - 8);
+        line.setAttribute('x2', cx); line.setAttribute('y2', cy - 40);
+        line.setAttribute('stroke', '#4ade80'); line.setAttribute('stroke-width', 2);
+        overlay.appendChild(line);
+
+        // speech bubble as foreignObject
+        const bw = 180, bh = m.instructions ? 70 : 46;
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        fo.setAttribute('x', cx - 75); fo.setAttribute('y', cy - 54);
-        fo.setAttribute('width', 150); fo.setAttribute('height', 38);
+        fo.setAttribute('x', cx - bw / 2);
+        fo.setAttribute('y', cy - 40 - bh);
+        fo.setAttribute('width', bw);
+        fo.setAttribute('height', bh);
+
         const hasInstr = !!m.instructions;
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml"
-          onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}"
-          style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 12px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;pointer-events:all;">
-          ${m.name}${hasInstr ? ' ℹ️' : ' 🔊'}
-        </div>`;
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.88);border:1.5px solid #4ade80;border-radius:12px;padding:8px 12px;pointer-events:all;cursor:pointer;" onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}">
+      <div style="color:#4ade80;font-size:14px;font-weight:700;text-align:center;">${m.name}</div>
+      ${hasInstr ? `<div style="margin-top:4px;font-size:10px;color:#aaa;text-align:center;">tap for details</div>` : ''}
+    </div>`;
         overlay.appendChild(fo);
       });
     }
@@ -627,11 +652,7 @@
         if (matches.length) {
           detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
           const withInstr = matches.find(m => m.instructions);
-          if (withInstr) {
-            showInstructions(withInstr.name, withInstr.instructions);
-          } else {
-            speak(matches[0].name);
-          }
+          speak(matches[0].name);
         } else {
           // speak whatever was detected even if not saved
           if (lastDetections.length) speak(lastDetections[0]);

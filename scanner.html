@@ -479,7 +479,8 @@
       catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
 
       resultPanel.className = 'show';
-      detectedText.innerHTML = 'Analyzing...';
+      const lang2 = localStorage.getItem('caretaker_lang') || 'en';
+      detectedText.innerHTML = lang2 === 'en' ? 'Analyzing...' : '...';
       aiResult.textContent = '';
       labelInput.value = '';
       instrInput.value = '';
@@ -512,13 +513,28 @@
         showOverlayLabels(matches);
 
         const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
-        detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
+      const lang = localStorage.getItem('caretaker_lang') || 'en';
+
+        async function t(text) {
+          if (lang === 'en') return text;
+          try {
+            const r = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`);
+            const d = await r.json();
+            return d[0].map(x => x[0]).join('') || text;
+          } catch { return text; }
+        }
+
+        const detWord = await t('Detected');
+        const savedWord = await t('Already saved');
+        const completeMsg = await t('Scan complete — add a label and save');
+
+        detectedText.innerHTML = `<strong>${detWord}:</strong> ${objList}`;
         if (matches.length) {
-          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ Already saved: ${matches.map(m => m.name).join(', ')}</span>`;
+          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ ${savedWord}: ${matches.map(m => m.name).join(', ')}</span>`;
         }
         aiResult.textContent = parsed.description || '';
         if (lastDetections.length) labelInput.value = lastDetections[0];
-        setStatus('Scan complete — add a label and save', 'active');
+        setStatus(completeMsg, 'active');
 
       } catch (e) {
         detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
@@ -550,6 +566,50 @@
     });
 
     labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') instrInput.focus(); });
+    // ── Translate scanner page to caretaker language ──────────────────────────
+      function translateEl(id, text, lang) {
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`)
+          .then(r => r.json())
+          .then(data => { document.getElementById(id).textContent = data[0].map(x => x[0]).join('') || text; })
+          .catch(() => { });
+      }
+
+      function translateScanner() {
+        const lang = localStorage.getItem('caretaker_lang') || 'en';
+        if (lang === 'en') return;
+
+        const items = [
+          { id: null, el: document.querySelector('.topbar h1'), text: 'Caretaker Scanner' },
+          { id: null, el: document.querySelector('.dashboard-btn'), text: 'Dashboard →' },
+          { id: null, el: document.getElementById('cam-dashboard-btn'), text: '📋 All saved objects' },
+          { id: null, el: document.getElementById('start-btn'), text: 'Enable Camera' },
+          { id: null, el: document.getElementById('scan-btn'), text: 'Scan Object' },
+          { id: null, el: document.getElementById('save-btn'), text: 'Save Object' },
+          { id: null, el: document.getElementById('save-confirm'), text: '✓ Saved! User will see this when they scan it.' },
+          { id: null, el: document.querySelector('#cam-start p'), text: 'Allow camera access to start scanning' },
+        ];
+
+        // translate field labels
+        document.querySelectorAll('.field-label').forEach((el, i) => {
+          const texts = ['Object name', 'Instructions for user (optional)'];
+          if (texts[i]) {
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(texts[i])}`)
+              .then(r => r.json())
+              .then(data => { el.textContent = data[0].map(x => x[0]).join('') || texts[i]; })
+              .catch(() => { });
+          }
+        });
+
+        items.forEach(item => {
+          if (!item.el) return;
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(item.text)}`)
+            .then(r => r.json())
+            .then(data => { item.el.textContent = data[0].map(x => x[0]).join('') || item.text; })
+            .catch(() => { });
+        });
+      }
+
+      translateScanner();
   </script>
 </body>
 
