@@ -484,7 +484,6 @@
 
     <button id="save-btn">Save Object</button>
     <div id="save-confirm">✓ Saved! User will see this when they scan it.</div>
-    <div id="saved-labels"></div>
   </div>
 
   <script>
@@ -506,7 +505,6 @@
     const labelInput = document.getElementById('label-input');
     const instrInput = document.getElementById('instr-input');
     const saveBtn = document.getElementById('save-btn');
-    const savedLabelsDiv = document.getElementById('saved-labels');
     const saveConfirm = document.getElementById('save-confirm');
     const camDashBtn = document.getElementById('cam-dashboard-btn');
 
@@ -527,37 +525,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(objects));
     }
 
-    function renderSavedPills() {
-      const objects = getObjects();
-      savedLabelsDiv.innerHTML = '';
-      for (const s of objects) {
-        const pill = document.createElement('div');
-        pill.className = 'pill';
-        pill.innerHTML = `<strong>${s.name}</strong>${s.instructions ? `<span>${s.instructions.slice(0, 30)}...</span>` : ''}`;
-        savedLabelsDiv.appendChild(pill);
-      }
-    }
 
-    function showOverlayLabels(matches) {
-      overlay.innerHTML = '';
-      if (!matches.length) return;
-      const vw = video.offsetWidth;
-      const vh = video.offsetHeight;
-      matches.forEach((m, i) => {
-        const cx = vw * (0.3 + i * 0.25);
-        const cy = vh * 0.4;
-        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
-        dot.setAttribute('r', 7); dot.setAttribute('fill', '#4ade80');
-        dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
-        overlay.appendChild(dot);
-        const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
-        fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
-        fo.setAttribute('width', 140); fo.setAttribute('height', 36);
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.85);color:#4ade80;font-size:13px;font-weight:600;padding:5px 10px;border-radius:14px;text-align:center;border:1px solid #4ade80;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ${m.name}</div>`;
-        overlay.appendChild(fo);
-      });
-    }
 
     function checkMatches(detections) {
       const lc = detections.map(d => d.toLowerCase());
@@ -574,7 +542,6 @@
         scanBtn.disabled = false;
         camDashBtn.classList.add('visible');
         setStatus('Point at an object and tap Scan', 'active');
-        renderSavedPills();
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
       }
@@ -632,7 +599,7 @@
 
         lastDetections = parsed.objects || [];
         const matches = checkMatches(lastDetections);
-        showOverlayLabels(matches);
+        
 
         const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
       const lang = localStorage.getItem('caretaker_lang') || 'en';
@@ -650,12 +617,49 @@
         const savedWord = await t('Already saved');
         const completeMsg = await t('Scan complete — add a label and save');
 
-        detectedText.innerHTML = `<strong>${detWord}:</strong> ${objList}`;
-        if (matches.length) {
-          detectedText.innerHTML += `<br><span style="color:#4ade80">✓ ${savedWord}: ${matches.map(m => m.name).join(', ')}</span>`;
+     if (lang !== 'en') {
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(objList)}`)
+            .then(r => r.json())
+            .then(d => {
+              const translatedObj = d[0].map(x => x[0]).join('') || objList;
+              detectedText.innerHTML = `<strong>${detWord}:</strong> ${translatedObj}`;
+              if (matches.length) {
+                const matchNames = matches.map(m => m.name).join(', ');
+                fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(matchNames)}`)
+                  .then(r => r.json())
+                  .then(d2 => {
+                    const translatedMatches = d2[0].map(x => x[0]).join('') || matchNames;
+                    detectedText.innerHTML += `<br><span style="color:#4ade80">✓ ${savedWord}: ${translatedMatches}</span>`;
+                  });
+              }
+            });
+        } else {
+          detectedText.innerHTML = `<strong>${detWord}:</strong> ${objList}`;
+          if (matches.length) {
+            detectedText.innerHTML += `<br><span style="color:#4ade80">✓ ${savedWord}: ${matches.map(m => m.name).join(', ')}</span>`;
+          }
+        } 
+       
+        
+        if (parsed.description && lang !== 'en') {
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(parsed.description)}`)
+            .then(r => r.json())
+            .then(d => { aiResult.textContent = d[0].map(x => x[0]).join('') || parsed.description; })
+            .catch(() => { aiResult.textContent = parsed.description; });
+        } else {
+          aiResult.textContent = parsed.description || '';
         }
-        aiResult.textContent = parsed.description || '';
-        if (lastDetections.length) labelInput.value = lastDetections[0];
+
+        if (lastDetections.length) {
+          if (lang !== 'en') {
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(lastDetections[0])}`)
+              .then(r => r.json())
+              .then(d => { labelInput.value = d[0].map(x => x[0]).join('') || lastDetections[0]; })
+              .catch(() => { labelInput.value = lastDetections[0]; });
+          } else {
+            labelInput.value = lastDetections[0];
+          }
+        }
         setStatus(completeMsg, 'active');
 
       } catch (e) {
@@ -683,7 +687,7 @@
       labelInput.value = '';
       instrInput.value = '';
       saveConfirm.className = 'show';
-      renderSavedPills();
+
       setTimeout(() => saveConfirm.className = '', 3000);
     });
 
