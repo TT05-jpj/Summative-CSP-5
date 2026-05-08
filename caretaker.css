@@ -324,7 +324,6 @@ header h1 {
   border-color: #4a2222 !important;
 }
 
-/* ── Popup overlay ── */
 .popup-overlay {
   display: none;
   position: fixed;
@@ -382,7 +381,6 @@ header h1 {
   color: #fff;
 }
 
-/* ── Add / Edit modal ── */
 #modal-overlay {
   display: none;
   position: fixed;
@@ -482,7 +480,6 @@ header h1 {
   background: #f0ddc8;
 }
 
-/* ── Mic / input row ── */
 .input-row {
   display: flex;
   gap: 10px;

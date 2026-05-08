@@ -1,6 +1,4 @@
-// ── Data ─────────────────────────────────────────────────────────────────
-// Each entry matches the shape: { name: "...", instructions: "..." }
-// Stored as JSON in localStorage, same key the patient scanner reads from
+// Shared with scanner.html and user.html — both read from this key.
 const STORAGE_KEY = 'accessibility_objects';
 
 function loadObjects() {
@@ -15,7 +13,6 @@ function saveObjects() {
 let objects = loadObjects();
 let editingIndex = null;
 
-// ── DOM refs ──────────────────────────────────────────────────────────────
 const container = document.getElementById('object-container');
 const addBtn = document.getElementById('add-btn');
 const viewPopup = document.getElementById('view-popup');
@@ -29,7 +26,6 @@ const inputInstr = document.getElementById('input-instr');
 const modalCancel = document.getElementById('modal-cancel');
 const modalSave = document.getElementById('modal-save');
 
-// ── Render cards — same pattern as your displayRec() ─────────────────────
 function renderCards() {
   container.innerHTML = '';
 
@@ -42,11 +38,9 @@ function renderCards() {
   }
 
   objects.forEach((obj, i) => {
-    // card element — mirrors how your recipe cards are built
     const card = document.createElement('div');
     card.classList.add('object-card');
 
-    // title tag — same custom rh1 element you use
     const title = document.createElement('rh1');
     title.textContent = obj.name;
     const lang = localStorage.getItem('caretaker_lang') || 'en';
@@ -57,7 +51,6 @@ function renderCards() {
         .catch(() => { });
     }
 
-    // button group — stacked like your recipe card buttons
     const btnGroup = document.createElement('div');
     btnGroup.classList.add('card-btns');
 
@@ -81,17 +74,14 @@ function renderCards() {
     card.appendChild(btnGroup);
     container.appendChild(card);
 
-    // VIEW — opens popup with name + instructions (same as your openIngredientPanel)
     viewBtn.addEventListener('click', () => {
       popupName.textContent = obj.name;
       popupInstr.textContent = obj.instructions || 'No instructions added.';
       viewPopup.classList.add('show');
     });
 
-    // CHANGE — opens modal pre-filled for editing
     changeBtn.addEventListener('click', () => openModal(i));
 
-    // DELETE — removes from array, saves, re-renders
     deleteBtn.addEventListener('click', () => {
       objects.splice(i, 1);
       saveObjects();
@@ -100,13 +90,11 @@ function renderCards() {
   });
 }
 
-// ── View popup close ──────────────────────────────────────────────────────
 closeView.addEventListener('click', () => viewPopup.classList.remove('show'));
 viewPopup.addEventListener('click', e => {
   if (e.target === viewPopup) viewPopup.classList.remove('show');
 });
 
-// ── Modal open/close ──────────────────────────────────────────────────────
 function openModal(index = null) {
   editingIndex = index;
   if (index !== null) {
@@ -133,17 +121,14 @@ modalOverlay.addEventListener('click', e => {
   if (e.target === modalOverlay) closeModal();
 });
 
-// ── Save ──────────────────────────────────────────────────────────────────
 modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
   const instr = inputInstr.value.trim();
   if (!name) { inputName.focus(); return; }
 
   if (editingIndex !== null) {
-    // update existing object in place
     objects[editingIndex] = { name, instructions: instr };
   } else {
-    // create new object and push onto array
     objects.push({ name, instructions: instr });
   }
 
@@ -152,17 +137,12 @@ modalSave.addEventListener('click', () => {
   closeModal();
 });
 
-// keyboard shortcuts
 inputName.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); inputInstr.focus(); }
 });
 inputInstr.addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) modalSave.click();
 });
-
-// ── Speech to text ────────────────────────────────────────────────────────
-// Uses the browser's built-in SpeechRecognition API — no API key needed.
-// Recognition language follows the caretaker's selected language.
 
 const SPEECH_LANG_MAP = {
   en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT',
@@ -178,8 +158,7 @@ function getSpeechLang() {
   return SPEECH_LANG_MAP[code] || 'en-US';
 }
 
-// Ask the browser for microphone permission. Returns true if granted.
-// We immediately stop the tracks — SpeechRecognition opens its own stream.
+// Stop the tracks right away — SpeechRecognition opens its own stream.
 async function ensureMicPermission() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   try {
@@ -208,16 +187,15 @@ function setupMic(btnId, targetInput) {
     return;
   }
 
-  // 4s grace period at the start, 3s after the last transcribed word.
   const INITIAL_TIMEOUT_MS = 4000;
   const SILENCE_TIMEOUT_MS = 3000;
 
-  // Per-click recognition instance — Chrome's SpeechRecognition gets into
-  // a stuck state if you reuse one object across sessions, so we recreate.
+  // Recreate per click — reusing one SpeechRecognition object can wedge it
+  // into a state where start() silently no-ops on Chrome.
   let activeRecognition = null;
   let silenceTimer = null;
-  let baseText = '';   // text already in the input when listening started
-  let finalText = '';  // finalised transcript accumulated this session
+  let baseText = '';
+  let finalText = '';
 
   function clearSilenceTimer() {
     if (silenceTimer) {
@@ -230,8 +208,7 @@ function setupMic(btnId, targetInput) {
     clearSilenceTimer();
     silenceTimer = setTimeout(() => {
       if (activeRecognition) {
-        // Stop visuals immediately — don't wait for the `end` event, which
-        // can be delayed or skipped on some Chrome states.
+        // Don't wait for `end` — it can be delayed or skipped on Chrome.
         stopVisuals();
         try { activeRecognition.stop(); } catch (_) { }
       }
@@ -253,8 +230,7 @@ function setupMic(btnId, targetInput) {
     const ok = await ensureMicPermission();
     if (!ok) return;
 
-    // Show pulse immediately so the user gets feedback the click registered,
-    // even if SpeechRecognition takes a moment (or fails) to fire `start`.
+    // Don't wait for `start` — give the user feedback the click registered.
     btn.classList.add('listening');
 
     const existing = targetInput.value.trim();
@@ -271,7 +247,6 @@ function setupMic(btnId, targetInput) {
       scheduleSilenceTimeout(INITIAL_TIMEOUT_MS);
     });
 
-    // speechstart/end mark when actual speech (not just open mic) is detected.
     r.addEventListener('speechstart', () => btn.classList.add('speaking'));
     r.addEventListener('speechend', () => btn.classList.remove('speaking'));
 
@@ -286,7 +261,6 @@ function setupMic(btnId, targetInput) {
         }
       }
       targetInput.value = (baseText + finalText + interim).trim();
-      // Each new word resets the 3s silence countdown.
       scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
     });
 
@@ -306,7 +280,7 @@ function setupMic(btnId, targetInput) {
       } else if (ev.error === 'language-not-supported') {
         alert('Your browser does not support speech recognition for the selected language.');
       } else if (ev.error === 'no-speech') {
-        // Silent timeout from the engine — fine, just stop quietly.
+        // Engine's own silence timeout — stop quietly.
       } else if (ev.error === 'audio-capture') {
         alert('No microphone was found. Check your device settings.');
       } else if (ev.error === 'network') {
@@ -330,5 +304,4 @@ function setupMic(btnId, targetInput) {
 setupMic('mic-name', document.getElementById('input-name'));
 setupMic('mic-instr', document.getElementById('input-instr'));
 
-// ── Init ──────────────────────────────────────────────────────────────────
 renderCards();

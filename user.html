@@ -448,13 +448,12 @@
       statusDot.className = mode || '';
     }
 
-    // ── Text to speech ────────────────────────────────────────────────────────
     function speak(text) {
       const userLang = localStorage.getItem('user_lang') || 'en';
 
       window.speechSynthesis.cancel();
 
-      // unlock browser audio
+      // Empty utterance to unlock browser audio on first interaction.
       const unlockUtt = new SpeechSynthesisUtterance('');
       window.speechSynthesis.speak(unlockUtt);
 
@@ -475,7 +474,7 @@
 
       function speakWithOpenAI(textToSay) {
         if (userLang === 'en') {
-          // use OpenAI for English (sounds better)
+          // OpenAI sounds noticeably better than the browser voice for English.
           fetch('https://api.openai.com/v1/audio/speech', {
             method: 'POST',
             headers: {
@@ -497,7 +496,7 @@
             })
             .catch(e => console.error('TTS error:', e));
         } else {
-          // use browser native voice for other languages — proper accent
+          // Browser native voice for non-English — gives a proper accent.
           const utt = new SpeechSynthesisUtterance(textToSay);
           utt.lang = userLang;
           utt.rate = 0.9;
@@ -511,7 +510,6 @@
     }
     speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
 
-    // ── Load caretaker objects ────────────────────────────────────────────────
     function getCaretakerObjects() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
       catch { return []; }
@@ -528,7 +526,6 @@
       return matches;
     }
 
-    // ── Overlay labels (tappable if instructions exist) ───────────────────────
     function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
@@ -538,21 +535,18 @@
         const cx = vw * 0.5;
         const cy = vh * 0.38;
 
-        // dot
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
         dot.setAttribute('r', 8); dot.setAttribute('fill', '#4ade80');
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
 
-        // line from dot up to bubble
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', cx); line.setAttribute('y1', cy - 8);
         line.setAttribute('x2', cx); line.setAttribute('y2', cy - 40);
         line.setAttribute('stroke', '#4ade80'); line.setAttribute('stroke-width', 2);
         overlay.appendChild(line);
 
-        // speech bubble as foreignObject
         const bw = 180, bh = m.instructions ? 70 : 46;
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         fo.setAttribute('x', cx - bw / 2);
@@ -569,7 +563,6 @@
       });
     }
 
-    // ── Instructions popup ────────────────────────────────────────────────────
     function showInstructions(name, instructions) {
       instrName.textContent = name;
       instrText.textContent = instructions;
@@ -580,7 +573,6 @@
     closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
     instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
 
-    // ── Camera ────────────────────────────────────────────────────────────────
     startBtn.addEventListener('click', async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -601,7 +593,6 @@
       return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
     }
 
-    // ── Scan ──────────────────────────────────────────────────────────────────
     scanBtn.addEventListener('click', async () => {
       if (!stream) return;
       scanBtn.disabled = true;
@@ -654,7 +645,6 @@
           const withInstr = matches.find(m => m.instructions);
           speak(matches[0].name);
         } else {
-          // speak whatever was detected even if not saved
           if (lastDetections.length) speak(lastDetections[0]);
         }
 
