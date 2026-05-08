@@ -385,6 +385,71 @@
       border-color: #2254c5;
     }
 
+    #instr-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    #instr-row #instr-input {
+      flex: 1;
+    }
+
+    .mic-btn {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .mic-btn:hover {
+      background: #222;
+      border-color: #4ade80;
+    }
+
+    .mic-btn .mic-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      pointer-events: none;
+      filter: brightness(0) invert(1);
+    }
+
+    .mic-btn.listening {
+      background: #16a34a;
+      border-color: #4ade80;
+    }
+
+    .mic-btn.listening.speaking {
+      animation: micPulseActive 0.7s ease-in-out infinite;
+    }
+
+    @keyframes micPulseActive {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.95);
+        background: #15803d;
+      }
+      50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 0 16px rgba(74, 222, 128, 0);
+        background: #4ade80;
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+        background: #15803d;
+      }
+    }
+
     #save-btn {
       padding: 8px 16px;
       font-size: 16px;
@@ -482,12 +547,20 @@
       <p class="field-label">Object name</p>
       <div id="label-row">
         <input id="label-input" type="text" placeholder='e.g. "pill bottle"' />
+        <button class="mic-btn" id="mic-label" type="button" aria-label="Speak object name">
+          <img src="micIcon.png" alt="mic" class="mic-icon" />
+        </button>
       </div>
     </div>
 
     <div>
       <p class="field-label">Instructions for user (optional)</p>
-      <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+      <div id="instr-row">
+        <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+        <button class="mic-btn" id="mic-instr" type="button" aria-label="Speak instructions">
+          <img src="micIcon.png" alt="mic" class="mic-icon" />
+        </button>
+      </div>
     </div>
 
     <button id="save-btn">Save Object</button>
@@ -690,6 +763,186 @@
     });
 
     labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') instrInput.focus(); });
+
+      function translateScanner() {
+        const lang = localStorage.getItem('caretaker_lang') || 'en';
+        if (lang === 'en') return;
+
+        const items = [
+          { el: document.querySelector('.topbar h1'), text: 'Caretaker Scanner' },
+          { el: document.querySelector('.dashboard-btn'), text: 'Dashboard →' },
+          { el: document.getElementById('cam-dashboard-btn'), text: '📋 All saved objects' },
+          { el: document.getElementById('start-btn'), text: 'Enable Camera' },
+          { el: document.getElementById('scan-btn'), text: 'Scan Object' },
+          { el: document.getElementById('save-btn'), text: 'Save Object' },
+          { el: document.getElementById('save-confirm'), text: '✓ Saved! User will see this when they scan it.' },
+          { el: document.querySelector('#cam-start p'), text: 'Allow camera access to start scanning' },
+        ];
+
+        document.querySelectorAll('.field-label').forEach((el, i) => {
+          const texts = ['Object name', 'Instructions for user (optional)'];
+          if (texts[i]) {
+            fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(texts[i])}`)
+              .then(r => r.json())
+              .then(data => { el.textContent = data[0].map(x => x[0]).join('') || texts[i]; })
+              .catch(() => { });
+          }
+        });
+
+        items.forEach(item => {
+          if (!item.el) return;
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(item.text)}`)
+            .then(r => r.json())
+            .then(data => { item.el.textContent = data[0].map(x => x[0]).join('') || item.text; })
+            .catch(() => { });
+        });
+      }
+
+      translateScanner();
+
+    const SPEECH_LANG_MAP = {
+      en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT',
+      pt: 'pt-PT', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA',
+      hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', ur: 'ur-PK',
+      ru: 'ru-RU', tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', pl: 'pl-PL',
+      nl: 'nl-NL', sv: 'sv-SE', ro: 'ro-RO', el: 'el-GR', he: 'he-IL',
+      fa: 'fa-IR', sw: 'sw-KE', tl: 'fil-PH', ms: 'ms-MY', id: 'id-ID',
+    };
+
+    function getSpeechLang() {
+      const code = localStorage.getItem('caretaker_lang') || 'en';
+      return SPEECH_LANG_MAP[code] || 'en-US';
+    }
+
+    async function ensureMicPermission() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        s.getTracks().forEach(t => t.stop());
+        return true;
+      } catch (err) {
+        if (err && err.name === 'NotAllowedError') {
+          alert('Microphone access was denied. Please allow it in your browser settings.');
+        } else {
+          alert('Could not access the microphone: ' + (err && err.message ? err.message : err));
+        }
+        return false;
+      }
+    }
+
+    function setupMic(btnId, targetInput) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        btn.title = 'Speech recognition not supported in this browser';
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+        return;
+      }
+
+      const INITIAL_TIMEOUT_MS = 4000;
+      const SILENCE_TIMEOUT_MS = 3000;
+
+      let activeRecognition = null;
+      let silenceTimer = null;
+      let baseText = '';
+      let finalText = '';
+
+      function clearSilenceTimer() {
+        if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+      }
+
+      function scheduleSilenceTimeout(ms) {
+        clearSilenceTimer();
+        silenceTimer = setTimeout(() => {
+          if (activeRecognition) {
+            stopVisuals();
+            try { activeRecognition.stop(); } catch (_) { }
+          }
+        }, ms);
+      }
+
+      function stopVisuals() {
+        btn.classList.remove('listening');
+        btn.classList.remove('speaking');
+      }
+
+      btn.addEventListener('click', async () => {
+        if (activeRecognition) {
+          stopVisuals();
+          try { activeRecognition.stop(); } catch (_) { }
+          return;
+        }
+
+        const ok = await ensureMicPermission();
+        if (!ok) return;
+
+        btn.classList.add('listening');
+
+        const existing = targetInput.value.trim();
+        baseText = existing ? existing + ' ' : '';
+        finalText = '';
+
+        const r = new SpeechRecognition();
+        r.interimResults = true;
+        r.continuous = true;
+        r.maxAlternatives = 1;
+        r.lang = getSpeechLang();
+
+        r.addEventListener('start', () => scheduleSilenceTimeout(INITIAL_TIMEOUT_MS));
+        r.addEventListener('speechstart', () => btn.classList.add('speaking'));
+        r.addEventListener('speechend', () => btn.classList.remove('speaking'));
+
+        r.addEventListener('result', (e) => {
+          let interim = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const transcript = e.results[i][0].transcript;
+            if (e.results[i].isFinal) finalText += transcript;
+            else interim += transcript;
+          }
+          targetInput.value = (baseText + finalText + interim).trim();
+          scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
+        });
+
+        r.addEventListener('end', () => {
+          activeRecognition = null;
+          stopVisuals();
+          clearSilenceTimer();
+        });
+
+        r.addEventListener('error', (ev) => {
+          activeRecognition = null;
+          stopVisuals();
+          clearSilenceTimer();
+          console.error('Speech error:', ev.error);
+          if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+            alert('Microphone access was denied. Please allow it in your browser settings.');
+          } else if (ev.error === 'language-not-supported') {
+            alert('Your browser does not support speech recognition for the selected language.');
+          } else if (ev.error === 'audio-capture') {
+            alert('No microphone was found. Check your device settings.');
+          } else if (ev.error === 'network') {
+            alert('Speech recognition needs a network connection and could not reach the service.');
+          }
+        });
+
+        activeRecognition = r;
+        try {
+          r.start();
+        } catch (err) {
+          activeRecognition = null;
+          stopVisuals();
+          clearSilenceTimer();
+          console.error('Speech start failed:', err);
+          alert('Could not start speech recognition: ' + (err && err.message ? err.message : err));
+        }
+      });
+    }
+
+    setupMic('mic-label', labelInput);
+    setupMic('mic-instr', instrInput);
   </script>
 </body>
 

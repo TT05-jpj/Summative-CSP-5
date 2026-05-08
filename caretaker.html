@@ -103,10 +103,8 @@
     </div>
   </header>
 
-  <!-- Card grid — same id pattern as your recipe site's reccontainer -->
   <div id="object-container"></div>
 
-  <!-- View instructions popup — same pattern as your missing-popup -->
   <div class="popup-overlay" id="view-popup">
     <div class="popup-box">
       <button id="close-view">×</button>
@@ -123,14 +121,18 @@
         <label>Object name</label>
         <div class="input-row">
           <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
-          <button class="mic-btn" id="mic-name" type="button">mic</button>
+          <button class="mic-btn" id="mic-name" type="button" aria-label="Speak object name">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div class="field">
         <label>Instructions</label>
         <div class="input-row">
           <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
-          <button class="mic-btn" id="mic-instr" type="button">mic</button>
+          <button class="mic-btn" id="mic-instr" type="button" aria-label="Speak instructions">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div id="modal-actions">

@@ -1,6 +1,4 @@
-// ── Data ─────────────────────────────────────────────────────────────────
-// Each entry matches the shape: { name: "...", instructions: "..." }
-// Stored as JSON in localStorage, same key the patient scanner reads from
+// Shared with scanner.html and user.html — both read from this key.
 const STORAGE_KEY = 'accessibility_objects';
 
 function loadObjects() {
@@ -15,7 +13,6 @@ function saveObjects() {
 let objects = loadObjects();
 let editingIndex = null;
 
-// ── DOM refs ──────────────────────────────────────────────────────────────
 const container = document.getElementById('object-container');
 const viewPopup = document.getElementById('view-popup');
 const popupName = document.getElementById('popup-obj-name');
@@ -28,7 +25,6 @@ const inputInstr = document.getElementById('input-instr');
 const modalCancel = document.getElementById('modal-cancel');
 const modalSave = document.getElementById('modal-save');
 
-// ── Render cards — same pattern as your displayRec() ─────────────────────
 function renderCards() {
   container.innerHTML = '';
 
@@ -52,11 +48,9 @@ function renderCards() {
   }
 
   objects.forEach((obj, i) => {
-    // card element — mirrors how your recipe cards are built
     const card = document.createElement('div');
     card.classList.add('object-card');
 
-    // title tag — same custom rh1 element you use
     const title = document.createElement('rh1');
     title.textContent = obj.name;
     const lang = localStorage.getItem('caretaker_lang') || 'en';
@@ -67,7 +61,6 @@ function renderCards() {
         .catch(() => { });
     }
 
-    // button group — stacked like your recipe card buttons
     const btnGroup = document.createElement('div');
     btnGroup.classList.add('card-btns');
 
@@ -101,17 +94,14 @@ function renderCards() {
     card.appendChild(btnGroup);
     container.appendChild(card);
 
-    // VIEW — opens popup with name + instructions (same as your openIngredientPanel)
     viewBtn.addEventListener('click', () => {
       popupName.textContent = obj.name;
       popupInstr.textContent = obj.instructions || 'No instructions added.';
       viewPopup.classList.add('show');
     });
 
-    // CHANGE — opens modal pre-filled for editing
     changeBtn.addEventListener('click', () => openModal(i));
 
-    // DELETE — removes from array, saves, re-renders
     deleteBtn.addEventListener('click', () => {
       objects.splice(i, 1);
       saveObjects();
@@ -120,13 +110,11 @@ function renderCards() {
   });
 }
 
-// ── View popup close ──────────────────────────────────────────────────────
 closeView.addEventListener('click', () => viewPopup.classList.remove('show'));
 viewPopup.addEventListener('click', e => {
   if (e.target === viewPopup) viewPopup.classList.remove('show');
 });
 
-// ── Modal open/close ──────────────────────────────────────────────────────
 function openModal(index = null) {
   editingIndex = index;
   if (index !== null) {
@@ -149,17 +137,14 @@ function closeModal() {
 
 
 
-// ── Save ──────────────────────────────────────────────────────────────────
 modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
   const instr = inputInstr.value.trim();
   if (!name) { inputName.focus(); return; }
 
   if (editingIndex !== null) {
-    // update existing object in place
     objects[editingIndex] = { name, instructions: instr };
   } else {
-    // create new object and push onto array
     objects.push({ name, instructions: instr });
   }
 
@@ -168,7 +153,6 @@ modalSave.addEventListener('click', () => {
   closeModal();
 });
 
-// keyboard shortcuts
 inputName.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); inputInstr.focus(); }
 });
@@ -176,16 +160,41 @@ inputInstr.addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) modalSave.click();
 });
 
-// ── Speech to text ────────────────────────────────────────────────────────
-// Uses the browser's built-in SpeechRecognition API — no API key needed.
-// When the mic button is clicked, it listens and dumps the spoken text
-// straight into the target input/textarea, then stops automatically.
+const SPEECH_LANG_MAP = {
+  en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT',
+  pt: 'pt-PT', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA',
+  hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', ur: 'ur-PK',
+  ru: 'ru-RU', tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', pl: 'pl-PL',
+  nl: 'nl-NL', sv: 'sv-SE', ro: 'ro-RO', el: 'el-GR', he: 'he-IL',
+  fa: 'fa-IR', sw: 'sw-KE', tl: 'fil-PH', ms: 'ms-MY', id: 'id-ID',
+};
+
+function getSpeechLang() {
+  const code = localStorage.getItem('caretaker_lang') || 'en';
+  return SPEECH_LANG_MAP[code] || 'en-US';
+}
+
+// Stop the tracks right away — SpeechRecognition opens its own stream.
+async function ensureMicPermission() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    return true;
+  } catch (err) {
+    if (err && err.name === 'NotAllowedError') {
+      alert('Microphone access was denied. Please allow it in your browser settings.');
+    } else {
+      alert('Could not access the microphone: ' + (err && err.message ? err.message : err));
+    }
+    return false;
+  }
+}
 
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
 
-  // Check browser support
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     btn.title = 'Speech recognition not supported in this browser';
@@ -194,53 +203,121 @@ function setupMic(btnId, targetInput) {
     return;
   }
 
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';       // change this if your caretaker speaks a different language
-  recognition.interimResults = false; // only give us the final result, not partial words
-  recognition.maxAlternatives = 1;
+  const INITIAL_TIMEOUT_MS = 4000;
+  const SILENCE_TIMEOUT_MS = 3000;
 
-  let listening = false;
+  // Recreate per click — reusing one SpeechRecognition object can wedge it
+  // into a state where start() silently no-ops on Chrome.
+  let activeRecognition = null;
+  let silenceTimer = null;
+  let baseText = '';
+  let finalText = '';
 
-  btn.addEventListener('click', () => {
-    if (listening) {
-      recognition.stop();
+  function clearSilenceTimer() {
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+    }
+  }
+
+  function scheduleSilenceTimeout(ms) {
+    clearSilenceTimer();
+    silenceTimer = setTimeout(() => {
+      if (activeRecognition) {
+        // Don't wait for `end` — it can be delayed or skipped on Chrome.
+        stopVisuals();
+        try { activeRecognition.stop(); } catch (_) { }
+      }
+    }, ms);
+  }
+
+  function stopVisuals() {
+    btn.classList.remove('listening');
+    btn.classList.remove('speaking');
+  }
+
+  btn.addEventListener('click', async () => {
+    if (activeRecognition) {
+      stopVisuals();
+      try { activeRecognition.stop(); } catch (_) { }
       return;
     }
-    recognition.start();
-  });
 
-  recognition.addEventListener('start', () => {
-    listening = true;
+    const ok = await ensureMicPermission();
+    if (!ok) return;
+
+    // Don't wait for `start` — give the user feedback the click registered.
     btn.classList.add('listening');
-    btn.textContent = '⏹';   // show stop icon while recording
-  });
 
-  recognition.addEventListener('result', (e) => {
-    // e.results[0][0].transcript is the spoken text as a string
-    const spoken = e.results[0][0].transcript;
-    targetInput.value = spoken;   // drop it straight into the field
-  });
+    const existing = targetInput.value.trim();
+    baseText = existing ? existing + ' ' : '';
+    finalText = '';
 
-  recognition.addEventListener('end', () => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = 'mic';  // restore mic icon
-  });
+    const r = new SpeechRecognition();
+    r.interimResults = true;
+    r.continuous = true;
+    r.maxAlternatives = 1;
+    r.lang = getSpeechLang();
 
-  recognition.addEventListener('error', (e) => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = 'mic';
-    console.error('Speech error:', e.error);
-    if (e.error === 'not-allowed') {
-      alert('Microphone access was denied. Please allow it in your browser settings.');
+    r.addEventListener('start', () => {
+      scheduleSilenceTimeout(INITIAL_TIMEOUT_MS);
+    });
+
+    r.addEventListener('speechstart', () => btn.classList.add('speaking'));
+    r.addEventListener('speechend', () => btn.classList.remove('speaking'));
+
+    r.addEventListener('result', (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalText += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      targetInput.value = (baseText + finalText + interim).trim();
+      scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
+    });
+
+    r.addEventListener('end', () => {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+    });
+
+    r.addEventListener('error', (ev) => {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+      console.error('Speech error:', ev.error);
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        alert('Microphone access was denied. Please allow it in your browser settings.');
+      } else if (ev.error === 'language-not-supported') {
+        alert('Your browser does not support speech recognition for the selected language.');
+      } else if (ev.error === 'no-speech') {
+        // Engine's own silence timeout — stop quietly.
+      } else if (ev.error === 'audio-capture') {
+        alert('No microphone was found. Check your device settings.');
+      } else if (ev.error === 'network') {
+        alert('Speech recognition needs a network connection and could not reach the service.');
+      }
+    });
+
+    activeRecognition = r;
+    try {
+      r.start();
+    } catch (err) {
+      activeRecognition = null;
+      stopVisuals();
+      clearSilenceTimer();
+      console.error('Speech start failed:', err);
+      alert('Could not start speech recognition: ' + (err && err.message ? err.message : err));
     }
   });
 }
 
-// Wire up both mic buttons to their fields
 setupMic('mic-name', document.getElementById('input-name'));
 setupMic('mic-instr', document.getElementById('input-instr'));
 
-// ── Init ──────────────────────────────────────────────────────────────────
 renderCards();
