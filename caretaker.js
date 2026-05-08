@@ -36,11 +36,9 @@ function renderCards() {
   const scanCard = document.createElement('div');
   scanCard.classList.add('object-card');
   scanCard.style.cursor = 'pointer';
+  scanCard.style.justifyContent = 'center';
   scanCard.innerHTML = `
-    <rh1 style="font-size:26px;"></rh1>
-    <div class="card-btns">
-      <button class="btn-view" style="font-size:20px;padding:16px 0;font-weight:800;height:150px;width:80%;margin:0 auto;display:block;">Add Object +</button>
-    </div>
+    <button class="btn-view" style="font-size:22px;padding:20px 0;font-weight:800;height:150px;width:85%;pointer-events:none;">Add Object +</button>
   `;
   scanCard.addEventListener('click', () => window.location.href = 'scanner.html');
   container.appendChild(scanCard);
@@ -79,7 +77,7 @@ function renderCards() {
 
     const changeBtn = document.createElement('button');
     changeBtn.classList.add('btn-change');
-    changeBtn.textContent = window.ctTranslations?.change || 'CHANGE INSTRUCTIONS';
+    changeBtn.textContent = window.ctTranslations?.change || 'EDIT INSTRUCTIONS';
 
     const deleteBtn = document.createElement('button');
     deleteBtn.classList.add('btn-delete');

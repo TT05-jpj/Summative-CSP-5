@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accessibility Scanner</title>
+  <title>A-TEN</title>
   <style>
     * {
       box-sizing: border-box;
@@ -14,8 +14,8 @@
 
     body {
       font-family: system-ui, sans-serif;
-      background: #ffffff;
-      color: #f0f0f0;
+      background: #03114F;
+      color: #dbeafe;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -26,26 +26,27 @@
     }
 
     .logo {
-      font-size: 15px;
-      font-weight: 500;
-      color: #444;
-      letter-spacing: 0.1em;
+      font-size: 96px;
+      font-weight: 900;
+      color: #facc15;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
+      line-height: 1;
     }
 
     h1 {
-      font-size: 32px;
+      font-size: 40px;
       font-weight: 600;
-      color: #fff;
+      color: #dbeafe;
       text-align: center;
       margin-bottom: 10px;
       line-height: 1.2;
     }
 
     .subtitle {
-      font-size: 15px;
-      color: #555;
+      font-size: 19px;
+      color: #aab0cc;
       text-align: center;
       margin-bottom: 36px;
     }
@@ -66,25 +67,25 @@
     }
 
     .lang-group label {
-      font-size: 11px;
-      color: #555;
+      font-size: 14px;
+      color: #aab0cc;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
     .lang-group select {
-      background: #1a1a1a;
-      color: #fff;
-      border: 1px solid #333;
+      background: #fef9c3;
+      color: #03114F;
+      border: 1px solid #fef9c3;
       border-radius: 8px;
       padding: 7px 10px;
-      font-size: 13px;
+      font-size: 16px;
       cursor: pointer;
     }
 
     .lang-group select:focus {
       outline: none;
-      border-color: #4ade80;
+      border-color: #facc15;
     }
 
     .btn-group {
@@ -101,7 +102,7 @@
       justify-content: space-between;
       padding: 20px 24px;
       border-radius: 14px;
-      border: 1px solid #222;
+      border: 1px solid #0a2070;
       cursor: pointer;
       text-decoration: none;
       transition: border-color 0.2s, background 0.2s;
@@ -115,56 +116,57 @@
     }
 
     .btn-label {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 600;
     }
 
     .btn-desc {
-      font-size: 13px;
-      opacity: 0.5;
+      font-size: 16px;
+      opacity: 0.7;
     }
 
     .btn-arrow {
-      font-size: 20px;
-      opacity: 0.3;
+      font-size: 25px;
+      opacity: 0.7;
     }
 
     .btn-user {
-      background: #0a2070;
-      border-color: #0a2070;
-      color: #faf9f9;
+      background: #dbeafe;
+      border-color: #dbeafe;
+      color: #03114F;
     }
 
     .btn-user:hover {
-      background: #142054;
-      border-color: #142054;
+      background: #bfdbfe;
+      border-color: #bfdbfe;
     }
 
     .btn-user .btn-arrow {
-      color: #000;
+      color: #03114F;
     }
 
     .btn-caretaker {
-      background: #1a1a1a;
-      color: #f0f0f0;
+      background: #2254c5;
+      color: #fff;
+      border-color: #2254c5;
     }
 
     .btn-caretaker:hover {
-      background: #222;
-      border-color: #444;
+      background: #1a45a8;
+      border-color: #facc15;
     }
 
     .footer {
       margin-top: 40px;
-      font-size: 12px;
-      color: #333;
+      font-size: 15px;
+      color: #aab0cc;
     }
   </style>
 </head>
 
 <body>
 
-  <p class="logo" id="logo-text">Accessibility App</p>
+  <p class="logo" id="logo-text">A-TEN</p>
   <h1 id="title-text">Who are you?</h1>
   <p class="subtitle" id="subtitle-text">Choose your role to get started</p>
 
@@ -243,7 +245,7 @@
   </div>
 
   <div class="btn-group">
-  <a href="user.html" class="btn btn-user">
+    <a href="user.html" class="btn btn-user">
       <div class="btn-left">
         <span class="btn-label" id="user-btn-label">I am a User</span>
         <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
@@ -282,7 +284,7 @@
     async function translatePage(ctLang, userLang) {
       // caretaker language texts
       const ctTexts = [
-        { id: 'logo-text', en: 'Accessibility App' },
+        { id: 'logo-text', en: 'A-TEN' },
         { id: 'title-text', en: 'Who are you?' },
         { id: 'subtitle-text', en: 'Choose your role to get started' },
         { id: 'ct-lang-label', en: 'Caretaker language' },

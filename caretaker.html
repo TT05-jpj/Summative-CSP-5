@@ -10,10 +10,24 @@
 
 <body>
 
+  <!-- Info popup -->
+  <div id="info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#03114F;border:1px solid #0a2070;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
+      <button onclick="document.getElementById('info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
+      <h2 style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Dashboard</h2>
+      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Add an object</strong> — Click the yellow <em>Add Object +</em> card to open the scanner. Point the camera at an object, tap <em>Scan Object</em>, then save it with a name and optional instructions.</p>
+      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">View Instructions</strong> — See exactly what the user will read when they scan that object.</p>
+      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Edit Instructions</strong> — Update the name or instructions for an existing object.</p>
+      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Delete</strong> — Permanently remove an object from the list.</p>
+      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Languages</strong> — Use the dropdowns at the top to set the caretaker display language and the language the user will see.</p>
+    </div>
+  </div>
+
   <header>
-    <h1>Caretaker Dashboard</h1>
-    <a href="scanner.html"
-      style="padding:8px 16px;font-size:14px;font-weight:500;background:#4ade80;color:#000;border-radius:8px;text-decoration:none;">📷 Scanner</a>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <h1>Caretaker Dashboard</h1>
+      <button onclick="document.getElementById('info-overlay').style.display='flex'" style="background:none;border:2px solid #facc15;color:#facc15;border-radius:50%;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</button>
+    </div>
     <!-- Language Settings -->
     <div id="lang-bar"
       style="display:flex;align-items:center;gap:20px;padding:22px 36px;background:#142054;border-bottom:1px solid #0a2070;font-size:22px;color:#aab0cc;">
@@ -155,16 +169,16 @@
     }
 
     // store translations for card buttons so renderCards can use them
-    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'CHANGE INSTRUCTIONS', delete: 'DELETE' };
+    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE' };
 
     async function loadTranslations(lang) {
       if (lang === 'en') {
-        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'CHANGE INSTRUCTIONS', delete: 'DELETE' };
+        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE' };
         return;
       }
       const [view, change, del] = await Promise.all([
         translateText('VIEW INSTRUCTIONS', lang),
-        translateText('CHANGE INSTRUCTIONS', lang),
+        translateText('EDIT INSTRUCTIONS', lang),
         translateText('DELETE', lang),
       ]);
       window.ctTranslations = { view: view.toUpperCase(), change: change.toUpperCase(), delete: del.toUpperCase() };
