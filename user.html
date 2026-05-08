@@ -418,7 +418,7 @@
   </div>
 
   <script>
-    const API_KEY = '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'; // OpenAI key here
+    const API_KEY = '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'; // OpenAI key here
     const STORAGE_KEY = 'accessibility_objects';
 
     const video = document.getElementById('video');
@@ -496,10 +496,12 @@
               currentSpeakText = textToSay;
             })
             .catch(e => console.error('TTS error:', e));
-        } else {
-          // use browser native voice for other languages — proper accent
+       } else {
+          const voices = window.speechSynthesis.getVoices();
+          const voice = voices.find(v => v.lang.startsWith(userLang)) || null;
           const utt = new SpeechSynthesisUtterance(textToSay);
           utt.lang = userLang;
+          if (voice) utt.voice = voice;
           utt.rate = 0.9;
           utt.volume = 1;
           window.speechSynthesis.speak(utt);
