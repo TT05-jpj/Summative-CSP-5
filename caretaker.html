@@ -14,12 +14,12 @@
   <div id="info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
     <div style="background:#03114F;border:1px solid #0a2070;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
       <button onclick="document.getElementById('info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
-      <h2 style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Dashboard</h2>
-      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Add an object</strong> — Click the yellow <em>Add Object +</em> card to open the scanner. Point the camera at an object, tap <em>Scan Object</em>, then save it with a name and optional instructions.</p>
-      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">View Instructions</strong> — See exactly what the user will read when they scan that object.</p>
-      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Edit Instructions</strong> — Update the name or instructions for an existing object.</p>
-      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Delete</strong> — Permanently remove an object from the list.</p>
-      <p style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Languages</strong> — Use the dropdowns at the top to set the caretaker display language and the language the user will see.</p>
+      <h2 id="info-title" style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Dashboard</h2>
+      <p id="info-p1" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Add an object</strong> — Click the yellow <em>Add Object +</em> card to open the scanner. Point the camera at an object, tap <em>Scan Object</em>, then save it with a name and optional instructions.</p>
+      <p id="info-p2" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">View Instructions</strong> — See exactly what the user will read when they scan that object.</p>
+      <p id="info-p3" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Edit Instructions</strong> — Update the name or instructions for an existing object.</p>
+      <p id="info-p4" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Delete</strong> — Permanently remove an object from the list.</p>
+      <p id="info-p5" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Languages</strong> — Use the dropdowns at the top to set the caretaker display language and the language the user will see.</p>
     </div>
   </div>
 
@@ -31,7 +31,7 @@
     <!-- Language Settings -->
     <div id="lang-bar"
       style="display:flex;align-items:center;gap:20px;padding:22px 36px;background:#142054;border-bottom:1px solid #0a2070;font-size:22px;color:#aab0cc;">
-      <span>🌐 Languages:</span>
+      <span id="lang-label">🌐 Languages:</span>
       <select id="caretaker-lang" 
       style="background:#020d3a;color:#fff;border:1px solid #0a2070;border-radius:8px;padding:12px 18px;font-size:18px;">
         <option value="en">Caretaker: English</option>
@@ -156,58 +156,93 @@
         .catch(() => text);
     }
 
-    const uiStrings = {
-      'header h1':            'Caretaker Dashboard',
-      '#modal-title':         'Add Object',
-      '#modal-cancel':        'Cancel',
-      '#modal-save':          'Save',
-      '#mic-name':            null,
-      '#mic-instr':           null,
-    };
-
-    const labelStrings = [
-      { sel: '.field label:first-of-type', en: 'Object name' },
-      { sel: '#input-name',  attr: 'placeholder', en: 'e.g. "pill bottle"' },
-      { sel: '#input-instr', attr: 'placeholder', en: 'e.g. "Take one tablet with water."' },
-    ];
-
     async function translateDashboard(lang) {
-      const els = [
-        { sel: 'header h1',   en: 'Caretaker Dashboard' },
+      const staticEls = [
+        { sel: 'header h1',     en: 'Caretaker Dashboard' },
         { sel: '#modal-cancel', en: 'Cancel' },
         { sel: '#modal-save',   en: 'Save' },
+        { sel: '#lang-label',   en: 'Languages', emoji: '🌐 ' },
       ];
 
       const fieldLabels = document.querySelectorAll('.field label');
       const fieldLabelTexts = ['Object name', 'Instructions'];
 
+      const infoEls = [
+        { id: 'info-title', en: 'How to use the Caretaker Dashboard' },
+        { id: 'info-p1', en: 'Add an object — Click the yellow Add Object + card to open the scanner. Point the camera at an object, tap Scan Object, then save it with a name and optional instructions.' },
+        { id: 'info-p2', en: 'View Instructions — See exactly what the user will read when they scan that object.' },
+        { id: 'info-p3', en: 'Edit Instructions — Update the name or instructions for an existing object.' },
+        { id: 'info-p4', en: 'Delete — Permanently remove an object from the list.' },
+        { id: 'info-p5', en: 'Languages — Use the dropdowns at the top to set the caretaker display language and the language the user will see.' },
+      ];
+
+      const dynamicStrings = [
+        'Add Object',
+        'Edit Object',
+        'No objects yet. Use the scanner to add one.',
+      ];
+
+      const langCodes = ['en','es','fr','de','it','pt','zh','ja','ko','ar','hi','ta','te','bn','ur','ru','tr','vi','th','pl','nl','sv','ro','el','he','fa','sw','tl','ms','id'];
+      const langNamesEn = ['English','Spanish','French','German','Italian','Portuguese','Chinese','Japanese','Korean','Arabic','Hindi','Tamil','Telugu','Bengali','Urdu','Russian','Turkish','Vietnamese','Thai','Polish','Dutch','Swedish','Romanian','Greek','Hebrew','Persian','Swahili','Filipino','Malay','Indonesian'];
+
+      function setDropdowns(ctPrefix, usPrefix, nameMap) {
+        document.querySelectorAll('#caretaker-lang option').forEach(opt => {
+          opt.textContent = ctPrefix + ': ' + (nameMap[opt.value] || opt.value);
+        });
+        document.querySelectorAll('#user-lang option').forEach(opt => {
+          opt.textContent = usPrefix + ': ' + (nameMap[opt.value] || opt.value);
+        });
+      }
+
       if (lang === 'en') {
-        els.forEach(({ sel, en }) => { const el = document.querySelector(sel); if (el) el.textContent = en; });
+        staticEls.forEach(({ sel, en, emoji }) => { const el = document.querySelector(sel); if (el) el.textContent = (emoji || '') + en; });
         fieldLabels.forEach((el, i) => { if (fieldLabelTexts[i]) el.textContent = fieldLabelTexts[i]; });
         document.getElementById('input-name').placeholder = 'e.g. "pill bottle"';
         document.getElementById('input-instr').placeholder = 'e.g. "Take one tablet with water."';
+        window.ctTranslations.addObjectModal = 'Add Object';
+        window.ctTranslations.editObjectModal = 'Edit Object';
+        window.ctTranslations.noObjects = 'No objects yet. Use the scanner to add one.';
+        infoEls.forEach(({ id, en }) => { const el = document.getElementById(id); if (el) el.textContent = en; });
+        const defaultMap = Object.fromEntries(langCodes.map((c, i) => [c, langNamesEn[i]]));
+        setDropdowns('Caretaker', 'User', defaultMap);
         return;
       }
 
-      const translations = await Promise.all([
-        ...els.map(({ en }) => translateText(en, lang)),
+      const all = await Promise.all([
+        ...staticEls.map(({ en }) => translateText(en, lang)),
         ...fieldLabelTexts.map(t => translateText(t, lang)),
         translateText('e.g. "pill bottle"', lang),
         translateText('e.g. "Take one tablet with water."', lang),
+        ...dynamicStrings.map(s => translateText(s, lang)),
+        translateText('Caretaker', lang),
+        translateText('User', lang),
+        ...langNamesEn.map(n => translateText(n, lang)),
+        ...infoEls.map(({ en }) => translateText(en, lang)),
       ]);
 
-      els.forEach(({ sel }, i) => { const el = document.querySelector(sel); if (el) el.textContent = translations[i]; });
-      fieldLabels.forEach((el, i) => { if (fieldLabelTexts[i]) el.textContent = translations[els.length + i]; });
-      document.getElementById('input-name').placeholder = translations[els.length + fieldLabelTexts.length];
-      document.getElementById('input-instr').placeholder = translations[els.length + fieldLabelTexts.length + 1];
+      const n = staticEls.length;
+      staticEls.forEach(({ sel, emoji }, i) => { const el = document.querySelector(sel); if (el) el.textContent = (emoji || '') + all[i]; });
+      fieldLabels.forEach((el, i) => { if (fieldLabelTexts[i]) el.textContent = all[n + i]; });
+      document.getElementById('input-name').placeholder = all[n + fieldLabelTexts.length];
+      document.getElementById('input-instr').placeholder = all[n + fieldLabelTexts.length + 1];
+      window.ctTranslations.addObjectModal = all[n + fieldLabelTexts.length + 2];
+      window.ctTranslations.editObjectModal = all[n + fieldLabelTexts.length + 3];
+      window.ctTranslations.noObjects = all[n + fieldLabelTexts.length + 4];
+      const ctPrefix = all[n + fieldLabelTexts.length + 5];
+      const usPrefix = all[n + fieldLabelTexts.length + 6];
+      const translatedNames = all.slice(n + fieldLabelTexts.length + 7, n + fieldLabelTexts.length + 7 + langNamesEn.length);
+      const nameMap = Object.fromEntries(langCodes.map((c, i) => [c, translatedNames[i]]));
+      setDropdowns(ctPrefix, usPrefix, nameMap);
+      const infoTranslated = all.slice(n + fieldLabelTexts.length + 7 + langNamesEn.length);
+      infoEls.forEach(({ id }, i) => { const el = document.getElementById(id); if (el) el.textContent = infoTranslated[i]; });
     }
 
     // store translations for card buttons so renderCards can use them
-    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +' };
+    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +', addObjectModal: 'Add Object', editObjectModal: 'Edit Object', noObjects: 'No objects yet. Use the scanner to add one.' };
 
     async function loadTranslations(lang) {
       if (lang === 'en') {
-        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +' };
+        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +', addObjectModal: 'Add Object', editObjectModal: 'Edit Object', noObjects: 'No objects yet. Use the scanner to add one.' };
         return;
       }
       const [view, change, del, addObject] = await Promise.all([
