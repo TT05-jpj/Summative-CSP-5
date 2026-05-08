@@ -38,8 +38,10 @@
     .back-btn {
       background: none;
       border: none;
-      color: #aab0cc;
-      font-size: 27px;
+      color: #dbeafe;
+      font-size: 16px;
+      font-family: system-ui, sans-serif;
+      font-weight: 500;
       cursor: pointer;
       padding: 4px 8px;
       line-height: 1;
@@ -63,8 +65,9 @@
       padding: 7px 14px;
       font-size: 16px;
       font-weight: 500;
-      background: #ffffff;
-      color: #03114F;
+      font-family: system-ui, sans-serif;
+      background: #03114F;
+      color: #dbeafe;
       border: 1px solid #0a2070;
       border-radius: 8px;
       cursor: pointer;
@@ -72,9 +75,9 @@
     }
 
     .dashboard-btn:hover {
-      background: #e8e8e8;
-      color: #03114F;
-      border-color: #0a2070;
+      background: #142054;
+      color: #fff;
+      border-color: #facc15;
     }
 
     #cam-wrap {
@@ -504,10 +507,24 @@
 
 <body>
 
+  <!-- Info popup -->
+  <div id="scanner-info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#142054;border:1px solid #2254c5;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
+      <button onclick="document.getElementById('scanner-info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
+      <h2 id="info-title" style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Scanner</h2>
+      <p id="info-p1" style="font-size:17px;color:#aab0cc;line-height:1.7;">Enable the camera — Click Enable Camera and allow access when prompted by your browser.</p>
+      <p id="info-p2" style="font-size:17px;color:#aab0cc;line-height:1.7;">Scan an object — Point the camera at the object you want to add, then tap Scan Object. The AI will identify it automatically.</p>
+      <p id="info-p3" style="font-size:17px;color:#aab0cc;line-height:1.7;">Name and save — Confirm or edit the object name, add instructions for the user, then tap Save Object.</p>
+      <p id="info-p4" style="font-size:17px;color:#aab0cc;line-height:1.7;">Mic buttons — Tap the microphone icon next to any field to speak instead of type.</p>
+      <p id="info-p5" style="font-size:17px;color:#aab0cc;line-height:1.7;">Done? — Click Dashboard to return to the object list.</p>
+    </div>
+  </div>
+
   <div class="topbar">
     <button class="back-btn" onclick="window.location.href='home.html'">← Home</button>
     <h1>Caretaker Scanner</h1>
     <div style="flex:1"></div>
+    <button onclick="document.getElementById('scanner-info-overlay').style.display='flex'" style="background:none;border:2px solid #facc15;color:#facc15;border-radius:50%;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:10px;">i</button>
     <a href="caretaker.html" class="dashboard-btn">Dashboard →</a>
   </div>
 
@@ -564,6 +581,7 @@
     </div>
 
     <button id="save-btn">Save Object</button>
+    <button id="update-photo-btn" style="display:none;padding:8px 16px;font-size:16px;font-weight:500;background:#142054;color:#facc15;border:1px solid #facc15;border-radius:8px;cursor:pointer;">🔄 Update Photo</button>
     <div id="save-confirm">✓ Saved! User will see this when they scan it.</div>
     <div id="saved-labels"></div>
   </div>
@@ -587,6 +605,7 @@
     const labelInput = document.getElementById('label-input');
     const instrInput = document.getElementById('instr-input');
     const saveBtn = document.getElementById('save-btn');
+    const updatePhotoBtn = document.getElementById('update-photo-btn');
     const savedLabelsDiv = document.getElementById('saved-labels');
     const saveConfirm = document.getElementById('save-confirm');
     const camDashBtn = document.getElementById('cam-dashboard-btn');
@@ -594,6 +613,29 @@
     let lastDetections = [];
     let stream = null;
     let capturedPhotoURL = null;
+
+    const msgs = {
+      cameraOff: 'Camera off',
+      ready:     'Point at an object and tap Scan',
+      scanning:  'Scanning...',
+      complete:  'Scan complete — add a label and save',
+      noFrame:   'Could not capture frame',
+      error:     'Error',
+    };
+
+    async function loadStatusTranslations() {
+      const lang = localStorage.getItem('caretaker_lang') || 'en';
+      if (lang === 'en') return;
+      const keys = Object.keys(msgs);
+      const translated = await Promise.all(
+        keys.map(k => fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(msgs[k])}`)
+          .then(r => r.json()).then(d => d[0].map(x => x[0]).join('')).catch(() => msgs[k]))
+      );
+      keys.forEach((k, i) => { msgs[k] = translated[i]; });
+      setStatus(msgs.cameraOff, '');
+    }
+
+    loadStatusTranslations();
 
     function setStatus(text, mode) {
       statusText.textContent = text;
@@ -655,7 +697,7 @@
         camStart.style.display = 'none';
         scanBtn.disabled = false;
         camDashBtn.classList.add('visible');
-        setStatus('Point at an object and tap Scan', 'active');
+        setStatus(msgs.ready, 'active');
         renderSavedPills();
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
@@ -676,19 +718,20 @@
       if (!stream) return;
       scanBtn.disabled = true;
       scanLine.classList.add('active');
-      setStatus('Scanning...', 'scanning');
+      setStatus(msgs.scanning, 'scanning');
       overlay.innerHTML = '';
       saveConfirm.className = '';
 
       let base64;
       try { base64 = captureFrame(); }
-      catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
+      catch (e) { setStatus(msgs.noFrame, ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
 
       resultPanel.className = 'show';
       detectedText.innerHTML = 'Analyzing...';
       aiResult.textContent = '';
       labelInput.value = '';
       instrInput.value = '';
+      updatePhotoBtn.style.display = 'none';
 
       try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -724,12 +767,13 @@
         }
         aiResult.textContent = parsed.description || '';
         if (lastDetections.length) labelInput.value = lastDetections[0];
-        setStatus('Scan complete — add a label and save', 'active');
+        if (capturedPhotoURL) updatePhotoBtn.style.display = 'block';
+        setStatus(msgs.complete, 'active');
 
       } catch (e) {
         detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
         console.error(e);
-        setStatus('Error', '');
+        setStatus(msgs.error, '');
       }
 
       scanLine.classList.remove('active');
@@ -764,6 +808,16 @@
 
     labelInput.addEventListener('keydown', e => { if (e.key === 'Enter') instrInput.focus(); });
 
+    updatePhotoBtn.addEventListener('click', () => {
+      const name = labelInput.value.trim();
+      if (!name || !capturedPhotoURL) return;
+      const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
+      photos[name.toLowerCase()] = capturedPhotoURL;
+      localStorage.setItem('scanner-photos', JSON.stringify(photos));
+      updatePhotoBtn.textContent = '✓ Photo updated';
+      updatePhotoBtn.disabled = true;
+    });
+
       function translateScanner() {
         const lang = localStorage.getItem('caretaker_lang') || 'en';
         if (lang === 'en') return;
@@ -775,8 +829,16 @@
           { el: document.getElementById('start-btn'), text: 'Enable Camera' },
           { el: document.getElementById('scan-btn'), text: 'Scan Object' },
           { el: document.getElementById('save-btn'), text: 'Save Object' },
+          { el: document.getElementById('update-photo-btn'), text: '🔄 Update Photo' },
           { el: document.getElementById('save-confirm'), text: '✓ Saved! User will see this when they scan it.' },
           { el: document.querySelector('#cam-start p'), text: 'Allow camera access to start scanning' },
+          { el: document.querySelector('.back-btn'), text: '← Home' },
+          { el: document.getElementById('info-title'), text: 'How to use the Caretaker Scanner' },
+          { el: document.getElementById('info-p1'), text: 'Enable the camera — Click Enable Camera and allow access when prompted by your browser.' },
+          { el: document.getElementById('info-p2'), text: 'Scan an object — Point the camera at the object you want to add, then tap Scan Object. The AI will identify it automatically.' },
+          { el: document.getElementById('info-p3'), text: 'Name and save — Confirm or edit the object name, add instructions for the user, then tap Save Object.' },
+          { el: document.getElementById('info-p4'), text: 'Mic buttons — Tap the microphone icon next to any field to speak instead of type.' },
+          { el: document.getElementById('info-p5'), text: 'Done? — Click Dashboard to return to the object list.' },
         ];
 
         document.querySelectorAll('.field-label').forEach((el, i) => {

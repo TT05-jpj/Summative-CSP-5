@@ -29,10 +29,11 @@
       display: flex;
       align-items: center;
       width: 100%;
-      max-width: 640px;
+      max-width: 900px;
       margin-bottom: 16px;
       gap: 12px;
       background: #142054;
+      position: relative;
     }
 
     .back-btn {
@@ -50,9 +51,13 @@
     }
 
     .topbar h1 {
-      font-size: 21px;
+      font-size: 26px;
       font-weight: 500;
       color: #fff;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
     }
 
     /* camera */
@@ -178,15 +183,15 @@
     }
 
     #cam-start p {
-      font-size: 16px;
+      font-size: 20px;
       color: #aab0cc;
       text-align: center;
-      max-width: 240px;
+      max-width: 280px;
     }
 
     #start-btn {
-      padding: 10px 24px;
-      font-size: 18px;
+      padding: 14px 30px;
+      font-size: 22px;
       font-weight: 500;
       background: #ffffff;
       color: #03114F;
@@ -207,7 +212,7 @@
       width: 100%;
       max-width: 640px;
       margin-top: 12px;
-      font-size: 16px;
+      font-size: 20px;
       color: #03114F;
     }
 
@@ -249,8 +254,8 @@
 
     #scan-btn {
       width: 100%;
-      padding: 16px;
-      font-size: 20px;
+      padding: 20px;
+      font-size: 26px;
       font-weight: 500;
       background: #142054;
       color: #fff;
@@ -298,37 +303,17 @@
       display: block;
     }
 
-    #detected-text {
-      font-size: 18px;
+    #result-obj-name {
+      font-size: 26px;
+      font-weight: 700;
+      color: #facc15;
+      text-transform: capitalize;
+    }
+
+    #result-instructions {
+      font-size: 22px;
       color: #fff;
-    }
-
-    #ai-result {
-      font-size: 16px;
-      color: #aab0cc;
-      line-height: 1.5;
-    }
-
-    #photo-saved-note {
-      font-size: 15px;
-      color: #facc15;
-      display: none;
-    }
-
-    #update-photo-btn {
-      padding: 10px;
-      font-size: 16px;
-      font-weight: 500;
-      background: #142054;
-      color: #facc15;
-      border: 1px solid #facc15;
-      border-radius: 8px;
-      cursor: pointer;
-      display: none;
-    }
-
-    #update-photo-btn:hover {
-      background: #facc1520;
+      line-height: 1.6;
     }
 
     /* instructions popup */
@@ -348,8 +333,8 @@
     }
 
     #instr-box {
-      background: #03114F;
-      border: 1px solid #0a2070;
+      background: #142054;
+      border: 1px solid #2254c5;
       border-radius: 16px;
       padding: 28px 24px;
       width: 100%;
@@ -361,13 +346,13 @@
     }
 
     #instr-box h2 {
-      font-size: 25px;
+      font-size: 32px;
       font-weight: 600;
       color: #facc15;
     }
 
     #instr-box p {
-      font-size: 19px;
+      font-size: 24px;
       color: #aab0cc;
       line-height: 1.7;
     }
@@ -439,12 +424,16 @@
     <button id="scan-btn" disabled>Scan Object</button>
   </div>
 
+  <div id="how-to" style="width:100%;max-width:900px;margin-top:14px;background:#142054;border-radius:12px;padding:18px 22px;display:flex;flex-direction:column;gap:8px;">
+    <p style="font-size:20px;font-weight:700;color:#facc15;margin:0;">How to use</p>
+    <p style="font-size:18px;color:#dbeafe;margin:0;">1. Tap <strong>Enable Camera</strong> and allow access.</p>
+    <p style="font-size:18px;color:#dbeafe;margin:0;">2. Point the camera at an object.</p>
+    <p style="font-size:18px;color:#dbeafe;margin:0;">3. Tap <strong>Scan Object</strong> — instructions will appear and be read aloud.</p>
+  </div>
+
   <div id="result-panel">
-    <img id="scan-photo" alt="Captured photo" />
-    <div id="detected-text"></div>
-    <div id="ai-result"></div>
-    <div id="photo-saved-note">📷 Photo saved to caretaker card</div>
-    <button id="update-photo-btn">🔄 Update photo for this object</button>
+    <div id="result-obj-name"></div>
+    <div id="result-instructions"></div>
   </div>
 
   <!-- Instructions popup -->
@@ -471,21 +460,40 @@
     const statusDot = document.getElementById('status-dot');
     const statusText = document.getElementById('status-text');
     const resultPanel = document.getElementById('result-panel');
-    const detectedText = document.getElementById('detected-text');
-    const aiResult = document.getElementById('ai-result');
+    const resultObjName = document.getElementById('result-obj-name');
+    const resultInstructions = document.getElementById('result-instructions');
     const instrPopup = document.getElementById('instr-popup');
     const instrName = document.getElementById('instr-name');
     const instrText = document.getElementById('instr-text');
     const closeInstr = document.getElementById('close-instr');
     const speakAgainBtn = document.getElementById('speak-again-btn');
-    const scanPhoto = document.getElementById('scan-photo');
-    const photoSavedNote = document.getElementById('photo-saved-note');
-    const updatePhotoBtn = document.getElementById('update-photo-btn');
     let lastDataUrl = null;
 
     let lastDetections = [];
     let stream = null;
     let currentSpeakText = '';
+
+    const msgs = {
+      cameraOff:    'Camera off',
+      ready:        'Point at an object and tap Scan',
+      scanning:     'Scanning...',
+      complete:     'Scan complete',
+      noFrame:      'Could not capture frame',
+      error:        'Error',
+      notDetected:  'Try pointing the camera more directly at the object.',
+      notSetUp:     'This object has not been set up by your caretaker yet.',
+    };
+
+    async function loadStatusTranslations() {
+      const lang = localStorage.getItem('user_lang') || 'en';
+      if (lang === 'en') return;
+      const keys = Object.keys(msgs);
+      const translated = await Promise.all(
+        keys.map(k => fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(msgs[k])}`)
+          .then(r => r.json()).then(d => d[0].map(x => x[0]).join('')).catch(() => msgs[k]))
+      );
+      keys.forEach((k, i) => { msgs[k] = translated[i]; });
+    }
 
     function setStatus(text, mode) {
       statusText.textContent = text;
@@ -573,30 +581,28 @@
     }
 
     // ── Overlay labels (tappable if instructions exist) ───────────────────────
-    function showOverlayLabels(matches) {
+    async function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
       const vw = video.offsetWidth;
       const vh = video.offsetHeight;
-      matches.forEach((m, i) => {
+      const tapLabel = await translateForUser('tap for details');
+      for (const m of matches) {
         const cx = vw * 0.5;
         const cy = vh * 0.38;
 
-        // dot
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
         dot.setAttribute('r', 8); dot.setAttribute('fill', '#facc15');
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
 
-        // line from dot up to bubble
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', cx); line.setAttribute('y1', cy - 8);
         line.setAttribute('x2', cx); line.setAttribute('y2', cy - 40);
         line.setAttribute('stroke', '#facc15'); line.setAttribute('stroke-width', 2);
         overlay.appendChild(line);
 
-        // speech bubble as foreignObject
         const bw = 180, bh = m.instructions ? 70 : 46;
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         fo.setAttribute('x', cx - bw / 2);
@@ -605,35 +611,42 @@
         fo.setAttribute('height', bh);
 
         const hasInstr = !!m.instructions;
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.88);border:1.5px solid #facc15;border-radius:12px;padding:8px 12px;pointer-events:all;cursor:pointer;" onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}">
-      <div style="color:#facc15;font-size:14px;font-weight:700;text-align:center;">${m.name}</div>
-      ${hasInstr ? `<div style="margin-top:4px;font-size:10px;color:#aaa;text-align:center;">tap for details</div>` : ''}
-    </div>`;
+        const bubbleName = await translateForUser(m.name);
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:#142054;border:1.5px solid #facc15;border-radius:12px;padding:8px 12px;pointer-events:all;cursor:pointer;" onclick="${hasInstr ? `showInstructions('${m.name.replace(/'/g, "\\'")}','${m.instructions.replace(/'/g, "\\'")}')` : `speak('${m.name.replace(/'/g, "\\'")}')`}">
+          <div style="color:#facc15;font-size:14px;font-weight:700;text-align:center;">${bubbleName}</div>
+          ${hasInstr ? `<div style="margin-top:4px;font-size:10px;color:#aaa;text-align:center;">${tapLabel}</div>` : ''}
+        </div>`;
         overlay.appendChild(fo);
-      });
+      }
+    }
+
+    // ── Translation helper ────────────────────────────────────────────────────
+    function translateForUser(text) {
+      const lang = localStorage.getItem('user_lang') || 'en';
+      if (lang === 'en') return Promise.resolve(text);
+      return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(d => d[0].map(x => x[0]).join('') || text)
+        .catch(() => text);
     }
 
     // ── Instructions popup ────────────────────────────────────────────────────
-    function showInstructions(name, instructions) {
+    async function showInstructions(name, instructions) {
+      instrPopup.classList.add('show');
       instrName.textContent = name;
       instrText.textContent = instructions;
-      instrPopup.classList.add('show');
+      const [tName, tInstr] = await Promise.all([
+        translateForUser(name),
+        translateForUser(instructions),
+      ]);
+      instrName.textContent = tName;
+      instrText.textContent = tInstr;
       speak(name + '. ' + instructions);
     }
 
     closeInstr.addEventListener('click', () => instrPopup.classList.remove('show'));
     instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
 
-    updatePhotoBtn.addEventListener('click', () => {
-      if (!lastDataUrl) return;
-      const names = JSON.parse(updatePhotoBtn.dataset.names || '[]');
-      const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
-      names.forEach(name => { photos[name] = lastDataUrl; });
-      localStorage.setItem('scanner-photos', JSON.stringify(photos));
-      updatePhotoBtn.style.display = 'none';
-      photoSavedNote.textContent = '📷 Photo updated!';
-      photoSavedNote.style.display = 'block';
-    });
 
     // ── Camera ────────────────────────────────────────────────────────────────
     startBtn.addEventListener('click', async () => {
@@ -642,7 +655,7 @@
         video.srcObject = stream;
         camStart.style.display = 'none';
         scanBtn.disabled = false;
-        setStatus('Point at an object and tap Scan', 'active');
+        setStatus(msgs.ready, 'active');
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
       }
@@ -661,7 +674,7 @@
       if (!stream) return;
       scanBtn.disabled = true;
       scanLine.classList.add('active');
-      setStatus('Scanning...', 'scanning');
+      setStatus(msgs.scanning, 'scanning');
       overlay.innerHTML = '';
       const unlockUtt = new SpeechSynthesisUtterance('');
       window.speechSynthesis.speak(unlockUtt);
@@ -670,16 +683,12 @@
         dataUrl = captureFrame();
         lastDataUrl = dataUrl;
         base64 = dataUrl.split(',')[1];
-        scanPhoto.src = dataUrl;
-        scanPhoto.classList.add('show');
-        photoSavedNote.style.display = 'none';
-        updatePhotoBtn.style.display = 'none';
       }
-      catch (e) { setStatus('Could not capture frame', ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
+      catch (e) { setStatus(msgs.noFrame, ''); scanBtn.disabled = false; scanLine.classList.remove('active'); return; }
 
       resultPanel.className = 'show';
-      detectedText.innerHTML = 'Analyzing...';
-      aiResult.textContent = '';
+      translateForUser('Scanning...').then(t => { resultObjName.textContent = t; });
+      resultInstructions.textContent = '';
 
       try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -708,40 +717,75 @@
         const matches = checkMatches(lastDetections);
         showOverlayLabels(matches);
 
-        // auto-save photo and always show update button
-        if (lastDetections.length && dataUrl) {
-          const photos = JSON.parse(localStorage.getItem('scanner-photos') || '{}');
-          lastDetections.forEach(name => { photos[name.toLowerCase()] = dataUrl; });
-          localStorage.setItem('scanner-photos', JSON.stringify(photos));
-          photoSavedNote.textContent = '📷 Photo saved to caretaker card';
-          photoSavedNote.style.display = 'block';
-          updatePhotoBtn.style.display = 'block';
-          updatePhotoBtn.dataset.names = JSON.stringify(lastDetections.map(n => n.toLowerCase()));
-        }
-
-        const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
-        detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
-        aiResult.textContent = parsed.description || '';
-
         if (matches.length) {
-          detectedText.innerHTML += `<br><span style="color:#facc15">✓ Recognized: ${matches.map(m => m.name).join(', ')}</span>`;
           const withInstr = matches.find(m => m.instructions);
-          speak(matches[0].name);
+          translateForUser(matches[0].name).then(t => { resultObjName.textContent = t; });
+          if (withInstr) {
+            translateForUser(withInstr.instructions).then(t => { resultInstructions.textContent = t; });
+            showInstructions(withInstr.name, withInstr.instructions);
+          } else {
+            translateForUser('No instructions saved for this object.').then(t => { resultInstructions.textContent = t; });
+            speak(matches[0].name);
+          }
+        } else if (lastDetections.length) {
+          translateForUser(lastDetections[0]).then(t => { resultObjName.textContent = t; });
+          translateForUser('This object has not been set up by your caretaker yet.').then(t => { resultInstructions.textContent = t; });
+          speak(lastDetections[0]);
         } else {
-          // speak whatever was detected even if not saved
-          if (lastDetections.length) speak(lastDetections[0]);
+          translateForUser('Nothing detected').then(t => { resultObjName.textContent = t; });
+          translateForUser('Try pointing the camera more directly at the object.').then(t => { resultInstructions.textContent = t; });
         }
 
-        setStatus('Scan complete', 'active');
+        setStatus(msgs.complete, 'active');
       } catch (e) {
-        detectedText.innerHTML = '<span style="color:#f87171">Scan failed — check your API key</span>';
+        translateForUser('Scan failed').then(t => { resultObjName.textContent = t; });
+        translateForUser('Please check your connection and try again.').then(t => { resultInstructions.textContent = t; });
         console.error(e);
-        setStatus('Error', '');
+        setStatus(msgs.error, '');
       }
 
       scanLine.classList.remove('active');
       scanBtn.disabled = false;
     });
+
+    // ── UI translation ────────────────────────────────────────────────────────
+    function translateUI() {
+      const lang = localStorage.getItem('user_lang') || 'en';
+      if (lang === 'en') return;
+
+      const items = [
+        { el: document.querySelector('.topbar h1'),    text: 'Object Scanner' },
+        { el: startBtn,                                text: 'Enable Camera' },
+        { el: scanBtn,                                 text: 'Scan Object' },
+        { el: document.querySelector('#cam-start p'),  text: 'Allow camera access to start scanning' },
+        { el: speakAgainBtn,                           text: '🔊 Speak again' },
+        { el: document.querySelector('.back-btn'),     text: '←' },
+      ];
+
+      const howToSteps = [
+        { el: document.querySelector('#how-to p:nth-child(1)'), text: 'How to use' },
+        { el: document.querySelector('#how-to p:nth-child(2)'), text: '1. Tap Enable Camera and allow access.' },
+        { el: document.querySelector('#how-to p:nth-child(3)'), text: '2. Point the camera at an object.' },
+        { el: document.querySelector('#how-to p:nth-child(4)'), text: '3. Tap Scan Object — instructions will appear and be read aloud.' },
+      ];
+
+      [...items, ...howToSteps].forEach(({ el, text }) => {
+        if (!el) return;
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(text)}`)
+          .then(r => r.json())
+          .then(data => { el.textContent = data[0].map(x => x[0]).join('') || text; })
+          .catch(() => {});
+      });
+
+    }
+
+    async function initUserTranslations() {
+      await loadStatusTranslations();
+      setStatus(msgs.cameraOff, '');
+      translateUI();
+    }
+
+    initUserTranslations();
   </script>
 </body>
 

@@ -34,7 +34,7 @@ function renderCards() {
   scanCard.style.cursor = 'pointer';
   scanCard.style.justifyContent = 'center';
   scanCard.innerHTML = `
-    <button class="btn-view" style="font-size:22px;padding:20px 0;font-weight:800;height:150px;width:85%;pointer-events:none;">Add Object +</button>
+    <button class="btn-view" style="font-size:22px;padding:20px 0;font-weight:800;height:150px;width:85%;pointer-events:none;">${window.ctTranslations?.addObject || 'Add Object +'}</button>
   `;
   scanCard.addEventListener('click', () => window.location.href = 'scanner.html');
   container.appendChild(scanCard);
@@ -134,6 +134,9 @@ function closeModal() {
   modalOverlay.classList.remove('show');
   editingIndex = null;
 }
+
+modalCancel.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
 
 

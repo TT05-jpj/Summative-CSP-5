@@ -534,6 +534,13 @@ header h1 {
   flex: 1;
 }
 
+.mic-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+}
+
 .mic-btn {
   flex-shrink: 0;
   width: 46px;

@@ -156,34 +156,67 @@
         .catch(() => text);
     }
 
+    const uiStrings = {
+      'header h1':            'Caretaker Dashboard',
+      '#modal-title':         'Add Object',
+      '#modal-cancel':        'Cancel',
+      '#modal-save':          'Save',
+      '#mic-name':            null,
+      '#mic-instr':           null,
+    };
+
+    const labelStrings = [
+      { sel: '.field label:first-of-type', en: 'Object name' },
+      { sel: '#input-name',  attr: 'placeholder', en: 'e.g. "pill bottle"' },
+      { sel: '#input-instr', attr: 'placeholder', en: 'e.g. "Take one tablet with water."' },
+    ];
+
     async function translateDashboard(lang) {
+      const els = [
+        { sel: 'header h1',   en: 'Caretaker Dashboard' },
+        { sel: '#modal-cancel', en: 'Cancel' },
+        { sel: '#modal-save',   en: 'Save' },
+      ];
+
+      const fieldLabels = document.querySelectorAll('.field label');
+      const fieldLabelTexts = ['Object name', 'Instructions'];
+
       if (lang === 'en') {
-        document.querySelector('header h1').textContent = 'Caretaker Dashboard';
-        document.getElementById('add-btn').textContent = '+ Add Object';
+        els.forEach(({ sel, en }) => { const el = document.querySelector(sel); if (el) el.textContent = en; });
+        fieldLabels.forEach((el, i) => { if (fieldLabelTexts[i]) el.textContent = fieldLabelTexts[i]; });
+        document.getElementById('input-name').placeholder = 'e.g. "pill bottle"';
+        document.getElementById('input-instr').placeholder = 'e.g. "Take one tablet with water."';
         return;
       }
-      const [title, addObj] = await Promise.all([
-        translateText('Caretaker Dashboard', lang),
-        translateText('+ Add Object', lang),
+
+      const translations = await Promise.all([
+        ...els.map(({ en }) => translateText(en, lang)),
+        ...fieldLabelTexts.map(t => translateText(t, lang)),
+        translateText('e.g. "pill bottle"', lang),
+        translateText('e.g. "Take one tablet with water."', lang),
       ]);
-      document.querySelector('header h1').textContent = title;
-      document.getElementById('add-btn').textContent = addObj;
+
+      els.forEach(({ sel }, i) => { const el = document.querySelector(sel); if (el) el.textContent = translations[i]; });
+      fieldLabels.forEach((el, i) => { if (fieldLabelTexts[i]) el.textContent = translations[els.length + i]; });
+      document.getElementById('input-name').placeholder = translations[els.length + fieldLabelTexts.length];
+      document.getElementById('input-instr').placeholder = translations[els.length + fieldLabelTexts.length + 1];
     }
 
     // store translations for card buttons so renderCards can use them
-    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE' };
+    window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +' };
 
     async function loadTranslations(lang) {
       if (lang === 'en') {
-        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE' };
+        window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +' };
         return;
       }
-      const [view, change, del] = await Promise.all([
+      const [view, change, del, addObject] = await Promise.all([
         translateText('VIEW INSTRUCTIONS', lang),
         translateText('EDIT INSTRUCTIONS', lang),
         translateText('DELETE', lang),
+        translateText('Add Object', lang),
       ]);
-      window.ctTranslations = { view: view.toUpperCase(), change: change.toUpperCase(), delete: del.toUpperCase() };
+      window.ctTranslations = { view: view.toUpperCase(), change: change.toUpperCase(), delete: del.toUpperCase(), addObject: addObject + ' +' };
     }
 
     async function initTranslations() {
