@@ -1,6 +1,4 @@
 // ── Data ─────────────────────────────────────────────────────────────────
-// Each entry matches the shape: { name: "...", instructions: "..." }
-// Stored as JSON in localStorage, same key the patient scanner reads from
 const STORAGE_KEY = 'accessibility_objects';
 
 function loadObjects() {
@@ -29,7 +27,7 @@ const inputInstr = document.getElementById('input-instr');
 const modalCancel = document.getElementById('modal-cancel');
 const modalSave = document.getElementById('modal-save');
 
-// ── Render cards — same pattern as your displayRec() ─────────────────────
+// ── Render cards ──────────────────────────────────────────────────────────
 function renderCards() {
   container.innerHTML = '';
 
@@ -42,22 +40,19 @@ function renderCards() {
   }
 
   objects.forEach((obj, i) => {
-    // card element — mirrors how your recipe cards are built
     const card = document.createElement('div');
     card.classList.add('object-card');
 
-    // title tag — same custom rh1 element you use
     const title = document.createElement('rh1');
     title.textContent = obj.name;
     const lang = localStorage.getItem('caretaker_lang') || 'en';
     if (lang !== 'en') {
-      fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(obj.name)}`)
+      fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(obj.name)}`)
         .then(r => r.json())
         .then(data => { title.textContent = data[0].map(x => x[0]).join('') || obj.name; })
         .catch(() => { });
     }
 
-    // button group — stacked like your recipe card buttons
     const btnGroup = document.createElement('div');
     btnGroup.classList.add('card-btns');
 
@@ -76,22 +71,32 @@ function renderCards() {
     btnGroup.appendChild(viewBtn);
     btnGroup.appendChild(changeBtn);
     btnGroup.appendChild(deleteBtn);
-
     card.appendChild(title);
     card.appendChild(btnGroup);
     container.appendChild(card);
 
-    // VIEW — opens popup with name + instructions (same as your openIngredientPanel)
     viewBtn.addEventListener('click', () => {
-      popupName.textContent = obj.name;
-      popupInstr.textContent = obj.instructions || 'No instructions added.';
+      const lang = localStorage.getItem('caretaker_lang') || 'en';
+      if (lang !== 'en') {
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(obj.name)}`)
+          .then(r => r.json())
+          .then(d => { popupName.textContent = d[0].map(x => x[0]).join('') || obj.name; })
+          .catch(() => { popupName.textContent = obj.name; });
+        if (obj.instructions) {
+          fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(obj.instructions)}`)
+            .then(r => r.json())
+            .then(d => { popupInstr.textContent = d[0].map(x => x[0]).join('') || obj.instructions; })
+            .catch(() => { popupInstr.textContent = obj.instructions; });
+        } else {
+          popupInstr.textContent = 'No instructions added.';
+        }
+      } else {
+        popupName.textContent = obj.name;
+        popupInstr.textContent = obj.instructions || 'No instructions added.';
+      }
       viewPopup.classList.add('show');
     });
-
-    // CHANGE — opens modal pre-filled for editing
     changeBtn.addEventListener('click', () => openModal(i));
-
-    // DELETE — removes from array, saves, re-renders
     deleteBtn.addEventListener('click', () => {
       objects.splice(i, 1);
       saveObjects();
@@ -109,12 +114,29 @@ viewPopup.addEventListener('click', e => {
 // ── Modal open/close ──────────────────────────────────────────────────────
 function openModal(index = null) {
   editingIndex = index;
+  const lang = localStorage.getItem('caretaker_lang') || 'en';
+
   if (index !== null) {
-    modalTitle.textContent = 'Edit Object';
-    inputName.value = objects[index].name;
-    inputInstr.value = objects[index].instructions;
+    modalTitle.textContent = window.translatedTitles?.edit || 'Edit Object';
+    if (lang !== 'en') {
+      inputName.value = objects[index].name;
+      inputInstr.value = objects[index].instructions || '';
+      fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(objects[index].name)}`)
+        .then(r => r.json())
+        .then(d => { inputName.value = d[0].map(x => x[0]).join('') || objects[index].name; })
+        .catch(() => { });
+      if (objects[index].instructions) {
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(objects[index].instructions)}`)
+          .then(r => r.json())
+          .then(d => { inputInstr.value = d[0].map(x => x[0]).join('') || objects[index].instructions; })
+          .catch(() => { });
+      }
+    } else {
+      inputName.value = objects[index].name;
+      inputInstr.value = objects[index].instructions || '';
+    }
   } else {
-    modalTitle.textContent = 'Add Object';
+    modalTitle.textContent = window.translatedTitles?.add || 'Add Object';
     inputName.value = '';
     inputInstr.value = '';
   }
@@ -134,25 +156,37 @@ modalOverlay.addEventListener('click', e => {
 });
 
 // ── Save ──────────────────────────────────────────────────────────────────
-modalSave.addEventListener('click', () => {
+modalSave.addEventListener('click', async () => {
   const name = inputName.value.trim();
   const instr = inputInstr.value.trim();
   if (!name) { inputName.focus(); return; }
 
-  if (editingIndex !== null) {
-    // update existing object in place
-    objects[editingIndex] = { name, instructions: instr };
-  } else {
-    // create new object and push onto array
-    objects.push({ name, instructions: instr });
+  // always save in English so translations work correctly later
+  const lang = localStorage.getItem('caretaker_lang') || 'en';
+  let englishName = name;
+  let englishInstr = instr;
+
+  if (lang !== 'en') {
+    try {
+      const [n, ins] = await Promise.all([
+        fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(name)}`).then(r => r.json()).then(d => d[0].map(x => x[0]).join('')),
+        instr ? fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(instr)}`).then(r => r.json()).then(d => d[0].map(x => x[0]).join('')) : Promise.resolve('')
+      ]);
+      englishName = n || name;
+      englishInstr = ins || instr;
+    } catch (e) { }
   }
 
+  if (editingIndex !== null) {
+    objects[editingIndex] = { name: englishName, instructions: englishInstr };
+  } else {
+    objects.push({ name: englishName, instructions: englishInstr });
+  }
   saveObjects();
   renderCards();
   closeModal();
 });
 
-// keyboard shortcuts
 inputName.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); inputInstr.focus(); }
 });
@@ -161,15 +195,40 @@ inputInstr.addEventListener('keydown', e => {
 });
 
 // ── Speech to text ────────────────────────────────────────────────────────
-// Uses the browser's built-in SpeechRecognition API — no API key needed.
-// When the mic button is clicked, it listens and dumps the spoken text
-// straight into the target input/textarea, then stops automatically.
+const SPEECH_LANG_MAP = {
+  en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT',
+  pt: 'pt-PT', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ar: 'ar-SA',
+  hi: 'hi-IN', ta: 'ta-IN', te: 'te-IN', bn: 'bn-IN', ur: 'ur-PK',
+  ru: 'ru-RU', tr: 'tr-TR', vi: 'vi-VN', th: 'th-TH', pl: 'pl-PL',
+  nl: 'nl-NL', sv: 'sv-SE', ro: 'ro-RO', el: 'el-GR', he: 'he-IL',
+  fa: 'fa-IR', sw: 'sw-KE', tl: 'fil-PH', ms: 'ms-MY', id: 'id-ID',
+};
+
+function getSpeechLang() {
+  const code = localStorage.getItem('caretaker_lang') || 'en';
+  return SPEECH_LANG_MAP[code] || 'en-US';
+}
+
+async function ensureMicPermission() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream.getTracks().forEach(t => t.stop());
+    return true;
+  } catch (err) {
+    if (err && err.name === 'NotAllowedError') {
+      alert('Microphone access was denied. Please allow it in your browser settings.');
+    } else {
+      alert('Could not access the microphone: ' + (err && err.message ? err.message : err));
+    }
+    return false;
+  }
+}
 
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
 
-  // Check browser support
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
     btn.title = 'Speech recognition not supported in this browser';
@@ -178,51 +237,86 @@ function setupMic(btnId, targetInput) {
     return;
   }
 
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';       // change this if your caretaker speaks a different language
-  recognition.interimResults = false; // only give us the final result, not partial words
-  recognition.maxAlternatives = 1;
+  const INITIAL_TIMEOUT_MS = 4000;
+  const SILENCE_TIMEOUT_MS = 3000;
+  let activeRecognition = null;
+  let silenceTimer = null;
+  let baseText = '';
+  let finalText = '';
 
-  let listening = false;
+  function clearSilenceTimer() {
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  }
 
-  btn.addEventListener('click', () => {
-    if (listening) {
-      recognition.stop();
+  function scheduleSilenceTimeout(ms) {
+    clearSilenceTimer();
+    silenceTimer = setTimeout(() => {
+      if (activeRecognition) {
+        stopVisuals();
+        try { activeRecognition.stop(); } catch (_) { }
+      }
+    }, ms);
+  }
+
+  function stopVisuals() {
+    btn.classList.remove('listening');
+    btn.classList.remove('speaking');
+  }
+
+  btn.addEventListener('click', async () => {
+    if (activeRecognition) {
+      stopVisuals();
+      try { activeRecognition.stop(); } catch (_) { }
       return;
     }
-    recognition.start();
-  });
+    const ok = await ensureMicPermission();
+    if (!ok) return;
 
-  recognition.addEventListener('start', () => {
-    listening = true;
     btn.classList.add('listening');
-    btn.textContent = '⏹';   // show stop icon while recording
-  });
+    const existing = targetInput.value.trim();
+    baseText = existing ? existing + ' ' : '';
+    finalText = '';
 
-  recognition.addEventListener('result', (e) => {
-    // e.results[0][0].transcript is the spoken text as a string
-    const spoken = e.results[0][0].transcript;
-    targetInput.value = spoken;   // drop it straight into the field
-  });
+    const r = new SpeechRecognition();
+    r.interimResults = true;
+    r.continuous = true;
+    r.maxAlternatives = 1;
+    r.lang = getSpeechLang();
 
-  recognition.addEventListener('end', () => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = 'mic';  // restore mic icon
-  });
+    r.addEventListener('start', () => { scheduleSilenceTimeout(INITIAL_TIMEOUT_MS); });
+    r.addEventListener('speechstart', () => btn.classList.add('speaking'));
+    r.addEventListener('speechend', () => btn.classList.remove('speaking'));
+    r.addEventListener('result', (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) { finalText += transcript; }
+        else { interim += transcript; }
+      }
+      targetInput.value = (baseText + finalText + interim).trim();
+      scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
+    });
+    r.addEventListener('end', () => { activeRecognition = null; stopVisuals(); clearSilenceTimer(); });
+    r.addEventListener('error', (ev) => {
+      activeRecognition = null; stopVisuals(); clearSilenceTimer();
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+        alert('Microphone access was denied.');
+      } else if (ev.error === 'language-not-supported') {
+        alert('Speech recognition not supported for this language.');
+      } else if (ev.error === 'audio-capture') {
+        alert('No microphone found.');
+      } else if (ev.error === 'network') {
+        alert('Network connection needed for speech recognition.');
+      }
+    });
 
-  recognition.addEventListener('error', (e) => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = 'mic';
-    console.error('Speech error:', e.error);
-    if (e.error === 'not-allowed') {
-      alert('Microphone access was denied. Please allow it in your browser settings.');
+    activeRecognition = r;
+    try { r.start(); } catch (err) {
+      activeRecognition = null; stopVisuals(); clearSilenceTimer();
     }
   });
 }
 
-// Wire up both mic buttons to their fields
 setupMic('mic-name', document.getElementById('input-name'));
 setupMic('mic-instr', document.getElementById('input-instr'));
 

@@ -541,4 +541,40 @@ header h1 {
   #object-container {
     grid-template-columns: repeat(2, 1fr);
   }
+        .mic-btn .mic-icon {
+          width: 22px;
+          height: 22px;
+          object-fit: contain;
+          pointer-events: none;
+          filter: brightness(0) invert(1);
+        }
+  
+    .mic-btn.listening {
+      background: #16a34a;
+      border-color: #4ade80;
+    }
+  
+    .mic-btn.listening.speaking {
+      animation: micPulseActive 0.7s ease-in-out infinite;
+    }
+  
+    @keyframes micPulseActive {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.95);
+        background: #15803d;
+      }
+  
+      50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 0 20px rgba(74, 222, 128, 0);
+        background: #4ade80;
+      }
+  
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+        background: #15803d;
+      }
+    }
 }

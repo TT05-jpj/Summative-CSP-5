@@ -111,14 +111,18 @@
         <label>Object name</label>
         <div class="input-row">
           <input id="input-name" type="text" placeholder='e.g. "pill bottle"' />
-          <button class="mic-btn" id="mic-name" type="button">mic</button>
+          <button class="mic-btn" id="mic-name" type="button" aria-label="Speak object name">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div class="field">
         <label>Instructions</label>
         <div class="input-row">
           <textarea id="input-instr" placeholder='e.g. "Take one tablet with water."'></textarea>
-          <button class="mic-btn" id="mic-instr" type="button">mic</button>
+          <button class="mic-btn" id="mic-instr" type="button" aria-label="Speak instructions">
+            <img src="micIcon.png" alt="mic" class="mic-icon" />
+          </button>
         </div>
       </div>
       <div id="modal-actions">
@@ -146,6 +150,12 @@
       if (lang === 'en') {
         document.querySelector('header h1').textContent = 'Caretaker Dashboard';
         document.getElementById('add-btn').textContent = '+ Add Object';
+        document.querySelectorAll('.field label')[0].textContent = 'Object name';
+        document.querySelectorAll('.field label')[1].textContent = 'Instructions';
+        document.getElementById('modal-cancel').textContent = 'Cancel';
+        document.getElementById('modal-save').textContent = 'Save';
+        document.getElementById('modal-title').textContent = 'Add Object';
+        window.translatedTitles = { add: 'Add Object', edit: 'Edit Object' };
         return;
       }
       const [title, addObj] = await Promise.all([
@@ -154,9 +164,22 @@
       ]);
       document.querySelector('header h1').textContent = title;
       document.getElementById('add-btn').textContent = addObj;
+
+      const [objNameLabel, instrLabel, cancelBtn, saveBtn, addTitle, editTitle] = await Promise.all([
+        translateText('Object name', lang),
+        translateText('Instructions', lang),
+        translateText('Cancel', lang),
+        translateText('Save', lang),
+        translateText('Add Object', lang),
+        translateText('Edit Object', lang),
+      ]);
+      document.querySelectorAll('.field label')[0].textContent = objNameLabel;
+      document.querySelectorAll('.field label')[1].textContent = instrLabel;
+      document.getElementById('modal-cancel').textContent = cancelBtn;
+      document.getElementById('modal-save').textContent = saveBtn;
+      window.translatedTitles = { add: addTitle, edit: editTitle };
     }
 
-    // store translations for card buttons so renderCards can use them
     window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'CHANGE INSTRUCTIONS', delete: 'DELETE' };
 
     async function loadTranslations(lang) {
