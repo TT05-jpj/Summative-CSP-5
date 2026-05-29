@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medication Tracker</title>
+  <link rel="stylesheet" href="medication.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Medication Tracker</h1>
+  </header>
+
+  <div id="med-container"></div>
+
+  <!-- View popup -->
+  <div class="popup-overlay" id="view-popup">
+    <div class="popup-box">
+      <button id="close-view">×</button>
+      <h2 id="popup-med-name"></h2>
+      <div class="popup-detail">
+        <span class="detail-label">Days</span>
+        <span id="popup-days"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Times per day</span>
+        <span id="popup-times"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Start date</span>
+        <span id="popup-start"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Status</span>
+        <span id="popup-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add modal -->
+  <div id="modal-overlay">
+    <div id="modal">
+      <h2>Add Medication</h2>
+
+      <div class="field">
+        <label>Medication name</label>
+        <div class="input-row">
+          <input id="input-name" type="text" placeholder='e.g. "Ibuprofen"' />
+          <button class="mic-btn" id="mic-name" type="button">🎤</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Days of the week</label>
+        <div class="days-dropdown">
+            <button type="button" id="days-toggle">Select days ▾</button>
+            <div class="days-menu" id="days-menu">
+            <div class="day-option" data-day="Monday">Monday</div>
+            <div class="day-option" data-day="Tuesday">Tuesday</div>
+            <div class="day-option" data-day="Wednesday">Wednesday</div>
+            <div class="day-option" data-day="Thursday">Thursday</div>
+            <div class="day-option" data-day="Friday">Friday</div>
+            <div class="day-option" data-day="Saturday">Saturday</div>
+            <div class="day-option" data-day="Sunday">Sunday</div>
+            </div>
+        </div>
+        <div id="days-selected-display"></div>
+        </div>
+
+      <div class="field">
+        <label>Times per day</label>
+        <div class="times-picker">
+          <button id="times-minus" type="button">−</button>
+          <span id="times-display">1</span>
+          <button id="times-plus" type="button">+</button>
+        </div>
+      </div>
+
+      <div id="modal-actions">
+        <button id="modal-cancel">Cancel</button>
+        <button id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="medication.js"></script>
+</body>
+</html>
