@@ -1,8 +1,8 @@
-// ── Storage keys ─────────────────────────────────────────────────────────────
+// ── Storage keys
 const DISPLAY_KEY = 'medications_active';
 const HISTORY_KEY = 'medications_history';
 
-// ── Load / save helpers ───────────────────────────────────────────────────────
+// ── Load / save helpers
 function loadActive() {
   try { return JSON.parse(localStorage.getItem(DISPLAY_KEY)) || []; }
   catch { return []; }
@@ -16,13 +16,13 @@ function loadHistory() {
 function saveActive(list)  { localStorage.setItem(DISPLAY_KEY, JSON.stringify(list)); }
 function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── State 
 let active      = loadActive();
 let history     = loadHistory();
 let timesPerDay = 1;
 let selectedDays = [];
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
+// ── DOM refs 
 const container    = document.getElementById('med-container');
 const viewPopup    = document.getElementById('view-popup');
 const closeView    = document.getElementById('close-view');
@@ -38,7 +38,7 @@ const daysMenu     = document.getElementById('days-menu');
 const daysDisplay  = document.getElementById('days-selected-display');
 const dayOptions   = document.querySelectorAll('.day-option');
 
-// ── Days dropdown ─────────────────────────────────────────────────────────────
+// ── Days dropdown 
 daysToggle.addEventListener('click', () => {
   daysMenu.classList.toggle('open');
 });
@@ -79,7 +79,7 @@ function updateDaysDisplay() {
   });
 }
 
-// ── Render cards ──────────────────────────────────────────────────────────────
+// ── Render cards 
 function renderCards() {
   container.innerHTML = '';
 
@@ -159,13 +159,13 @@ function renderCards() {
   });
 }
 
-// ── Popup close ───────────────────────────────────────────────────────────────
+// ── Popup close 
 closeView.addEventListener('click', () => viewPopup.classList.remove('show'));
 viewPopup.addEventListener('click', e => {
   if (e.target === viewPopup) viewPopup.classList.remove('show');
 });
 
-// ── Times per day +/- ────────────────────────────────────────────────────────
+// ── Times per day +/- 
 timesMinus.addEventListener('click', () => {
   if (timesPerDay > 1) { timesPerDay--; timesDisplay.textContent = timesPerDay; }
 });
@@ -173,7 +173,7 @@ timesPlus.addEventListener('click', () => {
   if (timesPerDay < 10) { timesPerDay++; timesDisplay.textContent = timesPerDay; }
 });
 
-// ── Modal open / close ────────────────────────────────────────────────────────
+// ── Modal open / close 
 function openModal() {
   inputName.value  = '';
   timesPerDay      = 1;
@@ -190,7 +190,7 @@ modalOverlay.addEventListener('click', e => {
   if (e.target === modalOverlay) modalOverlay.classList.remove('show');
 });
 
-// ── Save ──────────────────────────────────────────────────────────────────────
+// ── Save 
 modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
   if (!name)                { inputName.focus(); return; }
@@ -212,7 +212,7 @@ modalSave.addEventListener('click', () => {
   modalOverlay.classList.remove('show');
 });
 
-// ── Mic ───────────────────────────────────────────────────────────────────────
+// ── Mic 
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
@@ -252,7 +252,7 @@ function setupMic(btnId, targetInput) {
 }
 
 
-// ── Print history ─────────────────────────────────────────────────────────────
+// ── Print history 
 document.getElementById('print-btn').addEventListener('click', () => {
   const log = loadHistory();
 
@@ -394,5 +394,5 @@ document.getElementById('print-btn').addEventListener('click', () => {
 
 setupMic('mic-name', document.getElementById('input-name'));
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+// ── Init 
 renderCards();
