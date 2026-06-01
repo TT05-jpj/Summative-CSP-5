@@ -395,6 +395,18 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
 }
 #modal-save:hover { background: #f0ddc8; }
 
+#print-btn {
+  padding: 12px 28px;
+  font-size: 17px;
+  font-weight: 500;
+  background: #f9ead9;
+  color: #03114F;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+#print-btn:hover { background: #f0ddc8; }
+
 /* ── Responsive ── */
 @media (max-width: 1100px) { #med-container { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 700px)  { #med-container { grid-template-columns: repeat(2, 1fr); } }
