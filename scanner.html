@@ -587,7 +587,6 @@
   </div>
 
   <script>
-    const API_KEY = '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'; // paste your OpenAI key here
     const STORAGE_KEY = 'accessibility_objects';
 
     const video = document.getElementById('video');
@@ -734,9 +733,9 @@
       updatePhotoBtn.style.display = 'none';
 
       try {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          headers: { 'Content-Type': 'application/json' },//new stuff
           body: JSON.stringify({
             model: 'gpt-4o',
             max_tokens: 500,
