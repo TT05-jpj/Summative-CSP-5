@@ -447,7 +447,7 @@
   </div>
 
   <script>
-    const API_KEY = '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'; // OpenAI key here
+    
     const STORAGE_KEY = 'accessibility_objects';
 
     const video = document.getElementById('video');
@@ -528,11 +528,10 @@
       function speakWithOpenAI(textToSay) {
         if (userLang === 'en') {
           // use OpenAI for English (sounds better)
-          fetch('https://api.openai.com/v1/audio/speech', {
+         fetch('/api/tts', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
               model: 'tts-1',
@@ -691,9 +690,9 @@
       resultInstructions.textContent = '';
 
       try {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'gpt-4o',
             max_tokens: 500,
