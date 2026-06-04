@@ -16,19 +16,25 @@ function loadHistory() {
 function saveActive(list)  { localStorage.setItem(DISPLAY_KEY, JSON.stringify(list)); }
 function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
 
-// ── State 
-let active      = loadActive();
-let history     = loadHistory();
-let timesPerDay = 1;
+// ── State
+let active       = loadActive();
+let history      = loadHistory();
+let timesPerDay  = 1;
 let selectedDays = [];
 
-// ── DOM refs 
+// ── Edit state
+let editingId    = null;   // id of med being edited, or null for new
+let editTimesPerDay  = 1;
+let editSelectedDays = [];
+
+// ── DOM refs
 const container    = document.getElementById('med-container');
 const viewPopup    = document.getElementById('view-popup');
 const closeView    = document.getElementById('close-view');
 const modalOverlay = document.getElementById('modal-overlay');
 const modalCancel  = document.getElementById('modal-cancel');
 const modalSave    = document.getElementById('modal-save');
+const modalTitle   = document.getElementById('modal-title');
 const inputName    = document.getElementById('input-name');
 const timesDisplay = document.getElementById('times-display');
 const timesMinus   = document.getElementById('times-minus');
@@ -38,27 +44,25 @@ const daysMenu     = document.getElementById('days-menu');
 const daysDisplay  = document.getElementById('days-selected-display');
 const dayOptions   = document.querySelectorAll('.day-option');
 
-// ── Days dropdown 
+// ── Days dropdown
 daysToggle.addEventListener('click', () => {
   daysMenu.classList.toggle('open');
 });
 
-// close dropdown when clicking outside
 document.addEventListener('click', e => {
   if (!e.target.closest('.days-dropdown')) {
     daysMenu.classList.remove('open');
   }
 });
 
-// tap a day to select/deselect — no ctrl needed
 dayOptions.forEach(option => {
   option.addEventListener('click', () => {
     const day = option.dataset.day;
-    if (selectedDays.includes(day)) {
-      selectedDays = selectedDays.filter(d => d !== day);
+    if (editSelectedDays.includes(day)) {
+      editSelectedDays = editSelectedDays.filter(d => d !== day);
       option.classList.remove('selected');
     } else {
-      selectedDays.push(day);
+      editSelectedDays.push(day);
       option.classList.add('selected');
     }
     updateDaysDisplay();
@@ -66,12 +70,12 @@ dayOptions.forEach(option => {
 });
 
 function updateDaysDisplay() {
-  daysToggle.textContent = selectedDays.length
-    ? `${selectedDays.length} day${selectedDays.length > 1 ? 's' : ''} selected ▾`
+  daysToggle.textContent = editSelectedDays.length
+    ? `${editSelectedDays.length} day${editSelectedDays.length > 1 ? 's' : ''} selected ▾`
     : 'Select days ▾';
 
   daysDisplay.innerHTML = '';
-  selectedDays.forEach(day => {
+  editSelectedDays.forEach(day => {
     const tag = document.createElement('div');
     tag.className = 'day-tag';
     tag.textContent = day;
@@ -79,107 +83,153 @@ function updateDaysDisplay() {
   });
 }
 
-// ── Render cards 
+// ── Card action popup state
+let cardPopupMed = null;
+
+// ── Render list
 function renderCards() {
   container.innerHTML = '';
 
-  // Add medication card — always first
-  const addCard = document.createElement('div');
-  addCard.className = 'med-card';
-  addCard.innerHTML = `
-    <button class="btn-view" style="font-size:20px;font-weight:800;width:100%;height:150px;border-radius:14px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#f9ead9;color:#03114F;margin:0 auto;">
-      <span style="font-size:34px;">💊</span>
-      <span>Add Medication</span>
-    </button>
-  `;
-  addCard.querySelector('button').addEventListener('click', openModal);
-  container.appendChild(addCard);
+  // Add button — always first
+  const addRow = document.createElement('div');
+  addRow.className = 'add-row';
+  addRow.innerHTML = `<button class="btn-add-med"><span>💊</span> Add Medication</button>`;
+  addRow.querySelector('button').addEventListener('click', () => openModal(null));
+  container.appendChild(addRow);
 
-  // empty state
   if (active.length === 0) {
     const msg = document.createElement('p');
     msg.className = 'warning';
-    msg.textContent = 'No medications yet. Click Add Medication to get started.';
+    msg.textContent = 'No medications yet. Tap Add Medication to get started.';
     container.appendChild(msg);
     return;
   }
 
-  // one card per active medication
-  active.forEach((med, i) => {
-    const card = document.createElement('div');
-    card.className = 'med-card';
-
-    const name = document.createElement('span');
-    name.className = 'med-card-name';
-    name.textContent = med.name;
-
-    const sub = document.createElement('div');
-    sub.className = 'med-card-sub';
-    sub.textContent = `${med.days.join(', ')} · ${med.timesPerDay}x/day`;
-
-    const btnGroup = document.createElement('div');
-    btnGroup.className = 'card-btns';
-
-    const viewBtn = document.createElement('button');
-    viewBtn.className = 'btn-view';
-    viewBtn.textContent = 'VIEW DETAILS';
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-delete';
-    deleteBtn.textContent = 'DELETE';
-
-    btnGroup.appendChild(viewBtn);
-    btnGroup.appendChild(deleteBtn);
-    card.appendChild(name);
-    card.appendChild(sub);
-    card.appendChild(btnGroup);
-    container.appendChild(card);
-
-    // VIEW — open phone-shaped popup
-    viewBtn.addEventListener('click', () => {
-      document.getElementById('popup-med-name').textContent = med.name;
-      document.getElementById('popup-days').textContent     = med.days.join(', ');
-      document.getElementById('popup-times').textContent    = `${med.timesPerDay} time${med.timesPerDay > 1 ? 's' : ''} per day`;
-      document.getElementById('popup-start').textContent    = med.startDate;
-      document.getElementById('popup-status').textContent   = 'Ongoing';
-      viewPopup.classList.add('show');
-    });
-
-    // DELETE — record end date in history, remove from active
-    deleteBtn.addEventListener('click', () => {
-      const endDate = new Date().toLocaleDateString('en-US', {
-        year: 'numeric', month: 'long', day: 'numeric'
-      });
-      const histEntry = history.find(h => h.id === med.id);
-      if (histEntry) { histEntry.endDate = endDate; saveHistory(history); } //// print
-      active.splice(i, 1);
-      saveActive(active);
-      renderCards();
-    });
+  active.forEach((med) => {
+    const row = document.createElement('div');
+    row.className = 'med-row';
+    row.innerHTML = `
+      <span class="med-row-name">${med.name}</span>
+      <span class="med-row-arrow">›</span>
+    `;
+    row.addEventListener('click', () => openCardPopup(med));
+    container.appendChild(row);
   });
 }
 
-// ── Popup close 
+// ── Card action popup (opens when you tap a med row)
+function openCardPopup(med) {
+  cardPopupMed = med;
+  document.getElementById('card-popup-name').textContent = med.name;
+  document.getElementById('card-popup').classList.add('show');
+}
+
+function closeCardPopup() {
+  document.getElementById('card-popup').classList.remove('show');
+  cardPopupMed = null;
+}
+
+document.getElementById('card-popup').addEventListener('click', e => {
+  if (e.target === document.getElementById('card-popup')) closeCardPopup();
+});
+
+document.getElementById('card-btn-cancel').addEventListener('click', closeCardPopup);
+
+document.getElementById('card-btn-view').addEventListener('click', () => {
+  const med = cardPopupMed;
+  const histEntry = history.find(h => h.id === med.id);
+  const changeLog = (histEntry && histEntry.changeLog) ? histEntry.changeLog : [];
+
+  document.getElementById('popup-med-name').textContent = med.name;
+  document.getElementById('popup-days').textContent     = med.days.join(', ');
+  document.getElementById('popup-times').textContent    = `${med.timesPerDay} time${med.timesPerDay > 1 ? 's' : ''} per day`;
+  document.getElementById('popup-start').textContent    = med.startDate;
+  document.getElementById('popup-status').textContent   = 'Ongoing';
+
+  const logContainer = document.getElementById('popup-changelog');
+  logContainer.innerHTML = '';
+  if (changeLog.length > 0) {
+    const heading = document.createElement('div');
+    heading.className = 'detail-label';
+    heading.style.marginTop = '8px';
+    heading.textContent = 'Change History';
+    logContainer.appendChild(heading);
+    changeLog.forEach(entry => {
+      const item = document.createElement('div');
+      item.className = 'changelog-entry';
+      item.innerHTML = `<span class="changelog-date">${entry.date}</span><span class="changelog-desc">${entry.description}</span>`;
+      logContainer.appendChild(item);
+    });
+  }
+
+  closeCardPopup();
+  viewPopup.classList.add('show');
+});
+
+document.getElementById('card-btn-edit').addEventListener('click', () => {
+  const med = cardPopupMed;
+  closeCardPopup();
+  openModal(med);
+});
+
+document.getElementById('card-btn-delete').addEventListener('click', () => {
+  const med = cardPopupMed;
+  const endDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  const histEntry = history.find(h => h.id === med.id);
+  if (histEntry) { histEntry.endDate = endDate; saveHistory(history); }
+  const idx = active.findIndex(m => m.id === med.id);
+  if (idx !== -1) active.splice(idx, 1);
+  saveActive(active);
+  closeCardPopup();
+  renderCards();
+});
+
+// ── Popup close
 closeView.addEventListener('click', () => viewPopup.classList.remove('show'));
 viewPopup.addEventListener('click', e => {
   if (e.target === viewPopup) viewPopup.classList.remove('show');
 });
 
-// ── Times per day +/- 
+// ── Times per day +/-
 timesMinus.addEventListener('click', () => {
-  if (timesPerDay > 1) { timesPerDay--; timesDisplay.textContent = timesPerDay; }
+  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; }
 });
 timesPlus.addEventListener('click', () => {
-  if (timesPerDay < 10) { timesPerDay++; timesDisplay.textContent = timesPerDay; }
+  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; }
 });
 
-// ── Modal open / close 
-function openModal() {
-  inputName.value  = '';
-  timesPerDay      = 1;
-  timesDisplay.textContent = '1';
-  selectedDays     = [];
-  dayOptions.forEach(o => o.classList.remove('selected'));
+// ── Modal open
+// Pass null for new medication, or a med object to edit
+function openModal(med) {
+  if (med) {
+    // Edit mode
+    editingId = med.id;
+    modalTitle.textContent = 'Change Medication';
+    inputName.value = med.name;
+    editTimesPerDay = med.timesPerDay;
+    editSelectedDays = [...med.days];
+  } else {
+    // Add mode
+    editingId = null;
+    modalTitle.textContent = 'Add Medication';
+    inputName.value = '';
+    editTimesPerDay = 1;
+    editSelectedDays = [];
+  }
+
+  timesDisplay.textContent = editTimesPerDay;
+
+  // Sync day checkboxes
+  dayOptions.forEach(o => {
+    if (editSelectedDays.includes(o.dataset.day)) {
+      o.classList.add('selected');
+    } else {
+      o.classList.remove('selected');
+    }
+  });
+
   updateDaysDisplay();
   modalOverlay.classList.add('show');
   inputName.focus();
@@ -190,29 +240,101 @@ modalOverlay.addEventListener('click', e => {
   if (e.target === modalOverlay) modalOverlay.classList.remove('show');
 });
 
-// ── Save 
+// ── Save (handles both add and edit)
 modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
   if (!name)                { inputName.focus(); return; }
-  if (!selectedDays.length) { alert('Please select at least one day.'); return; }
+  if (!editSelectedDays.length) { alert('Please select at least one day.'); return; }
 
-  const startDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
+  if (editingId !== null) {
+    // ── EDIT existing med
+    const activeIndex = active.findIndex(m => m.id === editingId);
+    const histEntry   = history.find(h => h.id === editingId);
+    if (activeIndex === -1) { modalOverlay.classList.remove('show'); return; }
 
-  const id  = Date.now();
-  const med = { id, name, days: selectedDays, timesPerDay, startDate, endDate: null };
+    const old = active[activeIndex];
 
-  // push to both — active for display, history for permanent record
-  active.push(med);
-  history.push({ ...med });
-  saveActive(active);
-  saveHistory(history);
-  renderCards();
-  modalOverlay.classList.remove('show');
+    // Detect what actually changed
+    const changes = [];
+    if (old.name !== name) {
+      changes.push(`Name: "${old.name}" → "${name}"`);
+    }
+    const oldDaysSorted = [...old.days].sort().join(',');
+    const newDaysSorted = [...editSelectedDays].sort().join(',');
+    if (oldDaysSorted !== newDaysSorted) {
+      changes.push(`Days: ${old.days.join(', ')} → ${editSelectedDays.join(', ')}`);
+    }
+    if (old.timesPerDay !== editTimesPerDay) {
+      changes.push(`Frequency: ${old.timesPerDay}x/day → ${editTimesPerDay}x/day`);
+    }
+
+    if (changes.length === 0) {
+      // Nothing actually changed — just close, no record
+      modalOverlay.classList.remove('show');
+      return;
+    }
+
+    // Apply changes to active list
+    active[activeIndex] = {
+      ...old,
+      name: name,
+      days: editSelectedDays,
+      timesPerDay: editTimesPerDay
+    };
+
+    const changeDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const sameDay = histEntry && histEntry.startDate === changeDate;
+
+    if (sameDay) {
+      // Changed on the same day it was created — just update in place, no new record
+      histEntry.name        = name;
+      histEntry.days        = editSelectedDays;
+      histEntry.timesPerDay = editTimesPerDay;
+    } else {
+      // Different day — close old entry and push a new one to the front
+      if (histEntry) {
+        histEntry.endDate = changeDate;
+      }
+      const newHistEntry = {
+        id: editingId,
+        _histId: Date.now(),
+        name,
+        days: editSelectedDays,
+        timesPerDay: editTimesPerDay,
+        startDate: changeDate,
+        endDate: null,
+        changeLog: [{ date: changeDate, description: changes.join(' | ') }]
+      };
+      history.unshift(newHistEntry);
+    }
+
+    saveActive(active);
+    saveHistory(history);
+    renderCards();
+    modalOverlay.classList.remove('show');
+
+  } else {
+    // ── ADD new med
+    const startDate = new Date().toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const id  = Date.now();
+    const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, startDate, endDate: null, changeLog: [] };
+
+    active.push(med);
+    history.push({ ...med, changeLog: [] });
+    saveActive(active);
+    saveHistory(history);
+    renderCards();
+    modalOverlay.classList.remove('show');
+  }
 });
 
-// ── Mic 
+// ── Mic
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
@@ -251,8 +373,7 @@ function setupMic(btnId, targetInput) {
   });
 }
 
-
-// ── Print history 
+// ── Print history
 document.getElementById('print-btn').addEventListener('click', () => {
   const log = loadHistory();
 
@@ -328,6 +449,7 @@ document.getElementById('print-btn').addEventListener('click', () => {
           padding: 12px 16px;
           color: #111;
           border-bottom: 1px solid #e8ddd1;
+          vertical-align: top;
         }
 
         tbody tr:last-child td { border-bottom: none; }
@@ -391,8 +513,7 @@ document.getElementById('print-btn').addEventListener('click', () => {
   w.document.close();
 });
 
-
 setupMic('mic-name', document.getElementById('input-name'));
 
-// ── Init 
+// ── Init
 renderCards();

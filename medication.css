@@ -22,62 +22,120 @@ header {
 
 header h1 { font-size: 26px; font-weight: 600; color: #fff; }
 
-/* ── Card grid ── */
+/* ── Med list ── */
 #med-container {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 24px;
-  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 20px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .warning {
   color: #03114F;
-  font-size: 18px;
-  grid-column: 1 / -1;
+  font-size: 16px;
   text-align: center;
-  padding: 80px 0;
+  padding: 40px 0;
 }
 
-/* ── Med card ── */
-.med-card {
+/* ── Add button row ── */
+.add-row {
+  width: 100%;
+}
+
+.btn-add-med {
+  width: 100%;
+  padding: 18px;
+  font-size: 18px;
+  font-weight: 700;
+  background: #142054;
+  color: #f9ead9;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.02em;
+}
+.btn-add-med:hover { background: #1a2a6a; }
+
+/* ── Med list row ── */
+.med-row {
+  width: 100%;
   background: #142054;
   border: 1px solid #0a2070;
-  border-radius: 16px;
-  padding: 28px 20px;
+  border-radius: 14px;
+  padding: 18px 22px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  text-align: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.15s;
 }
+.med-row:hover { background: #1a2a6a; }
 
-.med-card-name {
-  display: block;
-  font-size: 22px;
+.med-row-name {
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
   text-transform: capitalize;
 }
 
-.med-card-sub {
-  font-size: 14px;
-  color: #aab0cc;
-  line-height: 1.5;
+.med-row-arrow {
+  font-size: 26px;
+  color: #7a8ab0;
 }
 
-.card-btns {
+/* ── Card action popup (name + 3 buttons) ── */
+#card-popup {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#card-popup.show { display: flex; }
+
+.card-popup-box {
+  background: #03114F;
+  border: 1px solid #0a2070;
+  border-radius: 20px;
+  padding: 28px 24px 32px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card-popup-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: capitalize;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.card-popup-btns {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  width: 100%;
 }
 
-.card-btns button {
+.card-popup-btns button {
   width: 100%;
-  padding: 12px 0;
-  font-size: 15px;
-  font-weight: 800;
-  border-radius: 10px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 12px;
   border: none;
   cursor: pointer;
   letter-spacing: 0.03em;
@@ -85,8 +143,18 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
 
 .btn-view         { background: #f9ead9; color: #03114F; }
 .btn-view:hover   { background: #f0ddc8; }
+.btn-edit         { background: #1a3a9a; color: #f0f0f0; }
+.btn-edit:hover   { background: #2a4aaa; }
 .btn-delete       { background: #d4be9e; color: #03114F; }
 .btn-delete:hover { background: #2a1111; color: #f87171; }
+
+.btn-card-cancel {
+  background: transparent;
+  color: #7a8ab0;
+  border: 1px solid #0a2070 !important;
+  margin-top: 2px;
+}
+.btn-card-cancel:hover { color: #fff; border-color: #2a4aaa !important; }
 
 /* ── Popup overlay ── */
 .popup-overlay {
@@ -156,6 +224,36 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
   line-height: 1;
 }
 #close-view:hover { color: #fff; }
+
+/* ── Changelog in popup ── */
+#popup-changelog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.changelog-entry {
+  background: #020d3a;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.changelog-date {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f9ead9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.changelog-desc {
+  font-size: 14px;
+  color: #aab0cc;
+  line-height: 1.5;
+}
 
 /* ── Modal ── */
 #modal-overlay {
@@ -233,67 +331,6 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
 /* ── Days dropdown ── */
-#days-select {
-  width: 100%;
-  background: #020d3a;
-  color: #f0f0f0;
-  border: 1px solid #0a2070;
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-size: 16px;
-  font-family: inherit;
-  outline: none;
-  height: 180px;
-}
-
-#days-select option {
-  padding: 10px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-#days-select option:checked {
-  background: #f9ead9;
-  color: #03114F;
-}
-
-.field-hint {
-  font-size: 12px;
-  color: #7a8ab0;
-  margin-top: 6px;
-}
-
-/* ── Times picker ── */
-.times-picker {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.times-picker button {
-  width: 44px;
-  height: 44px;
-  font-size: 22px;
-  font-weight: 700;
-  background: #020d3a;
-  color: #f0f0f0;
-  border: 1px solid #0a2070;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.times-picker button:hover { background: #0a2070; }
-
-#times-display {
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
-  min-width: 40px;
-  text-align: center;
-}
-
 .days-dropdown {
   position: relative;
   width: 100%;
@@ -365,6 +402,37 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
   border-radius: 20px;
 }
 
+/* ── Times picker ── */
+.times-picker {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.times-picker button {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  font-weight: 700;
+  background: #020d3a;
+  color: #f0f0f0;
+  border: 1px solid #0a2070;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.times-picker button:hover { background: #0a2070; }
+
+#times-display {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 40px;
+  text-align: center;
+}
+
 /* ── Modal actions ── */
 #modal-actions {
   display: flex;
@@ -406,7 +474,3 @@ header h1 { font-size: 26px; font-weight: 600; color: #fff; }
   cursor: pointer;
 }
 #print-btn:hover { background: #f0ddc8; }
-
-/* ── Responsive ── */
-@media (max-width: 1100px) { #med-container { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 700px)  { #med-container { grid-template-columns: repeat(2, 1fr); } }

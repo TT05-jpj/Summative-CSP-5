@@ -15,6 +15,19 @@
 
   <div id="med-container"></div>
 
+  <!-- Card action popup (tap a med row) -->
+  <div id="card-popup">
+    <div class="card-popup-box">
+      <div class="card-popup-name" id="card-popup-name"></div>
+      <div class="card-popup-btns">
+        <button class="btn-view" id="card-btn-view">VIEW DETAILS</button>
+        <button class="btn-edit" id="card-btn-edit">CHANGE</button>
+        <button class="btn-delete" id="card-btn-delete">DELETE</button>
+        <button class="btn-card-cancel" id="card-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- View popup -->
   <div class="popup-overlay" id="view-popup">
     <div class="popup-box">
@@ -36,13 +49,16 @@
         <span class="detail-label">Status</span>
         <span id="popup-status"></span>
       </div>
+      <!-- Change log renders here dynamically -->
+      <div id="popup-changelog"></div>
     </div>
   </div>
 
-  <!-- Add modal -->
+  <!-- Add / Edit modal -->
   <div id="modal-overlay">
     <div id="modal">
-      <h2>Add Medication</h2>
+      <!-- id="modal-title" lets JS swap between "Add Medication" and "Change Medication" -->
+      <h2 id="modal-title">Add Medication</h2>
 
       <div class="field">
         <label>Medication name</label>
@@ -55,8 +71,8 @@
       <div class="field">
         <label>Days of the week</label>
         <div class="days-dropdown">
-            <button type="button" id="days-toggle">Select days ▾</button>
-            <div class="days-menu" id="days-menu">
+          <button type="button" id="days-toggle">Select days ▾</button>
+          <div class="days-menu" id="days-menu">
             <div class="day-option" data-day="Monday">Monday</div>
             <div class="day-option" data-day="Tuesday">Tuesday</div>
             <div class="day-option" data-day="Wednesday">Wednesday</div>
@@ -64,10 +80,10 @@
             <div class="day-option" data-day="Friday">Friday</div>
             <div class="day-option" data-day="Saturday">Saturday</div>
             <div class="day-option" data-day="Sunday">Sunday</div>
-            </div>
+          </div>
         </div>
         <div id="days-selected-display"></div>
-        </div>
+      </div>
 
       <div class="field">
         <label>Times per day</label>
