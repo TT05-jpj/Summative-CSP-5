@@ -10,7 +10,10 @@
 
   <header>
     <h1>Medication Tracker</h1>
-    <button id="print-btn">Print History</button>
+    <div class="header-btns">
+      <button id="buy-pills-btn">Buy Pills</button>
+      <button id="print-btn">Print History</button>
+    </div>
   </header>
 
   <div id="med-container"></div>
@@ -19,11 +22,36 @@
   <div id="card-popup">
     <div class="card-popup-box">
       <div class="card-popup-name" id="card-popup-name"></div>
+      <div class="card-popup-pills" id="card-popup-pills"></div>
       <div class="card-popup-btns">
-        <button class="btn-view" id="card-btn-view">VIEW DETAILS</button>
-        <button class="btn-edit" id="card-btn-edit">CHANGE</button>
-        <button class="btn-delete" id="card-btn-delete">DELETE</button>
+        <button class="btn-edit"    id="card-btn-edit">CHANGE</button>
+        <button class="btn-restock" id="card-btn-restock">RESTOCK PILLS</button>
+        <button class="btn-delete"  id="card-btn-delete">DELETE</button>
         <button class="btn-card-cancel" id="card-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buy Pills popup -->
+  <div id="buy-pills-overlay">
+    <div class="buy-pills-box">
+      <button id="buy-pills-close">×</button>
+      <h2>Running Low</h2>
+      <div id="buy-pills-list"></div>
+    </div>
+  </div>
+
+  <!-- Restock modal -->
+  <div id="restock-overlay">
+    <div id="restock-modal">
+      <h2>Restock <span id="restock-med-name"></span></h2>
+      <div class="field">
+        <label>Pills to add</label>
+        <input id="restock-input" type="number" min="0" placeholder="e.g. 30" />
+      </div>
+      <div id="modal-actions">
+        <button id="restock-cancel">Cancel</button>
+        <button id="restock-save">Add Pills</button>
       </div>
     </div>
   </div>
@@ -49,7 +77,6 @@
         <span class="detail-label">Status</span>
         <span id="popup-status"></span>
       </div>
-      <!-- Change log renders here dynamically -->
       <div id="popup-changelog"></div>
     </div>
   </div>
@@ -57,7 +84,6 @@
   <!-- Add / Edit modal -->
   <div id="modal-overlay">
     <div id="modal">
-      <!-- id="modal-title" lets JS swap between "Add Medication" and "Change Medication" -->
       <h2 id="modal-title">Add Medication</h2>
 
       <div class="field">
@@ -92,6 +118,11 @@
           <span id="times-display">1</span>
           <button id="times-plus" type="button">+</button>
         </div>
+      </div>
+
+      <div class="field">
+        <label>Pills remaining</label>
+        <input id="pills-input" type="number" min="0" placeholder="e.g. 30" />
       </div>
 
       <div id="modal-actions">

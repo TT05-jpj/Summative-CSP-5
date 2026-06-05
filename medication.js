@@ -1,29 +1,17 @@
 // ── Storage keys
-const DISPLAY_KEY = 'medications_active';
-const HISTORY_KEY = 'medications_history';
+const DISPLAY_KEY  = 'medications_active';
+const HISTORY_KEY  = 'medications_history';
 
 // ── Load / save helpers
-function loadActive() {
-  try { return JSON.parse(localStorage.getItem(DISPLAY_KEY)) || []; }
-  catch { return []; }
-}
-
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-  catch { return []; }
-}
-
-function saveActive(list)  { localStorage.setItem(DISPLAY_KEY, JSON.stringify(list)); }
+function loadActive()  { try { return JSON.parse(localStorage.getItem(DISPLAY_KEY))  || []; } catch { return []; } }
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; } }
+function saveActive(list)  { localStorage.setItem(DISPLAY_KEY,  JSON.stringify(list)); }
 function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
 
 // ── State
-let active       = loadActive();
-let history      = loadHistory();
-let timesPerDay  = 1;
-let selectedDays = [];
-
-// ── Edit state
-let editingId    = null;   // id of med being edited, or null for new
+let active           = loadActive();
+let history          = loadHistory();
+let editingId        = null;
 let editTimesPerDay  = 1;
 let editSelectedDays = [];
 
@@ -43,18 +31,13 @@ const daysToggle   = document.getElementById('days-toggle');
 const daysMenu     = document.getElementById('days-menu');
 const daysDisplay  = document.getElementById('days-selected-display');
 const dayOptions   = document.querySelectorAll('.day-option');
+const pillsInput   = document.getElementById('pills-input');
 
 // ── Days dropdown
-daysToggle.addEventListener('click', () => {
-  daysMenu.classList.toggle('open');
-});
-
+daysToggle.addEventListener('click', () => daysMenu.classList.toggle('open'));
 document.addEventListener('click', e => {
-  if (!e.target.closest('.days-dropdown')) {
-    daysMenu.classList.remove('open');
-  }
+  if (!e.target.closest('.days-dropdown')) daysMenu.classList.remove('open');
 });
-
 dayOptions.forEach(option => {
   option.addEventListener('click', () => {
     const day = option.dataset.day;
@@ -68,12 +51,10 @@ dayOptions.forEach(option => {
     updateDaysDisplay();
   });
 });
-
 function updateDaysDisplay() {
   daysToggle.textContent = editSelectedDays.length
     ? `${editSelectedDays.length} day${editSelectedDays.length > 1 ? 's' : ''} selected ▾`
     : 'Select days ▾';
-
   daysDisplay.innerHTML = '';
   editSelectedDays.forEach(day => {
     const tag = document.createElement('div');
@@ -82,6 +63,67 @@ function updateDaysDisplay() {
     daysDisplay.appendChild(tag);
   });
 }
+
+// ── Times per day +/-
+timesMinus.addEventListener('click', () => {
+  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; }
+});
+timesPlus.addEventListener('click', () => {
+  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; }
+});
+
+// ── Daily subtraction
+// For each med, store lastDeductDate per med id in localStorage
+// On load, figure out how many scheduled days have passed since lastDeductDate, subtract pills
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function getDatesFrom(fromDateStr) {
+  // Returns array of day-name strings for each day from fromDate (exclusive) up to and including yesterday
+  const from   = new Date(fromDateStr);
+  const today  = new Date();
+  today.setHours(0,0,0,0);
+  const dates  = [];
+  const cursor = new Date(from);
+  cursor.setDate(cursor.getDate() + 1); // start day after last deduct
+  while (cursor < today) {
+    dates.push(DAY_NAMES[cursor.getDay()]);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function runDailyDeduction() {
+  const DEDUCT_KEY = 'med_last_deduct';
+  let deductMap;
+  try { deductMap = JSON.parse(localStorage.getItem(DEDUCT_KEY)) || {}; } catch { deductMap = {}; }
+
+  const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  let changed = false;
+
+  active.forEach(med => {
+    const lastDate = deductMap[med.id] || med.startDateISO || todayStr;
+    if (lastDate === todayStr) return; // already ran today
+
+    const missedDays = getDatesFrom(lastDate);
+    let deduct = 0;
+    missedDays.forEach(dayName => {
+      if (med.days.includes(dayName)) deduct += med.timesPerDay;
+    });
+
+    if (deduct > 0) {
+      med.pillCount = Math.max(0, (med.pillCount || 0) - deduct);
+      changed = true;
+    }
+    deductMap[med.id] = todayStr;
+  });
+
+  localStorage.setItem(DEDUCT_KEY, JSON.stringify(deductMap));
+  if (changed) saveActive(active);
+}
+
+// ── Low stock threshold
+const LOW_STOCK = 7;
+function isLow(med) { return typeof med.pillCount === 'number' && med.pillCount <= LOW_STOCK; }
 
 // ── Card action popup state
 let cardPopupMed = null;
@@ -105,11 +147,19 @@ function renderCards() {
     return;
   }
 
-  active.forEach((med) => {
+  active.forEach(med => {
     const row = document.createElement('div');
-    row.className = 'med-row';
+    row.className = 'med-row' + (isLow(med) ? ' med-row-low' : '');
+
+    const pillText = typeof med.pillCount === 'number'
+      ? `<span class="med-row-pills${isLow(med) ? ' pills-low' : ''}">${isLow(med) ? '⚠️ ' : ''}${med.pillCount} pill${med.pillCount !== 1 ? 's' : ''} left</span>`
+      : '';
+
     row.innerHTML = `
-      <span class="med-row-name">${med.name}</span>
+      <div class="med-row-info">
+        <span class="med-row-name">${med.name}</span>
+        ${pillText}
+      </div>
       <span class="med-row-arrow">›</span>
     `;
     row.addEventListener('click', () => openCardPopup(med));
@@ -117,10 +167,21 @@ function renderCards() {
   });
 }
 
-// ── Card action popup (opens when you tap a med row)
+// ── Card action popup
 function openCardPopup(med) {
   cardPopupMed = med;
   document.getElementById('card-popup-name').textContent = med.name;
+
+  // pill count line
+  const pillLine = document.getElementById('card-popup-pills');
+  if (typeof med.pillCount === 'number') {
+    pillLine.textContent = (isLow(med) ? '⚠️ Low stock — ' : '') + `${med.pillCount} pill${med.pillCount !== 1 ? 's' : ''} remaining`;
+    pillLine.className   = 'card-popup-pills' + (isLow(med) ? ' pills-low' : '');
+    pillLine.style.display = '';
+  } else {
+    pillLine.style.display = 'none';
+  }
+
   document.getElementById('card-popup').classList.add('show');
 }
 
@@ -132,39 +193,7 @@ function closeCardPopup() {
 document.getElementById('card-popup').addEventListener('click', e => {
   if (e.target === document.getElementById('card-popup')) closeCardPopup();
 });
-
 document.getElementById('card-btn-cancel').addEventListener('click', closeCardPopup);
-
-document.getElementById('card-btn-view').addEventListener('click', () => {
-  const med = cardPopupMed;
-  const histEntry = history.find(h => h.id === med.id);
-  const changeLog = (histEntry && histEntry.changeLog) ? histEntry.changeLog : [];
-
-  document.getElementById('popup-med-name').textContent = med.name;
-  document.getElementById('popup-days').textContent     = med.days.join(', ');
-  document.getElementById('popup-times').textContent    = `${med.timesPerDay} time${med.timesPerDay > 1 ? 's' : ''} per day`;
-  document.getElementById('popup-start').textContent    = med.startDate;
-  document.getElementById('popup-status').textContent   = 'Ongoing';
-
-  const logContainer = document.getElementById('popup-changelog');
-  logContainer.innerHTML = '';
-  if (changeLog.length > 0) {
-    const heading = document.createElement('div');
-    heading.className = 'detail-label';
-    heading.style.marginTop = '8px';
-    heading.textContent = 'Change History';
-    logContainer.appendChild(heading);
-    changeLog.forEach(entry => {
-      const item = document.createElement('div');
-      item.className = 'changelog-entry';
-      item.innerHTML = `<span class="changelog-date">${entry.date}</span><span class="changelog-desc">${entry.description}</span>`;
-      logContainer.appendChild(item);
-    });
-  }
-
-  closeCardPopup();
-  viewPopup.classList.add('show');
-});
 
 document.getElementById('card-btn-edit').addEventListener('click', () => {
   const med = cardPopupMed;
@@ -174,9 +203,7 @@ document.getElementById('card-btn-edit').addEventListener('click', () => {
 
 document.getElementById('card-btn-delete').addEventListener('click', () => {
   const med = cardPopupMed;
-  const endDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
+  const endDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
   const histEntry = history.find(h => h.id === med.id);
   if (histEntry) { histEntry.endDate = endDate; saveHistory(history); }
   const idx = active.findIndex(m => m.id === med.id);
@@ -186,48 +213,109 @@ document.getElementById('card-btn-delete').addEventListener('click', () => {
   renderCards();
 });
 
-// ── Popup close
+// ── Restock button in card popup
+document.getElementById('card-btn-restock').addEventListener('click', () => {
+  const med = cardPopupMed;
+  closeCardPopup();
+  openRestockModal(med);
+});
+
+// ── Restock modal
+let restockMed = null;
+
+function openRestockModal(med) {
+  restockMed = med;
+  document.getElementById('restock-med-name').textContent = med.name;
+  document.getElementById('restock-input').value = '';
+  document.getElementById('restock-overlay').classList.add('show');
+  document.getElementById('restock-input').focus();
+}
+
+document.getElementById('restock-cancel').addEventListener('click', () => {
+  document.getElementById('restock-overlay').classList.remove('show');
+  restockMed = null;
+});
+document.getElementById('restock-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('restock-overlay')) {
+    document.getElementById('restock-overlay').classList.remove('show');
+    restockMed = null;
+  }
+});
+document.getElementById('restock-save').addEventListener('click', () => {
+  const amount = Math.max(0, parseInt(document.getElementById('restock-input').value) || 0);
+  if (!restockMed || amount === 0) {
+    document.getElementById('restock-overlay').classList.remove('show');
+    restockMed = null;
+    return;
+  }
+  const idx = active.findIndex(m => m.id === restockMed.id);
+  if (idx !== -1) {
+    active[idx].pillCount = (active[idx].pillCount || 0) + amount;
+    saveActive(active);
+    renderCards();
+  }
+  document.getElementById('restock-overlay').classList.remove('show');
+  restockMed = null;
+});
+
+// ── Buy Pills popup (global low-stock list)
+document.getElementById('buy-pills-btn').addEventListener('click', () => {
+  const lowMeds = active.filter(isLow);
+  const list    = document.getElementById('buy-pills-list');
+  list.innerHTML = '';
+
+  if (lowMeds.length === 0) {
+    list.innerHTML = '<p class="buy-pills-empty">All medications are well stocked.</p>';
+  } else {
+    lowMeds.forEach(med => {
+      const item = document.createElement('div');
+      item.className = 'buy-pills-item';
+      item.innerHTML = `
+        <span class="buy-pills-name">${med.name}</span>
+        <span class="buy-pills-count">${med.pillCount} pill${med.pillCount !== 1 ? 's' : ''} left</span>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  document.getElementById('buy-pills-overlay').classList.add('show');
+});
+document.getElementById('buy-pills-close').addEventListener('click', () => {
+  document.getElementById('buy-pills-overlay').classList.remove('show');
+});
+document.getElementById('buy-pills-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('buy-pills-overlay'))
+    document.getElementById('buy-pills-overlay').classList.remove('show');
+});
+
+// ── View popup close
 closeView.addEventListener('click', () => viewPopup.classList.remove('show'));
 viewPopup.addEventListener('click', e => {
   if (e.target === viewPopup) viewPopup.classList.remove('show');
 });
 
-// ── Times per day +/-
-timesMinus.addEventListener('click', () => {
-  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; }
-});
-timesPlus.addEventListener('click', () => {
-  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; }
-});
-
-// ── Modal open
-// Pass null for new medication, or a med object to edit
+// ── Modal open (add or edit)
 function openModal(med) {
   if (med) {
-    // Edit mode
-    editingId = med.id;
+    editingId        = med.id;
     modalTitle.textContent = 'Change Medication';
-    inputName.value = med.name;
-    editTimesPerDay = med.timesPerDay;
+    inputName.value  = med.name;
+    editTimesPerDay  = med.timesPerDay;
     editSelectedDays = [...med.days];
+    pillsInput.value = typeof med.pillCount === 'number' ? med.pillCount : '';
   } else {
-    // Add mode
-    editingId = null;
+    editingId        = null;
     modalTitle.textContent = 'Add Medication';
-    inputName.value = '';
-    editTimesPerDay = 1;
+    inputName.value  = '';
+    editTimesPerDay  = 1;
     editSelectedDays = [];
+    pillsInput.value = '';
   }
 
   timesDisplay.textContent = editTimesPerDay;
 
-  // Sync day checkboxes
   dayOptions.forEach(o => {
-    if (editSelectedDays.includes(o.dataset.day)) {
-      o.classList.add('selected');
-    } else {
-      o.classList.remove('selected');
-    }
+    editSelectedDays.includes(o.dataset.day) ? o.classList.add('selected') : o.classList.remove('selected');
   });
 
   updateDaysDisplay();
@@ -240,75 +328,57 @@ modalOverlay.addEventListener('click', e => {
   if (e.target === modalOverlay) modalOverlay.classList.remove('show');
 });
 
-// ── Save (handles both add and edit)
+// ── Save (add or edit)
 modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
-  if (!name)                { inputName.focus(); return; }
+  if (!name)                    { inputName.focus(); return; }
   if (!editSelectedDays.length) { alert('Please select at least one day.'); return; }
+  const editPillCount = Math.max(0, parseInt(pillsInput.value) || 0);
 
   if (editingId !== null) {
-    // ── EDIT existing med
+    // EDIT
     const activeIndex = active.findIndex(m => m.id === editingId);
     const histEntry   = history.find(h => h.id === editingId);
     if (activeIndex === -1) { modalOverlay.classList.remove('show'); return; }
 
     const old = active[activeIndex];
 
-    // Detect what actually changed
     const changes = [];
-    if (old.name !== name) {
-      changes.push(`Name: "${old.name}" → "${name}"`);
-    }
-    const oldDaysSorted = [...old.days].sort().join(',');
-    const newDaysSorted = [...editSelectedDays].sort().join(',');
-    if (oldDaysSorted !== newDaysSorted) {
+    if (old.name !== name) changes.push(`Name: "${old.name}" → "${name}"`);
+    if ([...old.days].sort().join(',') !== [...editSelectedDays].sort().join(','))
       changes.push(`Days: ${old.days.join(', ')} → ${editSelectedDays.join(', ')}`);
-    }
-    if (old.timesPerDay !== editTimesPerDay) {
+    if (old.timesPerDay !== editTimesPerDay)
       changes.push(`Frequency: ${old.timesPerDay}x/day → ${editTimesPerDay}x/day`);
-    }
+    // pill count changes are NOT tracked in history
 
     if (changes.length === 0) {
-      // Nothing actually changed — just close, no record
+      // Only pill count may have changed — update silently
+      active[activeIndex].pillCount = editPillCount;
+      saveActive(active);
+      renderCards();
       modalOverlay.classList.remove('show');
       return;
     }
 
-    // Apply changes to active list
-    active[activeIndex] = {
-      ...old,
-      name: name,
-      days: editSelectedDays,
-      timesPerDay: editTimesPerDay
-    };
+    active[activeIndex] = { ...old, name, days: editSelectedDays, timesPerDay: editTimesPerDay, pillCount: editPillCount };
 
-    const changeDate = new Date().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-
-    const sameDay = histEntry && histEntry.startDate === changeDate;
+    const changeDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const sameDay    = histEntry && histEntry.startDate === changeDate;
 
     if (sameDay) {
-      // Changed on the same day it was created — just update in place, no new record
       histEntry.name        = name;
       histEntry.days        = editSelectedDays;
       histEntry.timesPerDay = editTimesPerDay;
+      // pillCount intentionally not written to history
     } else {
-      // Different day — close old entry and push a new one to the front
-      if (histEntry) {
-        histEntry.endDate = changeDate;
-      }
-      const newHistEntry = {
-        id: editingId,
-        _histId: Date.now(),
-        name,
-        days: editSelectedDays,
-        timesPerDay: editTimesPerDay,
-        startDate: changeDate,
-        endDate: null,
+      if (histEntry) histEntry.endDate = changeDate;
+      history.unshift({
+        id: editingId, _histId: Date.now(),
+        name, days: editSelectedDays, timesPerDay: editTimesPerDay,
+        startDate: changeDate, endDate: null,
         changeLog: [{ date: changeDate, description: changes.join(' | ') }]
-      };
-      history.unshift(newHistEntry);
+        // no pillCount in history
+      });
     }
 
     saveActive(active);
@@ -317,16 +387,16 @@ modalSave.addEventListener('click', () => {
     modalOverlay.classList.remove('show');
 
   } else {
-    // ── ADD new med
-    const startDate = new Date().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    });
-
+    // ADD
+    const today     = new Date();
+    const startDate = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const startDateISO = today.toISOString().split('T')[0];
     const id  = Date.now();
-    const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, startDate, endDate: null, changeLog: [] };
+    const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, pillCount: editPillCount, startDate, startDateISO, endDate: null, changeLog: [] };
 
     active.push(med);
-    history.push({ ...med, changeLog: [] });
+    // history entry has no pillCount
+    history.push({ id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, startDate, startDateISO, endDate: null, changeLog: [] });
     saveActive(active);
     saveHistory(history);
     renderCards();
@@ -338,39 +408,17 @@ modalSave.addEventListener('click', () => {
 function setupMic(btnId, targetInput) {
   const btn = document.getElementById(btnId);
   if (!btn) return;
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    btn.style.opacity = '0.4';
-    btn.style.cursor  = 'not-allowed';
-    return;
-  }
-  const recognition      = new SpeechRecognition();
-  recognition.lang       = 'en-US';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { btn.style.opacity='0.4'; btn.style.cursor='not-allowed'; return; }
+  const recognition = new SR();
+  recognition.lang = 'en-US';
   recognition.interimResults = false;
   let listening = false;
-
-  btn.addEventListener('click', () => {
-    if (listening) { recognition.stop(); return; }
-    recognition.start();
-  });
-  recognition.addEventListener('start', () => {
-    listening = true;
-    btn.classList.add('listening');
-    btn.textContent = '⏹';
-  });
-  recognition.addEventListener('result', e => {
-    targetInput.value = e.results[0][0].transcript;
-  });
-  recognition.addEventListener('end', () => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = '🎤';
-  });
-  recognition.addEventListener('error', () => {
-    listening = false;
-    btn.classList.remove('listening');
-    btn.textContent = '🎤';
-  });
+  btn.addEventListener('click', () => { listening ? recognition.stop() : recognition.start(); });
+  recognition.addEventListener('start',  () => { listening=true;  btn.classList.add('listening');    btn.textContent='⏹'; });
+  recognition.addEventListener('result', e  => { targetInput.value = e.results[0][0].transcript; });
+  recognition.addEventListener('end',    () => { listening=false; btn.classList.remove('listening'); btn.textContent='🎤'; });
+  recognition.addEventListener('error',  () => { listening=false; btn.classList.remove('listening'); btn.textContent='🎤'; });
 }
 
 // ── Print history
@@ -388,125 +436,34 @@ document.getElementById('print-btn').addEventListener('click', () => {
   `).join('');
 
   const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Medication History</title>
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-          font-family: system-ui, sans-serif;
-          background: #fff;
-          color: #111;
-          padding: 48px;
-        }
-
-        .print-header {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-          margin-bottom: 32px;
-          border-bottom: 2px solid #03114F;
-          padding-bottom: 16px;
-        }
-
-        .print-header h1 {
-          font-size: 28px;
-          font-weight: 700;
-          color: #03114F;
-        }
-
-        .print-header p {
-          font-size: 13px;
-          color: #888;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 15px;
-        }
-
-        thead {
-          background: #03114F;
-          color: #fff;
-        }
-
-        thead th {
-          padding: 12px 16px;
-          text-align: left;
-          font-weight: 600;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          font-size: 13px;
-        }
-
-        tbody tr:nth-child(even) { background: #f9ead9; }
-        tbody tr:nth-child(odd)  { background: #fff; }
-
-        tbody td {
-          padding: 12px 16px;
-          color: #111;
-          border-bottom: 1px solid #e8ddd1;
-          vertical-align: top;
-        }
-
-        tbody tr:last-child td { border-bottom: none; }
-
-        .no-data {
-          text-align: center;
-          padding: 48px;
-          color: #888;
-          font-size: 16px;
-        }
-
-        .print-footer {
-          margin-top: 32px;
-          font-size: 12px;
-          color: #aaa;
-          text-align: center;
-          border-top: 1px solid #e8ddd1;
-          padding-top: 16px;
-        }
-
-        @media print {
-          body { padding: 24px; }
-        }
-      </style>
-    </head>
-    <body>
-      <div class="print-header">
-        <h1>Medication History</h1>
-        <p>Printed on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-      </div>
-
-      ${log.length === 0
-        ? `<p class="no-data">No medication history found.</p>`
-        : `<table>
-            <thead>
-              <tr>
-                <th>Medication</th>
-                <th>Days</th>
-                <th>Frequency</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>`
-      }
-
-      <div class="print-footer">
-        Generated by A-TEN
-      </div>
-
-      <script>
-        window.onload = () => { window.print(); }
-      </script>
-    </body>
-    </html>
-  `;
+    <!DOCTYPE html><html><head><title>Medication History</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:system-ui,sans-serif;background:#fff;color:#111;padding:48px}
+      .print-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;border-bottom:2px solid #03114F;padding-bottom:16px}
+      .print-header h1{font-size:28px;font-weight:700;color:#03114F}
+      .print-header p{font-size:13px;color:#888}
+      table{width:100%;border-collapse:collapse;font-size:15px}
+      thead{background:#03114F;color:#fff}
+      thead th{padding:12px 16px;text-align:left;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
+      tbody tr:nth-child(even){background:#f9ead9}
+      tbody tr:nth-child(odd){background:#fff}
+      tbody td{padding:12px 16px;color:#111;border-bottom:1px solid #e8ddd1;vertical-align:top}
+      tbody tr:last-child td{border-bottom:none}
+      .no-data{text-align:center;padding:48px;color:#888;font-size:16px}
+      .print-footer{margin-top:32px;font-size:12px;color:#aaa;text-align:center;border-top:1px solid #e8ddd1;padding-top:16px}
+      @media print{body{padding:24px}}
+    </style></head><body>
+    <div class="print-header">
+      <h1>Medication History</h1>
+      <p>Printed on ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</p>
+    </div>
+    ${log.length===0
+      ? `<p class="no-data">No medication history found.</p>`
+      : `<table><thead><tr><th>Medication</th><th>Days</th><th>Frequency</th><th>Start Date</th><th>End Date</th></tr></thead><tbody>${rows}</tbody></table>`}
+    <div class="print-footer">Generated by A-TEN</div>
+    <script>window.onload=()=>{window.print()}<\/script>
+    </body></html>`;
 
   const w = window.open('', '_blank');
   w.document.write(html);
@@ -516,4 +473,5 @@ document.getElementById('print-btn').addEventListener('click', () => {
 setupMic('mic-name', document.getElementById('input-name'));
 
 // ── Init
+runDailyDeduction();
 renderCards();
