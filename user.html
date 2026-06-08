@@ -407,8 +407,10 @@
       <div class="corner tr"></div>
       <div class="corner bl"></div>
       <div class="corner br"></div>
-      <div id="scan-line"></div>
+    <div id="scan-line"></div>
     </div>
+    <button id="flip-btn"
+      style="display:none;position:absolute;bottom:12px;right:12px;background:rgba(20,32,84,0.85);border:1px solid #0a2070;color:#fff;font-size:22px;width:44px;height:44px;border-radius:50%;cursor:pointer;z-index:10;">🔄</button>
     <div id="cam-start">
       <button id="start-btn">Enable Camera</button>
       <p>Allow camera access to start scanning</p>
@@ -470,7 +472,8 @@
     let lastDataUrl = null;
 
     let lastDetections = [];
-    let stream = null;
+  let stream = null;
+    let facingMode = 'environment';
     let currentSpeakText = '';
 
     const msgs = {
@@ -648,12 +651,13 @@
 
 
     // ── Camera ────────────────────────────────────────────────────────────────
-    startBtn.addEventListener('click', async () => {
+   startBtn.addEventListener('click', async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
         video.srcObject = stream;
         camStart.style.display = 'none';
         scanBtn.disabled = false;
+        document.getElementById('flip-btn').style.display = 'block';
         setStatus(msgs.ready, 'active');
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
@@ -785,6 +789,16 @@
     }
 
     initUserTranslations();
+
+    document.getElementById('flip-btn').addEventListener('click', async () => {
+        facingMode = facingMode === 'environment' ? 'user' : 'environment';
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+        }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+        video.srcObject = stream;
+      });
+      
   </script>
 </body>
 
