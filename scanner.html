@@ -588,7 +588,17 @@
 
   <script>
     const API_KEY = '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'; // paste your OpenAI key here
-    const STORAGE_KEY = 'accessibility_objects';
+    function getScannerSession() {
+      try {
+        return JSON.parse(
+          localStorage.getItem('auth_session') ||
+          sessionStorage.getItem('auth_session') ||
+          'null'
+        );
+      } catch { return null; }
+    }
+    const _ss = getScannerSession();
+    const STORAGE_KEY = 'objects_' + (_ss ? _ss.username : '');
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');

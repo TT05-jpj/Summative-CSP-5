@@ -10,7 +10,30 @@
 
 <body>
 
-  <!-- Info popup -->
+  <script>
+    (function () {
+      function getSession() {
+        try {
+          return JSON.parse(
+            localStorage.getItem('auth_session') ||
+            sessionStorage.getItem('auth_session') ||
+            'null'
+          );
+        } catch { return null; }
+      }
+
+      if (!getSession() || getSession().role !== 'caretaker') {
+        window.location.replace('login.html?role=caretaker');
+      }
+    })();
+
+    function logout() {
+      localStorage.removeItem('auth_session');
+      sessionStorage.removeItem('auth_session');
+      window.location.href = 'home.html';
+    }
+  </script>
+
   <div id="info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
     <div style="background:#03114F;border:1px solid #0a2070;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
       <button onclick="document.getElementById('info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
@@ -28,7 +51,6 @@
       <h1>Caretaker Dashboard</h1>
       <button onclick="document.getElementById('info-overlay').style.display='flex'" style="background:none;border:2px solid #facc15;color:#facc15;border-radius:50%;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</button>
     </div>
-    <!-- Language Settings -->
     <div id="lang-bar"
       style="display:flex;align-items:center;gap:20px;padding:22px 36px;background:#142054;border-bottom:1px solid #0a2070;font-size:22px;color:#aab0cc;">
       <span id="lang-label">🌐 Languages:</span>
@@ -100,10 +122,22 @@
         <option value="id">User: Indonesian</option>
       </select>
       <span id="lang-saved" style="color:#4ade80;display:none;">✓ Saved</span>
+      <button onclick="logout()" style="margin-left:auto;background:none;border:1px solid #aab0cc;color:#aab0cc;font-size:16px;font-family:inherit;padding:8px 18px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:border-color 0.2s,color 0.2s;" onmouseover="this.style.borderColor='#fff';this.style.color='#fff'" onmouseout="this.style.borderColor='#aab0cc';this.style.color='#aab0cc'">Log Out</button>
     </div>
   </header>
 
-  <div id="object-container"></div>
+  <div id="dashboard-tabs">
+    <button class="dash-tab active" id="tab-objects" onclick="switchDashTab('objects')">Objects</button>
+    <button class="dash-tab" id="tab-users" onclick="switchDashTab('users')">User Dashboard</button>
+  </div>
+
+  <div id="panel-objects">
+    <div id="object-container"></div>
+  </div>
+
+  <div id="panel-users">
+    <div id="user-dashboard-container"></div>
+  </div>
 
   <div class="popup-overlay" id="view-popup">
     <div class="popup-box">
@@ -113,7 +147,6 @@
     </div>
   </div>
 
-  <!-- Add / Edit modal -->
   <div id="modal-overlay">
     <div id="modal">
       <h2 id="modal-title">Add Object</h2>
@@ -237,7 +270,6 @@
       infoEls.forEach(({ id }, i) => { const el = document.getElementById(id); if (el) el.textContent = infoTranslated[i]; });
     }
 
-    // store translations for card buttons so renderCards can use them
     window.ctTranslations = { view: 'VIEW INSTRUCTIONS', change: 'EDIT INSTRUCTIONS', delete: 'DELETE', addObject: 'Add Object +', addObjectModal: 'Add Object', editObjectModal: 'Edit Object', noObjects: 'No objects yet. Use the scanner to add one.' };
 
     async function loadTranslations(lang) {

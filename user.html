@@ -387,14 +387,61 @@
       background: #142054;
       color: #fff;
     }
+
+    /* NEW: Log Out button sits in the top-right of the topbar.
+       margin-left:auto pushes it to the far right since the topbar
+       is a flex container with the back arrow on the left. */
+    .logout-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #aab0cc;
+      color: #aab0cc;
+      font-size: 15px;
+      font-family: inherit;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .logout-btn:hover {
+      border-color: #fff;
+      color: #fff;
+    }
   </style>
 </head>
 
 <body>
 
+  <script>
+    (function () {
+      function getSession() {
+        try {
+          return JSON.parse(
+            localStorage.getItem('auth_session') ||
+            sessionStorage.getItem('auth_session') ||
+            'null'
+          );
+        } catch { return null; }
+      }
+
+      if (!getSession() || getSession().role !== 'user') {
+        window.location.replace('login.html?role=user');
+      }
+    })();
+
+    function logout() {
+      localStorage.removeItem('auth_session');
+      sessionStorage.removeItem('auth_session');
+      window.location.href = 'home.html';
+    }
+  </script>
+
   <div class="topbar">
     <button class="back-btn" onclick="window.location.href='home.html'">←</button>
     <h1>Object Scanner</h1>
+    <button class="logout-btn" onclick="logout()">Log Out</button>
   </div>
 
   <div id="cam-wrap">
@@ -448,7 +495,19 @@
 
   <script>
     const API_KEY = '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'; // OpenAI key here
-    const STORAGE_KEY = 'accessibility_objects';
+    function getUserObjectsKey() {
+      try {
+        const session = JSON.parse(
+          localStorage.getItem('auth_session') ||
+          sessionStorage.getItem('auth_session') || 'null'
+        );
+        if (!session) return null;
+        const users = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const me = users.find(u => u.username === session.username && u.role === 'user');
+        return (me && me.assigned && me.assignedTo) ? 'objects_' + me.assignedTo : null;
+      } catch { return null; }
+    }
+    const STORAGE_KEY = getUserObjectsKey();
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -500,13 +559,11 @@
       statusDot.className = mode || '';
     }
 
-    // ── Text to speech ────────────────────────────────────────────────────────
     function speak(text) {
       const userLang = localStorage.getItem('user_lang') || 'en';
 
       window.speechSynthesis.cancel();
 
-      // unlock browser audio
       const unlockUtt = new SpeechSynthesisUtterance('');
       window.speechSynthesis.speak(unlockUtt);
 
@@ -527,7 +584,6 @@
 
       function speakWithOpenAI(textToSay) {
         if (userLang === 'en') {
-          // use OpenAI for English (sounds better)
           fetch('https://api.openai.com/v1/audio/speech', {
             method: 'POST',
             headers: {
@@ -549,7 +605,6 @@
             })
             .catch(e => console.error('TTS error:', e));
         } else {
-          // use browser native voice for other languages — proper accent
           const utt = new SpeechSynthesisUtterance(textToSay);
           utt.lang = userLang;
           utt.rate = 0.9;
@@ -563,8 +618,8 @@
     }
     speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
 
-    // ── Load caretaker objects ────────────────────────────────────────────────
     function getCaretakerObjects() {
+      if (!STORAGE_KEY) return [];
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
       catch { return []; }
     }
@@ -580,7 +635,6 @@
       return matches;
     }
 
-    // ── Overlay labels (tappable if instructions exist) ───────────────────────
     async function showOverlayLabels(matches) {
       overlay.innerHTML = '';
       if (!matches.length) return;
@@ -620,7 +674,6 @@
       }
     }
 
-    // ── Translation helper ────────────────────────────────────────────────────
     function translateForUser(text) {
       const lang = localStorage.getItem('user_lang') || 'en';
       if (lang === 'en') return Promise.resolve(text);
@@ -630,7 +683,6 @@
         .catch(() => text);
     }
 
-    // ── Instructions popup ────────────────────────────────────────────────────
     async function showInstructions(name, instructions) {
       instrPopup.classList.add('show');
       instrName.textContent = name;
@@ -648,7 +700,6 @@
     instrPopup.addEventListener('click', e => { if (e.target === instrPopup) instrPopup.classList.remove('show'); });
 
 
-    // ── Camera ────────────────────────────────────────────────────────────────
     startBtn.addEventListener('click', async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -669,7 +720,6 @@
       return canvas.toDataURL('image/jpeg', 0.8);
     }
 
-    // ── Scan ──────────────────────────────────────────────────────────────────
     scanBtn.addEventListener('click', async () => {
       if (!stream) return;
       scanBtn.disabled = true;
@@ -748,7 +798,6 @@
       scanBtn.disabled = false;
     });
 
-    // ── UI translation ────────────────────────────────────────────────────────
     function translateUI() {
       const lang = localStorage.getItem('user_lang') || 'en';
       if (lang === 'en') return;

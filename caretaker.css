@@ -578,6 +578,120 @@ header h1 {
   }
 }
 
+/* ── Dashboard tabs ── */
+#dashboard-tabs {
+  display: flex;
+  background: #0a1a4a;
+  border-bottom: 2px solid #0a2070;
+  padding: 0 36px;
+  gap: 4px;
+}
+
+.dash-tab {
+  padding: 14px 28px;
+  font-size: 17px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  color: #aab0cc;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.dash-tab:hover {
+  color: #fff;
+}
+
+.dash-tab.active {
+  color: #facc15;
+  border-bottom-color: #facc15;
+}
+
+/* ── User Dashboard ── */
+#panel-users {
+  display: none;
+  padding: 36px;
+}
+
+.ud-empty {
+  font-size: 16px;
+  color: #aab0cc;
+}
+
+.ud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.ud-card {
+  background: #142054;
+  border: 1px solid #0a2070;
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ud-row {
+  font-size: 16px;
+  color: #aab0cc;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ud-label {
+  font-weight: 600;
+  color: #7a8ab0;
+}
+
+.ud-value {
+  color: #fff;
+  font-weight: 500;
+}
+
+.ud-btn {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 8px;
+  letter-spacing: 0.02em;
+}
+
+.ud-btn-assign {
+  background: #16a34a;
+  color: #fff;
+}
+
+.ud-btn-assign:hover {
+  background: #15803d;
+}
+
+.ud-btn-unassign {
+  background: #991b1b;
+  color: #fff;
+}
+
+.ud-btn-unassign:hover {
+  background: #7f1d1d;
+}
+
+.ud-btn-disabled {
+  background: #1e2a4a;
+  color: #4a5a7a;
+  cursor: not-allowed;
+  border: 1px solid #2a3a5a;
+}
+
 @media (max-width: 1100px) {
   #object-container {
     grid-template-columns: repeat(3, 1fr);

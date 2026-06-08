@@ -248,14 +248,24 @@
   </div>
 
   <div class="btn-group">
-    <a href="user.html" class="btn btn-user">
+    <!--
+      CHANGED: href was "user.html" — now routes through login.html first.
+      The ?role=user parameter tells the login page which account type to
+      sign in / sign up for, and where to redirect on success (user.html).
+    -->
+    <a href="login.html?role=user" class="btn btn-user">
       <div class="btn-left">
         <span class="btn-label" id="user-btn-label">I am a User</span>
         <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
       </div>
       <span class="btn-arrow">→</span>
     </a>
-    <a href="caretaker.html" class="btn btn-caretaker">
+    <!--
+      CHANGED: href was "caretaker.html" — now routes through login.html first.
+      The ?role=caretaker parameter tells the login page which account type to
+      sign in / sign up for, and where to redirect on success (caretaker.html).
+    -->
+    <a href="login.html?role=caretaker" class="btn btn-caretaker">
       <div class="btn-left">
         <span class="btn-label" id="ct-btn-label">I am a Caretaker</span>
         <span class="btn-desc" id="ct-btn-desc">Manage objects &amp; instructions</span>
