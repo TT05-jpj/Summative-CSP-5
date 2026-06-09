@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="A-TEN">
+  <link rel="stylesheet" href="shared.css" />
+  <title>Sign In — A-TEN</title>
+  <style>
+    body {
+      background: var(--navy);
+      color: #e2e8f0;
+      min-height: 100dvh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: calc(40px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+      font-family: var(--font);
+    }
+    .logo { font-size: 72px; font-weight: 900; color: var(--accent); letter-spacing: 0.04em; margin-bottom: 4px; line-height: 1; }
+    .tagline { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 28px; letter-spacing: 0.07em; text-transform: uppercase; }
+
+    .card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px; padding: 28px 24px;
+      width: 100%; max-width: 380px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    .auth-tabs {
+      display: flex; background: rgba(0,0,0,0.25);
+      border-radius: 10px; overflow: hidden;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px; font-size: 15px; font-weight: 600;
+      background: none; border: none; color: rgba(255,255,255,0.5);
+      cursor: pointer; transition: background 0.2s, color 0.2s; font-family: var(--font);
+    }
+    .tab-btn.active { background: var(--accent); color: var(--navy); }
+    .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
+
+    .form-section { display: flex; flex-direction: column; gap: 14px; }
+    .form-section.hidden { display: none; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.07em; }
+    .field-input {
+      width: 100%; padding: 12px 14px; font-size: 16px;
+      background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px; color: #e2e8f0; outline: none; font-family: var(--font);
+      transition: border-color 0.15s;
+    }
+    .field-input:focus { border-color: var(--accent); }
+    .field-input::placeholder { color: rgba(255,255,255,0.22); }
+
+    .keep-signed { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; user-select: none; }
+    .keep-signed input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
+    .submit-btn {
+      width: 100%; padding: 14px; font-size: 17px; font-weight: 700;
+      background: var(--accent); color: var(--navy);
+      border: none; border-radius: 12px; cursor: pointer; font-family: var(--font);
+      transition: opacity 0.15s; margin-top: 2px;
+    }
+    .submit-btn:hover { opacity: 0.88; }
+
+    .msg { font-size: 13px; border-radius: 8px; padding: 10px 14px; display: none; line-height: 1.5; }
+    .msg.show { display: block; }
+    .msg-error   { color: #f87171; background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.3); }
+    .msg-success { color: #4ade80; background: rgba(22,163,74,0.15);  border: 1px solid rgba(22,163,74,0.3); }
+  </style>
+</head>
+<body>
+
+  <p class="logo">A-TEN</p>
+  <p class="tagline">Accessibility Tool</p>
+
+  <div class="card">
+    <div class="auth-tabs">
+      <button class="tab-btn active" id="tab-login"  onclick="showTab('login')">Log In</button>
+      <button class="tab-btn"        id="tab-signup" onclick="showTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Log In -->
+    <div class="form-section" id="form-login">
+      <div class="field">
+        <label class="field-label">Username</label>
+        <input class="field-input" type="text" id="login-username" placeholder="Your username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input class="field-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <label class="keep-signed">
+        <input type="checkbox" id="keep-in" /> Keep me signed in
+      </label>
+      <div class="msg msg-error" id="login-error"></div>
+      <button class="submit-btn" onclick="handleLogin()">Log In</button>
+    </div>
+
+    <!-- Sign Up -->
+    <div class="form-section hidden" id="form-signup">
+      <div class="field">
+        <label class="field-label">Full Name</label>
+        <input class="field-input" type="text" id="signup-name" placeholder="Your full name" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label class="field-label">Username</label>
+        <input class="field-input" type="text" id="signup-username" placeholder="Choose a username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label class="field-label">Phone Number</label>
+        <input class="field-input" type="tel" id="signup-phone" placeholder="e.g. +1 555 000 1234" autocomplete="tel" />
+      </div>
+      <div class="field">
+        <label class="field-label">Password</label>
+        <input class="field-input" type="password" id="signup-password" placeholder="At least 6 characters" autocomplete="new-password" />
+      </div>
+      <div class="field">
+        <label class="field-label">Confirm Password</label>
+        <input class="field-input" type="password" id="signup-confirm" placeholder="Repeat your password" autocomplete="new-password" />
+      </div>
+      <div class="msg msg-error"   id="signup-error"></div>
+      <div class="msg msg-success" id="signup-success"></div>
+      <button class="submit-btn" onclick="handleSignup()">Create Account</button>
+    </div>
+  </div>
+
+  <script>
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
+      catch { return null; }
+    }
+    // Already logged in → go to home for role selection
+    if (getSession()) window.location.replace('home.html');
+
+    function getUsers() {
+      try { return JSON.parse(localStorage.getItem('auth_users')) || []; } catch { return []; }
+    }
+    function saveUsers(u) { localStorage.setItem('auth_users', JSON.stringify(u)); }
+
+    function saveSession(session, persist) {
+      const data = JSON.stringify(session);
+      if (persist) { localStorage.setItem('auth_session', data); sessionStorage.removeItem('auth_session'); }
+      else { sessionStorage.setItem('auth_session', data); localStorage.removeItem('auth_session'); }
+    }
+
+    async function hashPassword(p) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function showMsg(id, text) { const el = document.getElementById(id); el.textContent = text; el.classList.add('show'); }
+    function hideMsg(id)       { const el = document.getElementById(id); el.textContent = ''; el.classList.remove('show'); }
+
+    function showTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-signup').classList.toggle('active', !isLogin);
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-signup').classList.toggle('hidden', isLogin);
+    }
+
+    async function handleLogin() {
+      hideMsg('login-error');
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+      const keep     = document.getElementById('keep-in').checked;
+      if (!username || !password) { showMsg('login-error', 'Please fill in all fields.'); return; }
+      const hash  = await hashPassword(password);
+      const match = getUsers().find(u => u.username === username && u.passwordHash === hash);
+      if (!match) { showMsg('login-error', 'Username or password incorrect.'); return; }
+      saveSession({ username: match.username, name: match.name, phone: match.phone }, keep);
+      window.location.href = 'home.html';
+    }
+
+    async function handleSignup() {
+      hideMsg('signup-error'); hideMsg('signup-success');
+      const name     = document.getElementById('signup-name').value.trim();
+      const username = document.getElementById('signup-username').value.trim();
+      const phone    = document.getElementById('signup-phone').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const confirm  = document.getElementById('signup-confirm').value;
+      if (!name || !username || !password || !confirm) { showMsg('signup-error', 'Please fill in all fields.'); return; }
+      if (username.length < 3)                          { showMsg('signup-error', 'Username must be at least 3 characters.'); return; }
+      if (!/^[a-zA-Z0-9_]+$/.test(username))            { showMsg('signup-error', 'Username: letters, numbers and underscores only.'); return; }
+      if (password.length < 6)                          { showMsg('signup-error', 'Password must be at least 6 characters.'); return; }
+      if (password !== confirm)                         { showMsg('signup-error', 'Passwords do not match.'); return; }
+      const users = getUsers();
+      if (users.find(u => u.username === username))     { showMsg('signup-error', 'Username already taken.'); return; }
+      const hash = await hashPassword(password);
+      users.push({ username, name, phone, passwordHash: hash });
+      saveUsers(users);
+      showMsg('signup-success', 'Account created! Logging you in…');
+      setTimeout(async () => {
+        saveSession({ username, name, phone }, false);
+        window.location.href = 'home.html';
+      }, 1200);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const signingUp = !document.getElementById('form-signup').classList.contains('hidden');
+      signingUp ? handleSignup() : handleLogin();
+    });
+  </script>
+</body>
+</html>
