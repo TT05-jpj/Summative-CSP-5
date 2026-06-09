@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <title>Medication Tracker</title>
+  <link rel="stylesheet" href="medication.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Medication Tracker</h1>
+    <div class="header-btns">
+      <button id="buy-pills-btn">Buy Pills</button>
+      <button id="print-btn">Print History</button>
+    </div>
+  </header>
+
+  <div id="med-container"></div>
+
+  <!-- Card action popup (tap a med row) -->
+  <div id="card-popup">
+    <div class="card-popup-box">
+      <div class="card-popup-name" id="card-popup-name"></div>
+      <div class="card-popup-pills" id="card-popup-pills"></div>
+      <div class="card-popup-btns">
+        <button class="btn-edit"    id="card-btn-edit">CHANGE</button>
+        <button class="btn-restock" id="card-btn-restock">RESTOCK PILLS</button>
+        <button class="btn-delete"  id="card-btn-delete">DELETE</button>
+        <button class="btn-card-cancel" id="card-btn-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buy Pills popup -->
+  <div id="buy-pills-overlay">
+    <div class="buy-pills-box">
+      <button id="buy-pills-close">×</button>
+      <h2>Running Low</h2>
+      <div id="buy-pills-list"></div>
+    </div>
+  </div>
+
+  <!-- Restock modal -->
+  <div id="restock-overlay">
+    <div id="restock-modal">
+      <h2>Restock <span id="restock-med-name"></span></h2>
+      <div class="field">
+        <label>Pills to add</label>
+        <input id="restock-input" type="number" min="0" placeholder="e.g. 30" />
+      </div>
+      <div id="modal-actions">
+        <button id="restock-cancel">Cancel</button>
+        <button id="restock-save">Add Pills</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View popup -->
+  <div class="popup-overlay" id="view-popup">
+    <div class="popup-box">
+      <button id="close-view">×</button>
+      <h2 id="popup-med-name"></h2>
+      <div class="popup-detail">
+        <span class="detail-label">Days</span>
+        <span id="popup-days"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Times per day</span>
+        <span id="popup-times"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Start date</span>
+        <span id="popup-start"></span>
+      </div>
+      <div class="popup-detail">
+        <span class="detail-label">Status</span>
+        <span id="popup-status"></span>
+      </div>
+      <div id="popup-changelog"></div>
+    </div>
+  </div>
+
+  <!-- Camera scan overlay -->
+  <div id="scan-overlay">
+    <div id="scan-overlay-inner">
+      <div id="scan-topbar">
+        <button id="scan-close-btn">✕ Cancel</button>
+        <span id="scan-label-title">Point at the medication label</span>
+        <div></div>
+      </div>
+      <div id="scan-cam-wrap">
+        <video id="scan-video" autoplay playsinline muted></video>
+        <canvas id="scan-canvas"></canvas>
+        <div id="scan-frame">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+        </div>
+        <div id="scan-cam-start">
+          <button id="scan-start-cam-btn">Enable Camera</button>
+          <p>Allow camera access to scan the label</p>
+        </div>
+        <div id="scan-analyzing" style="display:none">
+          <div class="scan-spinner"></div>
+          <p>Reading label…</p>
+        </div>
+      </div>
+      <div id="scan-controls">
+        <button id="scan-capture-btn" disabled>📷 Capture Label</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div id="modal-overlay">
+    <div id="modal">
+      <h2 id="modal-title">Add Medication</h2>
+      <button id="scan-label-btn" type="button">📷 Scan Label</button>
+
+      <div class="field">
+        <label>Medication name</label>
+        <div class="input-row">
+          <input id="input-name" type="text" placeholder='e.g. "Ibuprofen"' />
+          <button class="mic-btn" id="mic-name" type="button">🎤</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Days of the week</label>
+        <div class="days-dropdown">
+          <button type="button" id="days-toggle">Select days ▾</button>
+          <div class="days-menu" id="days-menu">
+            <div class="day-option" data-day="Monday">Monday</div>
+            <div class="day-option" data-day="Tuesday">Tuesday</div>
+            <div class="day-option" data-day="Wednesday">Wednesday</div>
+            <div class="day-option" data-day="Thursday">Thursday</div>
+            <div class="day-option" data-day="Friday">Friday</div>
+            <div class="day-option" data-day="Saturday">Saturday</div>
+            <div class="day-option" data-day="Sunday">Sunday</div>
+          </div>
+        </div>
+        <div id="days-selected-display"></div>
+      </div>
+
+      <div class="field">
+        <label>Times per day</label>
+        <div class="times-picker">
+          <button id="times-minus" type="button">−</button>
+          <span id="times-display">1</span>
+          <button id="times-plus" type="button">+</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Pills remaining</label>
+        <input id="pills-input" type="number" min="0" placeholder="e.g. 30" />
+      </div>
+
+      <div id="modal-actions">
+        <button id="modal-cancel">Cancel</button>
+        <button id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="medication.js"></script>
+  <script src="tab-bar.js"></script>
+  <script src="side-panel.js"></script>
+</body>
+</html>

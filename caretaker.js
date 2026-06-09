@@ -1,13 +1,105 @@
-// Shared with scanner.html and user.html — both read from this key.
-const STORAGE_KEY = 'accessibility_objects';
+// ── Auth helpers ─────────────────────────────────────────────────────────────
+function getCaretakerSession() {
+  try {
+    return JSON.parse(
+      localStorage.getItem('auth_session') ||
+      sessionStorage.getItem('auth_session') ||
+      'null'
+    );
+  } catch { return null; }
+}
 
+function getStorageKey() {
+  const s = getCaretakerSession();
+  return 'objects_' + (s ? s.username : '');
+}
+
+function getAllAppUsers() {
+  try { return JSON.parse(localStorage.getItem('auth_users')) || []; }
+  catch { return []; }
+}
+
+function saveAllAppUsers(users) {
+  localStorage.setItem('auth_users', JSON.stringify(users));
+}
+
+// ── Dashboard tabs ────────────────────────────────────────────────────────────
+function switchDashTab(tab) {
+  const isObjects = tab === 'objects';
+  document.getElementById('tab-objects').classList.toggle('active', isObjects);
+  document.getElementById('tab-users').classList.toggle('active', !isObjects);
+  document.getElementById('panel-objects').style.display = isObjects ? '' : 'none';
+  document.getElementById('panel-users').style.display = isObjects ? 'none' : 'block';
+  if (!isObjects) renderUserDashboard();
+}
+
+function renderUserDashboard() {
+  const udContainer = document.getElementById('user-dashboard-container');
+  const session = getCaretakerSession();
+  const myUsername = (session ? session.username : '').toLowerCase();
+  const allUsers = getAllAppUsers().filter(u => u.role === 'user');
+
+  const visible = allUsers.filter(u =>
+    (u.caretakerName || '').toLowerCase() === myUsername ||
+    u.assignedTo === session.username ||
+    !u.caretakerName
+  );
+
+  udContainer.innerHTML = '';
+
+  if (visible.length === 0) {
+    udContainer.innerHTML = '<p class="warning" style="padding:36px 20px;">No users found.</p>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'ud-grid';
+
+  visible.forEach(u => {
+    const card = document.createElement('div');
+    card.className = 'ud-card';
+    const isAssignedToMe = u.assignedTo === session.username;
+    const nameMatchesMe = (u.caretakerName || '').toLowerCase() === myUsername;
+    let btnHTML;
+    if (isAssignedToMe) {
+      btnHTML = `<button class="ud-btn ud-btn-unassign" onclick="unassignUser('${u.username}')">Unassign</button>`;
+    } else if (nameMatchesMe && !u.assigned) {
+      btnHTML = `<button class="ud-btn ud-btn-assign" onclick="assignUser('${u.username}')">Assign</button>`;
+    } else {
+      btnHTML = `<button class="ud-btn ud-btn-disabled" disabled>Assign</button>`;
+    }
+    card.innerHTML = `
+      <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.username}</span></p>
+      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.caretakerName || 'N/A'}</span></p>
+      ${btnHTML}
+    `;
+    grid.appendChild(card);
+  });
+  udContainer.appendChild(grid);
+}
+
+function assignUser(username) {
+  const session = getCaretakerSession();
+  if (!session) return;
+  const users = getAllAppUsers();
+  const user = users.find(u => u.username === username && u.role === 'user');
+  if (user) { user.assigned = true; user.assignedTo = session.username; saveAllAppUsers(users); renderUserDashboard(); }
+}
+
+function unassignUser(username) {
+  const users = getAllAppUsers();
+  const user = users.find(u => u.username === username && u.role === 'user');
+  if (user) { user.assigned = false; user.assignedTo = ''; saveAllAppUsers(users); renderUserDashboard(); }
+}
+
+// ── Object storage ────────────────────────────────────────────────────────────
 function loadObjects() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  try { return JSON.parse(localStorage.getItem(getStorageKey())) || []; }
   catch { return []; }
 }
 
 function saveObjects() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(objects));
+  localStorage.setItem(getStorageKey(), JSON.stringify(objects));
 }
 
 let objects = loadObjects();
@@ -30,19 +122,15 @@ function renderCards() {
 
   // ── Scanner card — always first ──
   const scanCard = document.createElement('div');
-  scanCard.classList.add('object-card');
-  scanCard.style.cursor = 'pointer';
-  scanCard.style.justifyContent = 'center';
-  scanCard.innerHTML = `
-    <button class="btn-view" style="font-size:22px;padding:20px 0;font-weight:800;height:150px;width:85%;pointer-events:none;">${window.ctTranslations?.addObject || 'Add Object +'}</button>
-  `;
+  scanCard.classList.add('object-card', 'add-object-card');
+  scanCard.innerHTML = `<button class="btn-view">${window.ctTranslations?.addObject || '+ Add Object'}</button>`;
   scanCard.addEventListener('click', () => window.location.href = 'scanner.html');
   container.appendChild(scanCard);
 
   if (objects.length === 0) {
     const msg = document.createElement('p');
     msg.classList.add('warning');
-    msg.textContent = "No objects yet. Use the scanner to add one.";
+    msg.textContent = window.ctTranslations?.noObjects || 'No objects yet. Use the scanner to add one.';
     container.appendChild(msg);
     return;
   }
@@ -118,11 +206,11 @@ viewPopup.addEventListener('click', e => {
 function openModal(index = null) {
   editingIndex = index;
   if (index !== null) {
-    modalTitle.textContent = 'Edit Object';
+    modalTitle.textContent = window.ctTranslations?.editObjectModal || 'Edit Object';
     inputName.value = objects[index].name;
     inputInstr.value = objects[index].instructions;
   } else {
-    modalTitle.textContent = 'Add Object';
+    modalTitle.textContent = window.ctTranslations?.addObjectModal || 'Add Object';
     inputName.value = '';
     inputInstr.value = '';
   }

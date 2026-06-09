@@ -3,20 +3,20 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>A-TEN</title>
   <script>
+    // index.html is no longer the entry point — redirect to login
     (function(){
       try {
         const s = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
-        if (!s) window.location.replace('login.html');
+        window.location.replace(s ? 'home.html' : 'login.html');
       } catch { window.location.replace('login.html'); }
     })();
   </script>
   <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
   <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-w
-  eb-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="A-TEN">
   <link rel="stylesheet" href="shared.css" />
   <style>
@@ -51,7 +51,7 @@
 
     .subtitle {
       font-size: 15px;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(255,255,255,0.55);
       text-align: center;
       margin-bottom: 28px;
     }
@@ -95,10 +95,7 @@
       -webkit-tap-highlight-color: transparent;
       transition: transform 0.15s;
     }
-
-    .swatch:active {
-      transform: scale(0.92);
-    }
+    .swatch:active { transform: scale(0.92); }
 
     .swatch-circle {
       width: 56px;
@@ -106,110 +103,50 @@
       border-radius: 50%;
       position: relative;
       overflow: hidden;
-      border: 3px solid rgba(255, 255, 255, 0.65);
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.45);
+      border: 3px solid rgba(255,255,255,0.65);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.45);
       transition: border-color 0.15s;
     }
-
     .swatch-circle::before,
     .swatch-circle::after {
       content: '';
       position: absolute;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
     }
-
-    .swatch-circle::before {
-      top: 0;
-      height: 55%;
-    }
-
-    .swatch-circle::after {
-      bottom: 0;
-      height: 45%;
-    }
+    .swatch-circle::before { top: 0; height: 55%; }
+    .swatch-circle::after  { bottom: 0; height: 45%; }
 
     .swatch.active .swatch-circle {
       border-color: #ffffff;
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.45);
     }
 
     .swatch-name {
       font-size: 11px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(255,255,255,0.55);
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
-
-    .swatch.active .swatch-name {
-      color: #e2e8f0;
-    }
+    .swatch.active .swatch-name { color: #e2e8f0; }
 
     /* Individual swatch colors — match shared.css theme values */
-    .swatch[data-theme=""] .swatch-circle::before {
-      background: #1e3060;
-    }
-
-    .swatch[data-theme=""] .swatch-circle::after {
-      background: #f0b830;
-    }
-
-    .swatch[data-theme="watermelon"] .swatch-circle::before {
-      background: #3d7848;
-    }
-
-    .swatch[data-theme="watermelon"] .swatch-circle::after {
-      background: #f04898;
-    }
-
-    .swatch[data-theme="rose"] .swatch-circle::before {
-      background: #8a1258;
-    }
-
-    .swatch[data-theme="rose"] .swatch-circle::after {
-      background: #ffaad6;
-    }
-
-    .swatch[data-theme="ocean"] .swatch-circle::before {
-      background: #1a6870;
-    }
-
-    .swatch[data-theme="ocean"] .swatch-circle::after {
-      background: #cfe8ef;
-    }
-
-    .swatch[data-theme="sunset"] .swatch-circle::before {
-      background: #c0128a;
-    }
-
-    .swatch[data-theme="sunset"] .swatch-circle::after {
-      background: #ffa028;
-    }
-
-    .swatch[data-theme="sage"] .swatch-circle::before {
-      background: #2e5a3a;
-    }
-
-    .swatch[data-theme="sage"] .swatch-circle::after {
-      background: #d4f0c0;
-    }
-
-    .swatch[data-theme="grape"] .swatch-circle::before {
-      background: #57467b;
-    }
-
-    .swatch[data-theme="grape"] .swatch-circle::after {
-      background: #ea7af4;
-    }
-
-    .swatch[data-theme="calm"] .swatch-circle::before {
-      background: #4a4858;
-    }
-
-    .swatch[data-theme="calm"] .swatch-circle::after {
-      background: #c4cad0;
-    }
+    .swatch[data-theme=""]       .swatch-circle::before { background: #1e3060; }
+    .swatch[data-theme=""]       .swatch-circle::after  { background: #f0b830; }
+    .swatch[data-theme="watermelon"] .swatch-circle::before { background: #3d7848; }
+    .swatch[data-theme="watermelon"] .swatch-circle::after  { background: #f04898; }
+    .swatch[data-theme="rose"]       .swatch-circle::before { background: #8a1258; }
+    .swatch[data-theme="rose"]       .swatch-circle::after  { background: #ffaad6; }
+    .swatch[data-theme="ocean"]      .swatch-circle::before { background: #1a6870; }
+    .swatch[data-theme="ocean"]      .swatch-circle::after  { background: #cfe8ef; }
+    .swatch[data-theme="sunset"]     .swatch-circle::before { background: #c0128a; }
+    .swatch[data-theme="sunset"]     .swatch-circle::after  { background: #ffa028; }
+    .swatch[data-theme="sage"]       .swatch-circle::before { background: #2e5a3a; }
+    .swatch[data-theme="sage"]       .swatch-circle::after  { background: #d4f0c0; }
+    .swatch[data-theme="grape"]      .swatch-circle::before { background: #57467b; }
+    .swatch[data-theme="grape"]      .swatch-circle::after  { background: #ea7af4; }
+    .swatch[data-theme="calm"]       .swatch-circle::before { background: #4a4858; }
+    .swatch[data-theme="calm"]       .swatch-circle::after  { background: #c4cad0; }
 
     /* ── Language selectors ── */
     .lang-selectors {
@@ -228,7 +165,7 @@
 
     .lang-group label {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(255,255,255,0.55);
       text-transform: uppercase;
       letter-spacing: 0.07em;
       font-weight: 600;
@@ -267,10 +204,7 @@
       transition: transform 0.15s, box-shadow 0.15s;
       -webkit-tap-highlight-color: transparent;
     }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
+    .btn:active { transform: scale(0.98); }
 
     .btn-left {
       display: flex;
@@ -279,45 +213,28 @@
       gap: 3px;
     }
 
-    .btn-label {
-      font-size: 19px;
-      font-weight: 700;
-    }
-
-    .btn-desc {
-      font-size: 14px;
-      opacity: 0.7;
-    }
-
-    .btn-arrow {
-      font-size: 22px;
-      opacity: 0.8;
-    }
+    .btn-label { font-size: 19px; font-weight: 700; }
+    .btn-desc  { font-size: 14px; opacity: 0.7; }
+    .btn-arrow { font-size: 22px; opacity: 0.8; }
 
     .btn-user {
       background: #ffffff;
       color: var(--navy);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
-
-    .btn-user:hover {
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
-    }
+    .btn-user:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.4); }
 
     .btn-caretaker {
       background: var(--accent);
       color: var(--navy);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
     }
-
-    .btn-caretaker:hover {
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
-    }
+    .btn-caretaker:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.35); }
 
     .footer {
       margin-top: 28px;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.35);
+      color: rgba(255,255,255,0.35);
     }
   </style>
 </head>
@@ -328,7 +245,7 @@
   <h1 id="title-text">Who are you?</h1>
   <p class="subtitle" id="subtitle-text">Choose your role to get started</p>
 
-  <!-- Theme picker -->
+  <!-- Theme picker — above the fold so it's always visible -->
   <div class="theme-section">
     <p class="theme-label">Colour Scheme</p>
     <div class="theme-swatches">
@@ -442,20 +359,20 @@
   </div>
 
   <div class="btn-group">
-    <button class="btn btn-user" onclick="selectRole('user')">
+    <a href="user.html" class="btn btn-user" onclick="localStorage.setItem('role','user')">
       <div class="btn-left">
         <span class="btn-label" id="user-btn-label">I am a User</span>
         <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
       </div>
       <span class="btn-arrow">→</span>
-    </button>
-    <button class="btn btn-caretaker" onclick="selectRole('caretaker')">
+    </a>
+    <a href="caretaker.html" class="btn btn-caretaker" onclick="localStorage.setItem('role','caretaker')">
       <div class="btn-left">
         <span class="btn-label" id="ct-btn-label">I am a Caretaker</span>
         <span class="btn-desc" id="ct-btn-desc">Manage objects &amp; instructions</span>
       </div>
       <span class="btn-arrow">→</span>
-    </button>
+    </a>
   </div>
 
   <p class="footer" id="footer-text">Select the option that applies to you</p>
@@ -464,9 +381,11 @@
     const ctLangSel = document.getElementById('caretaker-lang');
     const userLangSel = document.getElementById('user-lang');
 
+    // load saved
     ctLangSel.value = localStorage.getItem('caretaker_lang') || 'en';
     userLangSel.value = localStorage.getItem('user_lang') || 'en';
 
+    // translate a piece of text using Google Translate free endpoint
     function translateText(text, targetLang) {
       if (targetLang === 'en') return Promise.resolve(text);
       return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
@@ -475,7 +394,9 @@
         .catch(() => text);
     }
 
+    // translate all caretaker-facing text
     async function translatePage(ctLang, userLang) {
+      // caretaker language texts
       const ctTexts = [
         { id: 'title-text', en: 'Who are you?' },
         { id: 'subtitle-text', en: 'Choose your role to get started' },
@@ -485,37 +406,34 @@
         { id: 'ct-btn-desc', en: 'Manage objects & instructions' },
         { id: 'footer-text', en: 'Select the option that applies to you' },
       ];
+
       for (const item of ctTexts) {
-        document.getElementById(item.id).textContent = await translateText(item.en, ctLang);
+        const translated = await translateText(item.en, ctLang);
+        document.getElementById(item.id).textContent = translated;
       }
-      document.getElementById('user-btn-label').textContent = await translateText('I am a User', userLang);
-      document.getElementById('user-btn-desc').textContent = await translateText('Scan objects around me', userLang);
+
+      // user button in user language
+      const userBtnLabel = await translateText('I am a User', userLang);
+      const userBtnDesc = await translateText('Scan objects around me', userLang);
+      document.getElementById('user-btn-label').textContent = userBtnLabel;
+      document.getElementById('user-btn-desc').textContent = userBtnDesc;
     }
 
-    // ── Role selection — saves role to session then navigates
-    function selectRole(role) {
-      try {
-        const raw = localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session');
-        const s = raw ? JSON.parse(raw) : {};
-        const updated = JSON.stringify({ ...s, role });
-        if (localStorage.getItem('auth_session')) localStorage.setItem('auth_session', updated);
-        else sessionStorage.setItem('auth_session', updated);
-      } catch {}
-      window.location.href = role === 'caretaker' ? 'caretaker.html' : 'user.html';
-    }
-
+    // run on load
     translatePage(ctLangSel.value, userLangSel.value);
 
+    // run when changed
     ctLangSel.addEventListener('change', () => {
       localStorage.setItem('caretaker_lang', ctLangSel.value);
       translatePage(ctLangSel.value, userLangSel.value);
     });
+
     userLangSel.addEventListener('change', () => {
       localStorage.setItem('user_lang', userLangSel.value);
       translatePage(ctLangSel.value, userLangSel.value);
     });
 
-    // ── Theme picker
+    // ── Theme picker ─────────────────────────────────────────────────────────
     const swatches = document.querySelectorAll('.swatch');
 
     function applyTheme(theme) {
@@ -524,11 +442,12 @@
       swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
     }
 
+    // Mark current theme on load
     const savedTheme = localStorage.getItem('app-theme') || '';
     swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === savedTheme));
+
     swatches.forEach(s => s.addEventListener('click', () => applyTheme(s.dataset.theme)));
   </script>
-  <script src="side-panel.js"></script>
 </body>
 
 </html>

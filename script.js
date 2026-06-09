@@ -1,7 +1,6 @@
-// =============================================
-    // PUT YOUR OPENAI API KEY HERE
+
     const API_KEY = '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';
-    // =============================================
+
 
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
