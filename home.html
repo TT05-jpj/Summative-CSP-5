@@ -3,62 +3,222 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>A-TEN</title>
+  <script>
+    (function(){
+      try {
+        const s = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        if (!s) window.location.replace('login.html');
+      } catch { window.location.replace('login.html'); }
+    })();
+  </script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-w
+  eb-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="A-TEN">
+  <link rel="stylesheet" href="shared.css" />
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="A-TEN">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: system-ui, sans-serif;
-      background: #03114F;
-      color: #dbeafe;
-      min-height: 100vh;
+      background: var(--navy);
+      color: #e2e8f0;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 24px;
-      gap: 0;
+      padding: calc(40px + env(safe-area-inset-top)) 24px calc(48px + env(safe-area-inset-bottom));
+      overflow-y: auto;
     }
 
     .logo {
-      font-size: 96px;
+      font-size: 72px;
       font-weight: 900;
-      color: #facc15;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 24px;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
       line-height: 1;
     }
 
     h1 {
-      font-size: 40px;
+      font-size: 28px;
       font-weight: 600;
-      color: #dbeafe;
+      color: #e2e8f0;
       text-align: center;
-      margin-bottom: 10px;
-      line-height: 1.2;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
     }
 
     .subtitle {
-      font-size: 19px;
-      color: #aab0cc;
+      font-size: 15px;
+      color: rgba(255, 255, 255, 0.55);
       text-align: center;
-      margin-bottom: 36px;
+      margin-bottom: 28px;
     }
 
-    /* language selectors */
+    /* ── Theme picker ── */
+    .theme-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .theme-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .theme-swatches {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 0;
+      width: 100%;
+    }
+
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 16px;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s;
+    }
+
+    .swatch:active {
+      transform: scale(0.92);
+    }
+
+    .swatch-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.65);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.45);
+      transition: border-color 0.15s;
+    }
+
+    .swatch-circle::before,
+    .swatch-circle::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+    }
+
+    .swatch-circle::before {
+      top: 0;
+      height: 55%;
+    }
+
+    .swatch-circle::after {
+      bottom: 0;
+      height: 45%;
+    }
+
+    .swatch.active .swatch-circle {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.45);
+    }
+
+    .swatch-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .swatch.active .swatch-name {
+      color: #e2e8f0;
+    }
+
+    /* Individual swatch colors — match shared.css theme values */
+    .swatch[data-theme=""] .swatch-circle::before {
+      background: #1e3060;
+    }
+
+    .swatch[data-theme=""] .swatch-circle::after {
+      background: #f0b830;
+    }
+
+    .swatch[data-theme="watermelon"] .swatch-circle::before {
+      background: #3d7848;
+    }
+
+    .swatch[data-theme="watermelon"] .swatch-circle::after {
+      background: #f04898;
+    }
+
+    .swatch[data-theme="rose"] .swatch-circle::before {
+      background: #8a1258;
+    }
+
+    .swatch[data-theme="rose"] .swatch-circle::after {
+      background: #ffaad6;
+    }
+
+    .swatch[data-theme="ocean"] .swatch-circle::before {
+      background: #1a6870;
+    }
+
+    .swatch[data-theme="ocean"] .swatch-circle::after {
+      background: #cfe8ef;
+    }
+
+    .swatch[data-theme="sunset"] .swatch-circle::before {
+      background: #c0128a;
+    }
+
+    .swatch[data-theme="sunset"] .swatch-circle::after {
+      background: #ffa028;
+    }
+
+    .swatch[data-theme="sage"] .swatch-circle::before {
+      background: #2e5a3a;
+    }
+
+    .swatch[data-theme="sage"] .swatch-circle::after {
+      background: #d4f0c0;
+    }
+
+    .swatch[data-theme="grape"] .swatch-circle::before {
+      background: #57467b;
+    }
+
+    .swatch[data-theme="grape"] .swatch-circle::after {
+      background: #ea7af4;
+    }
+
+    .swatch[data-theme="calm"] .swatch-circle::before {
+      background: #4a4858;
+    }
+
+    .swatch[data-theme="calm"] .swatch-circle::after {
+      background: #c4cad0;
+    }
+
+    /* ── Language selectors ── */
     .lang-selectors {
       display: flex;
-      gap: 10px;
-      margin-bottom: 40px;
+      gap: 12px;
+      margin-bottom: 28px;
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -66,103 +226,101 @@
     .lang-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
     }
 
     .lang-group label {
-      font-size: 14px;
-      color: #aab0cc;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.55);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.07em;
+      font-weight: 600;
     }
 
     .lang-group select {
-      background: #fef9c3;
-      color: #03114F;
-      border: 1px solid #fef9c3;
+      background: var(--accent);
+      color: var(--navy);
+      border: none;
       border-radius: 8px;
-      padding: 7px 10px;
-      font-size: 16px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
-    }
-
-    .lang-group select:focus {
+      font-family: var(--font);
       outline: none;
-      border-color: #facc15;
     }
 
+    /* ── Role buttons ── */
     .btn-group {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       width: 100%;
-      max-width: 320px;
+      max-width: 340px;
     }
 
     .btn {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 20px 24px;
-      border-radius: 14px;
-      border: 1px solid #0a2070;
+      padding: 20px 22px;
+      border-radius: 16px;
       cursor: pointer;
       text-decoration: none;
-      transition: border-color 0.2s, background 0.2s;
+      transition: transform 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
     }
 
     .btn-left {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 4px;
+      gap: 3px;
     }
 
     .btn-label {
-      font-size: 22px;
-      font-weight: 600;
+      font-size: 19px;
+      font-weight: 700;
     }
 
     .btn-desc {
-      font-size: 16px;
+      font-size: 14px;
       opacity: 0.7;
     }
 
     .btn-arrow {
-      font-size: 25px;
-      opacity: 0.7;
+      font-size: 22px;
+      opacity: 0.8;
     }
 
     .btn-user {
-      background: #dbeafe;
-      border-color: #dbeafe;
-      color: #03114F;
+      background: #ffffff;
+      color: var(--navy);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
     .btn-user:hover {
-      background: #bfdbfe;
-      border-color: #bfdbfe;
-    }
-
-    .btn-user .btn-arrow {
-      color: #03114F;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
     }
 
     .btn-caretaker {
-      background: #2254c5;
-      color: #fff;
-      border-color: #2254c5;
+      background: var(--accent);
+      color: var(--navy);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
     }
 
     .btn-caretaker:hover {
-      background: #1a45a8;
-      border-color: #facc15;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.35);
     }
 
     .footer {
-      margin-top: 40px;
-      font-size: 15px;
-      color: #aab0cc;
+      margin-top: 28px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.35);
     }
   </style>
 </head>
@@ -172,6 +330,45 @@
   <p class="logo" id="logo-text">A-TEN</p>
   <h1 id="title-text">Who are you?</h1>
   <p class="subtitle" id="subtitle-text">Choose your role to get started</p>
+
+  <!-- Theme picker -->
+  <div class="theme-section">
+    <p class="theme-label">Colour Scheme</p>
+    <div class="theme-swatches">
+      <button class="swatch" data-theme="">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Navy</span>
+      </button>
+      <button class="swatch" data-theme="watermelon">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Watermelon</span>
+      </button>
+      <button class="swatch" data-theme="rose">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Rose</span>
+      </button>
+      <button class="swatch" data-theme="ocean">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Ocean</span>
+      </button>
+      <button class="swatch" data-theme="sunset">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Sunset</span>
+      </button>
+      <button class="swatch" data-theme="sage">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Sage</span>
+      </button>
+      <button class="swatch" data-theme="grape">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Grape</span>
+      </button>
+      <button class="swatch" data-theme="calm">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Calm</span>
+      </button>
+    </div>
+  </div>
 
   <!-- Language selectors -->
   <div class="lang-selectors">
@@ -248,30 +445,20 @@
   </div>
 
   <div class="btn-group">
-    <!--
-      CHANGED: href was "user.html" — now routes through login.html first.
-      The ?role=user parameter tells the login page which account type to
-      sign in / sign up for, and where to redirect on success (user.html).
-    -->
-    <a href="login.html?role=user" class="btn btn-user">
+    <button class="btn btn-user" onclick="selectRole('user')">
       <div class="btn-left">
         <span class="btn-label" id="user-btn-label">I am a User</span>
         <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
       </div>
       <span class="btn-arrow">→</span>
-    </a>
-    <!--
-      CHANGED: href was "caretaker.html" — now routes through login.html first.
-      The ?role=caretaker parameter tells the login page which account type to
-      sign in / sign up for, and where to redirect on success (caretaker.html).
-    -->
-    <a href="login.html?role=caretaker" class="btn btn-caretaker">
+    </button>
+    <button class="btn btn-caretaker" onclick="selectRole('caretaker')">
       <div class="btn-left">
         <span class="btn-label" id="ct-btn-label">I am a Caretaker</span>
         <span class="btn-desc" id="ct-btn-desc">Manage objects &amp; instructions</span>
       </div>
       <span class="btn-arrow">→</span>
-    </a>
+    </button>
   </div>
 
   <p class="footer" id="footer-text">Select the option that applies to you</p>
@@ -280,11 +467,9 @@
     const ctLangSel = document.getElementById('caretaker-lang');
     const userLangSel = document.getElementById('user-lang');
 
-    // load saved
     ctLangSel.value = localStorage.getItem('caretaker_lang') || 'en';
     userLangSel.value = localStorage.getItem('user_lang') || 'en';
 
-    // translate a piece of text using Google Translate free endpoint
     function translateText(text, targetLang) {
       if (targetLang === 'en') return Promise.resolve(text);
       return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
@@ -293,9 +478,7 @@
         .catch(() => text);
     }
 
-    // translate all caretaker-facing text
     async function translatePage(ctLang, userLang) {
-      // caretaker language texts
       const ctTexts = [
         { id: 'title-text', en: 'Who are you?' },
         { id: 'subtitle-text', en: 'Choose your role to get started' },
@@ -305,33 +488,50 @@
         { id: 'ct-btn-desc', en: 'Manage objects & instructions' },
         { id: 'footer-text', en: 'Select the option that applies to you' },
       ];
-
       for (const item of ctTexts) {
-        const translated = await translateText(item.en, ctLang);
-        document.getElementById(item.id).textContent = translated;
+        document.getElementById(item.id).textContent = await translateText(item.en, ctLang);
       }
-
-      // user button in user language
-      const userBtnLabel = await translateText('I am a User', userLang);
-      const userBtnDesc = await translateText('Scan objects around me', userLang);
-      document.getElementById('user-btn-label').textContent = userBtnLabel;
-      document.getElementById('user-btn-desc').textContent = userBtnDesc;
+      document.getElementById('user-btn-label').textContent = await translateText('I am a User', userLang);
+      document.getElementById('user-btn-desc').textContent = await translateText('Scan objects around me', userLang);
     }
 
-    // run on load
+    // ── Role selection — saves role to session then navigates
+    function selectRole(role) {
+      try {
+        const raw = localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session');
+        const s = raw ? JSON.parse(raw) : {};
+        const updated = JSON.stringify({ ...s, role });
+        if (localStorage.getItem('auth_session')) localStorage.setItem('auth_session', updated);
+        else sessionStorage.setItem('auth_session', updated);
+      } catch {}
+      window.location.href = role === 'caretaker' ? 'caretaker.html' : 'user.html';
+    }
+
     translatePage(ctLangSel.value, userLangSel.value);
 
-    // run when changed
     ctLangSel.addEventListener('change', () => {
       localStorage.setItem('caretaker_lang', ctLangSel.value);
       translatePage(ctLangSel.value, userLangSel.value);
     });
-
     userLangSel.addEventListener('change', () => {
       localStorage.setItem('user_lang', userLangSel.value);
       translatePage(ctLangSel.value, userLangSel.value);
     });
+
+    // ── Theme picker
+    const swatches = document.querySelectorAll('.swatch');
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      localStorage.setItem('app-theme', theme);
+      swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+    }
+
+    const savedTheme = localStorage.getItem('app-theme') || '';
+    swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === savedTheme));
+    swatches.forEach(s => s.addEventListener('click', () => applyTheme(s.dataset.theme)));
   </script>
+  <script src="side-panel.js"></script>
 </body>
 
 </html>

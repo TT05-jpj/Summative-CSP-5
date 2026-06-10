@@ -1,10 +1,10 @@
 {
-    "name": "Caretaker",
-    "short_name": "Caretaker",
-    "start_url": "/Summative-CSP-5/",
+    "name": "A-TEN",
+    "short_name": "A-TEN",
+    "start_url": "/home.html",
     "display": "standalone",
-    "background_color": "#111111",
-    "theme_color": "#1a1a1a",
+    "background_color": "#03114F",
+    "theme_color": "#03114F",
     "icons": [
         {
             "src": "micIcon.png",

@@ -3,529 +3,236 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Caretaker Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <title>Object Scanner</title>
+  <link rel="stylesheet" href="shared.css" />
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: system-ui, sans-serif;
-      background: #dbeafe;
-      color: #03114F;
-      height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px;
+      padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + 68px + env(safe-area-inset-bottom));
     }
 
+    /* ── Top bar ── */
     .topbar {
       display: flex;
       align-items: center;
       width: 100%;
       max-width: 1100px;
-      margin-bottom: 16px;
-      gap: 12px;
-      background: #142054;
-      position: relative;
+      margin-bottom: 10px;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .back-btn {
-      background: none;
-      border: none;
-      color: #dbeafe;
-      font-size: 16px;
-      font-family: system-ui, sans-serif;
-      font-weight: 500;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      font-family: var(--font);
+      font-weight: 600;
       cursor: pointer;
-      padding: 4px 8px;
-      line-height: 1;
+      padding: 7px 14px;
+      border-radius: 8px;
+      transition: background 0.15s;
+      white-space: nowrap;
     }
-
-    .back-btn:hover {
-      color: #fff;
-    }
+    .back-btn:hover { background: var(--border); }
 
     .topbar h1 {
-      font-size: 21px;
-      font-weight: 500;
-      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--navy);
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
       white-space: nowrap;
+      letter-spacing: -0.01em;
     }
 
     .dashboard-btn {
       padding: 7px 14px;
-      font-size: 16px;
-      font-weight: 500;
-      font-family: system-ui, sans-serif;
-      background: #03114F;
-      color: #dbeafe;
-      border: 1px solid #0a2070;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font);
+      background: var(--navy);
+      color: var(--accent);
+      border: none;
       border-radius: 8px;
       cursor: pointer;
       text-decoration: none;
+      transition: opacity 0.15s;
+      white-space: nowrap;
     }
+    .dashboard-btn:hover { opacity: 0.88; }
 
-    .dashboard-btn:hover {
-      background: #142054;
-      color: #fff;
-      border-color: #facc15;
-    }
-
+    /* ── Camera ── */
     #cam-wrap {
       position: relative;
       flex: 1;
       min-height: 0;
       width: 100%;
       max-width: 1100px;
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
       background: #000;
-      border: 1px solid #0a2070;
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
 
-    #video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #canvas { display: none; }
+    #overlay { position: absolute; inset: 0; pointer-events: none; }
 
-    #canvas {
-      display: none;
-    }
-
-    #overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    /* dashboard icon button ON the camera */
     #cam-dashboard-btn {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(20, 32, 84, 0.85);
-      border: 1px solid #0a2070;
-      color: #ffffff;
-      font-size: 15px;
-      font-weight: 500;
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      font-size: 14px; font-weight: 600;
       padding: 6px 12px;
       border-radius: 8px;
-      cursor: pointer;
-      z-index: 10;
-      text-decoration: none;
-      display: none;
+      cursor: pointer; z-index: 10;
+      text-decoration: none; display: none;
+      font-family: var(--font);
     }
-
-    #cam-dashboard-btn:hover {
-      background: rgba(20, 32, 84, 1);
-      color: #ffffff;
-    }
-
-    #cam-dashboard-btn.visible {
-      display: block;
-    }
-
-    #scan-frame {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    #scan-frame .corner {
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      border-color: #facc15;
-      border-style: solid;
-      border-width: 0;
-    }
-
-    #scan-frame .tl {
-      top: 20px;
-      left: 20px;
-      border-top-width: 3px;
-      border-left-width: 3px;
-      border-top-left-radius: 4px;
-    }
-
-    #scan-frame .tr {
-      top: 20px;
-      right: 20px;
-      border-top-width: 3px;
-      border-right-width: 3px;
-      border-top-right-radius: 4px;
-    }
-
-    #scan-frame .bl {
-      bottom: 20px;
-      left: 20px;
-      border-bottom-width: 3px;
-      border-left-width: 3px;
-      border-bottom-left-radius: 4px;
-    }
-
-    #scan-frame .br {
-      bottom: 20px;
-      right: 20px;
-      border-bottom-width: 3px;
-      border-right-width: 3px;
-      border-bottom-right-radius: 4px;
-    }
-
-    #scan-line {
-      position: absolute;
-      left: 20px;
-      right: 20px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #facc15, transparent);
-      top: 20px;
-      display: none;
-      animation: scandown 1.5s ease-in-out infinite;
-    }
-
-    @keyframes scandown {
-      0% {
-        top: 20px;
-        opacity: 1;
-      }
-
-      90% {
-        top: calc(100% - 22px);
-        opacity: 1;
-      }
-
-      100% {
-        top: calc(100% - 22px);
-        opacity: 0;
-      }
-    }
-
-    #scan-line.active {
-      display: block;
-    }
+    #cam-dashboard-btn.visible { display: block; }
 
     #cam-start {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      background: #03114F;
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; background: #111;
     }
-
-    #cam-start p {
-      font-size: 16px;
-      color: #aab0cc;
-      text-align: center;
-      max-width: 240px;
-    }
-
+    #cam-start p { font-size: 15px; color: rgba(255,255,255,0.6); text-align: center; max-width: 240px; }
     #start-btn {
-      padding: 10px 24px;
-      font-size: 18px;
-      font-weight: 500;
-      background: #ffffff;
-      color: #03114F;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      padding: 12px 28px; font-size: 17px; font-weight: 700;
+      background: var(--accent); color: var(--navy);
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: var(--font); transition: opacity 0.15s;
     }
+    #start-btn:hover { opacity: 0.88; }
 
-    #start-btn:hover {
-      background: #e8e8e8;
-    }
-
+    /* ── Status ── */
     #status-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      max-width: 1100px;
-      margin-top: 12px;
-      font-size: 16px;
-      color: #03114F;
-    }
-
-    #status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #0a2070;
-      flex-shrink: 0;
-    }
-
-    #status-dot.active {
-      background: #facc15;
-    }
-
-    #status-dot.scanning {
-      background: #facc15;
-      animation: pulse 1s infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: 0.3
-      }
-    }
-
-    #controls {
-      width: 100%;
-      max-width: 1100px;
-      margin-top: 12px;
-    }
-
-    #scan-btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 19px;
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; max-width: 1100px;
+      margin-top: 10px; font-size: 14px; color: var(--muted);
       font-weight: 500;
-      background: #142054;
-      color: #fff;
-      border: 1px solid #0a2070;
-      border-radius: 12px;
-      cursor: pointer;
     }
+    #status-dot { background: var(--border); }
 
-    #scan-btn:hover:not(:disabled) {
-      border-color: #facc15;
-      color: #facc15;
+    /* ── Scan button ── */
+    #controls { width: 100%; max-width: 1100px; margin-top: 10px; }
+    #scan-btn {
+      width: 100%; padding: 14px;
+      font-size: 17px; font-weight: 700;
+      background: var(--navy); color: var(--accent);
+      border: none; border-radius: 12px;
+      cursor: pointer; font-family: var(--font);
+      transition: opacity 0.15s;
     }
+    #scan-btn:hover:not(:disabled) { opacity: 0.88; }
+    #scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-    #scan-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
+    /* ── Result panel ── */
     #result-panel {
-      display: none;
-      width: 100%;
-      max-width: 1100px;
-      margin-top: 14px;
-      background: #2254c5;
-      border: 1px solid #0a2070;
-      border-radius: 12px;
-      padding: 16px;
-      gap: 12px;
-      flex-direction: column;
+      display: none; width: 100%; max-width: 1100px;
+      margin-top: 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 16px;
+      gap: 12px; flex-direction: column;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
     }
+    #result-panel.show { display: flex; }
 
-    #result-panel.show {
-      display: flex;
-    }
-
-    #detected-text {
-      font-size: 18px;
-      color: #fff;
-    }
-
-    #ai-result {
-      font-size: 16px;
-      color: #aab0cc;
-      line-height: 1.5;
-    }
+    #detected-text { font-size: 15px; color: var(--text); font-weight: 500; }
+    #ai-result     { font-size: 14px; color: var(--muted); line-height: 1.6; }
 
     .field-label {
-      font-size: 15px;
-      color: #aab0cc;
-      margin-bottom: 5px;
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px;
     }
 
-    #label-row {
-      display: flex;
-      gap: 8px;
+    #label-row, #instr-row { display: flex; gap: 8px; }
+    #instr-row { align-items: flex-start; }
+    #label-input, #instr-input {
+      flex: 1; padding: 9px 12px; font-size: 15px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 9px; color: var(--text);
+      outline: none; font-family: var(--font);
     }
-
-    #label-input {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: 16px;
-      background: #020d3a;
-      border: 1px solid #0a2070;
-      border-radius: 8px;
-      color: #f0f0f0;
-      outline: none;
-    }
-
-    #label-input:focus {
-      border-color: #2254c5;
-    }
-
-    #instr-input {
-      width: 100%;
-      padding: 8px 12px;
-      font-size: 16px;
-      background: #020d3a;
-      border: 1px solid #0a2070;
-      border-radius: 8px;
-      color: #f0f0f0;
-      outline: none;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 70px;
-    }
-
-    #instr-input:focus {
-      border-color: #2254c5;
-    }
-
-    #instr-row {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
-
-    #instr-row #instr-input {
-      flex: 1;
-    }
+    #label-input:focus, #instr-input:focus { border-color: var(--navy); background: var(--surface); }
+    #instr-input { resize: vertical; min-height: 64px; }
 
     .mic-btn {
-      flex-shrink: 0;
-      width: 38px;
-      height: 38px;
-      background: #1a1a1a;
-      border: 1px solid #2a2a2a;
-      border-radius: 8px;
-      cursor: pointer;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, transform 0.1s;
+      width: 40px; height: 40px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
     }
-
-    .mic-btn:hover {
-      background: #222;
-      border-color: #4ade80;
-    }
-
-    .mic-btn .mic-icon {
-      width: 18px;
-      height: 18px;
-      object-fit: contain;
-      pointer-events: none;
-      filter: brightness(0) invert(1);
-    }
-
-    .mic-btn.listening {
-      background: #16a34a;
-      border-color: #4ade80;
-    }
-
-    .mic-btn.listening.speaking {
-      animation: micPulseActive 0.7s ease-in-out infinite;
-    }
-
-    @keyframes micPulseActive {
-      0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.95);
-        background: #15803d;
-      }
-      50% {
-        transform: scale(1.18);
-        box-shadow: 0 0 0 16px rgba(74, 222, 128, 0);
-        background: #4ade80;
-      }
-      100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-        background: #15803d;
-      }
-    }
+    .mic-btn:hover { background: var(--border); }
+    .mic-icon { filter: brightness(0) saturate(100%) invert(13%) sepia(50%) saturate(800%) hue-rotate(200deg); }
+    .mic-btn.listening { background: #dcfce7; border-color: #16a34a; }
 
     #save-btn {
-      padding: 8px 16px;
-      font-size: 16px;
-      font-weight: 500;
-      background: #ffffff;
-      color: #03114F;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      white-space: nowrap;
-      align-self: flex-end;
+      padding: 10px 22px; font-size: 15px; font-weight: 700;
+      background: var(--navy); color: var(--accent);
+      border: none; border-radius: 9px; cursor: pointer;
+      align-self: flex-end; font-family: var(--font);
+      transition: opacity 0.15s;
+    }
+    #save-btn:hover { opacity: 0.88; }
+
+    #update-photo-btn {
+      padding: 9px 18px; font-size: 14px; font-weight: 600;
+      background: var(--bg); color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 9px; cursor: pointer; display: none;
+      font-family: var(--font);
     }
 
-    #save-btn:hover {
-      background: #e8e8e8;
-    }
+    #save-confirm { font-size: 14px; color: var(--success); display: none; font-weight: 600; }
+    #save-confirm.show { display: block; }
 
-    #saved-labels {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
+    #saved-labels { display: flex; flex-wrap: wrap; gap: 6px; }
     .pill {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: #142054;
-      border: 1px solid #0a2070;
-      border-radius: 20px;
-      padding: 3px 10px;
-      font-size: 15px;
-      color: #aab0cc;
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 13px; color: var(--muted);
     }
-
-    .pill strong {
-      font-weight: 500;
-      color: #fff;
-    }
-
-    #save-confirm {
-      font-size: 16px;
-      color: #facc15;
-      display: none;
-    }
-
-    #save-confirm.show {
-      display: block;
-    }
+    .pill strong { font-weight: 600; color: var(--text); }
   </style>
 </head>
 
 <body>
 
   <!-- Info popup -->
-  <div id="scanner-info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#142054;border:1px solid #2254c5;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
-      <button onclick="document.getElementById('scanner-info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
-      <h2 id="info-title" style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Scanner</h2>
-      <p id="info-p1" style="font-size:17px;color:#aab0cc;line-height:1.7;">Enable the camera — Click Enable Camera and allow access when prompted by your browser.</p>
-      <p id="info-p2" style="font-size:17px;color:#aab0cc;line-height:1.7;">Scan an object — Point the camera at the object you want to add, then tap Scan Object. The AI will identify it automatically.</p>
-      <p id="info-p3" style="font-size:17px;color:#aab0cc;line-height:1.7;">Name and save — Confirm or edit the object name, add instructions for the user, then tap Save Object.</p>
-      <p id="info-p4" style="font-size:17px;color:#aab0cc;line-height:1.7;">Mic buttons — Tap the microphone icon next to any field to speak instead of type.</p>
-      <p id="info-p5" style="font-size:17px;color:#aab0cc;line-height:1.7;">Done? — Click Dashboard to return to the object list.</p>
+  <div id="scanner-info-overlay" class="overlay-bg" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="info-popup-box">
+      <button class="close-btn" onclick="document.getElementById('scanner-info-overlay').classList.remove('show')">×</button>
+      <h2 id="info-title">How to use the Scanner</h2>
+      <p id="info-p1"><strong>Enable camera</strong> — Tap Enable Camera and allow access when prompted.</p>
+      <p id="info-p2"><strong>Scan an object</strong> — Point the camera at the object and tap Scan Object. AI identifies it automatically.</p>
+      <p id="info-p3"><strong>Name and save</strong> — Edit the name, add instructions, then tap Save Object.</p>
+      <p id="info-p4"><strong>Mic buttons</strong> — Tap the mic icon to speak instead of type.</p>
+      <p id="info-p5"><strong>Done?</strong> — Tap Dashboard to return to your objects.</p>
     </div>
   </div>
 
   <div class="topbar">
-    <button class="back-btn" onclick="window.location.href='home.html'">← Home</button>
-    <h1>Caretaker Scanner</h1>
+    <h1>Object Scanner</h1>
     <div style="flex:1"></div>
-    <button onclick="document.getElementById('scanner-info-overlay').style.display='flex'" style="background:none;border:2px solid #facc15;color:#facc15;border-radius:50%;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:10px;">i</button>
-    <a href="caretaker.html" class="dashboard-btn">Dashboard →</a>
+    <button class="info-btn" onclick="document.getElementById('scanner-info-overlay').classList.add('show')">i</button>
   </div>
 
   <div id="cam-wrap">
@@ -540,10 +247,10 @@
       <div class="corner br"></div>
       <div id="scan-line"></div>
     </div>
-    <a href="caretaker.html" id="cam-dashboard-btn">📋 All saved objects</a>
+    <a href="caretaker.html" id="cam-dashboard-btn">← Dashboard</a>
     <div id="cam-start">
-      <button id="start-btn">Enable Camera</button>
-      <p>Allow camera access to start scanning</p>
+      <button id="start-btn">Start Camera</button>
+      <p>Allow camera access to continue</p>
     </div>
   </div>
 
@@ -561,9 +268,9 @@
     <div id="ai-result"></div>
 
     <div>
-      <p class="field-label">Object name</p>
+      <p class="field-label">Name</p>
       <div id="label-row">
-        <input id="label-input" type="text" placeholder='e.g. "pill bottle"' />
+        <input id="label-input" type="text" placeholder="Object name" />
         <button class="mic-btn" id="mic-label" type="button" aria-label="Speak object name">
           <img src="micIcon.png" alt="mic" class="mic-icon" />
         </button>
@@ -571,9 +278,9 @@
     </div>
 
     <div>
-      <p class="field-label">Instructions for user (optional)</p>
+      <p class="field-label">Instructions</p>
       <div id="instr-row">
-        <textarea id="instr-input" placeholder='e.g. "Take one tablet with water every morning."'></textarea>
+        <textarea id="instr-input" placeholder="Instructions for the user (optional)"></textarea>
         <button class="mic-btn" id="mic-instr" type="button" aria-label="Speak instructions">
           <img src="micIcon.png" alt="mic" class="mic-icon" />
         </button>
@@ -581,21 +288,15 @@
     </div>
 
     <button id="save-btn">Save Object</button>
-    <button id="update-photo-btn" style="display:none;padding:8px 16px;font-size:16px;font-weight:500;background:#142054;color:#facc15;border:1px solid #facc15;border-radius:8px;cursor:pointer;">🔄 Update Photo</button>
+    <button id="update-photo-btn">🔄 Update Photo</button>
     <div id="save-confirm">✓ Saved! User will see this when they scan it.</div>
     <div id="saved-labels"></div>
   </div>
 
   <script>
-    const API_KEY = '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'; // paste your OpenAI key here
     function getScannerSession() {
-      try {
-        return JSON.parse(
-          localStorage.getItem('auth_session') ||
-          sessionStorage.getItem('auth_session') ||
-          'null'
-        );
-      } catch { return null; }
+      try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
+      catch { return null; }
     }
     const _ss = getScannerSession();
     const STORAGE_KEY = 'objects_' + (_ss ? _ss.username : '');
@@ -621,7 +322,8 @@
     const camDashBtn = document.getElementById('cam-dashboard-btn');
 
     let lastDetections = [];
-    let stream = null;
+   let stream = null;
+    let facingMode = 'environment';
     let capturedPhotoURL = null;
 
     const msgs = {
@@ -682,13 +384,14 @@
         const cy = vh * 0.4;
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
-        dot.setAttribute('r', 7); dot.setAttribute('fill', '#facc15');
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#facc15';
+        dot.setAttribute('r', 7); dot.setAttribute('fill', accent);
         dot.setAttribute('stroke', '#fff'); dot.setAttribute('stroke-width', 2);
         overlay.appendChild(dot);
         const fo = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
         fo.setAttribute('x', cx - 70); fo.setAttribute('y', cy - 52);
         fo.setAttribute('width', 140); fo.setAttribute('height', 36);
-        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.85);color:#facc15;font-size:13px;font-weight:600;padding:5px 10px;border-radius:14px;text-align:center;border:1px solid #facc15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ${m.name}</div>`;
+        fo.innerHTML = `<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgba(0,0,0,0.85);color:${accent};font-size:13px;font-weight:600;padding:5px 10px;border-radius:14px;text-align:center;border:1px solid ${accent};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">✓ ${m.name}</div>`;
         overlay.appendChild(fo);
       });
     }
@@ -700,14 +403,15 @@
       );
     }
 
-    startBtn.addEventListener('click', async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        camStart.style.display = 'none';
-        scanBtn.disabled = false;
-        camDashBtn.classList.add('visible');
-        setStatus(msgs.ready, 'active');
+ startBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+      video.srcObject = stream;
+      camStart.style.display = 'none';
+      scanBtn.disabled = false;
+      camDashBtn.classList.add('visible');
+      document.getElementById('flip-btn').style.display = 'block';
+      setStatus(msgs.ready, 'active');
         renderSavedPills();
       } catch (e) {
         camStart.querySelector('p').textContent = 'Camera access denied. Check browser permissions.';
@@ -744,9 +448,9 @@
       updatePhotoBtn.style.display = 'none';
 
       try {
-        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'gpt-4o',
             max_tokens: 500,
@@ -773,7 +477,7 @@
         const objList = lastDetections.length ? lastDetections.join(', ') : 'nothing detected';
         detectedText.innerHTML = `<strong>Detected:</strong> ${objList}`;
         if (matches.length) {
-          detectedText.innerHTML += `<br><span style="color:#facc15">✓ Already saved: ${matches.map(m => m.name).join(', ')}</span>`;
+          detectedText.innerHTML += `<br><span style="color:${getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#facc15'}">✓ Already saved: ${matches.map(m => m.name).join(', ')}</span>`;
         }
         aiResult.textContent = parsed.description || '';
         if (lastDetections.length) labelInput.value = lastDetections[0];
@@ -1015,7 +719,17 @@
 
     setupMic('mic-label', labelInput);
     setupMic('mic-instr', instrInput);
+    document.getElementById('flip-btn').addEventListener('click', async () => {
+        facingMode = facingMode === 'environment' ? 'user' : 'environment';
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+        }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
+        video.srcObject = stream;
+      });
   </script>
+  <script src="tab-bar.js"></script>
+  <script src="side-panel.js"></script>
 </body>
 
 </html>

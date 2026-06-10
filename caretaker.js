@@ -1,3 +1,4 @@
+// ── Auth helpers ─────────────────────────────────────────────────────────────
 function getCaretakerSession() {
   try {
     return JSON.parse(
@@ -22,6 +23,7 @@ function saveAllAppUsers(users) {
   localStorage.setItem('auth_users', JSON.stringify(users));
 }
 
+// ── Dashboard tabs ────────────────────────────────────────────────────────────
 function switchDashTab(tab) {
   const isObjects = tab === 'objects';
   document.getElementById('tab-objects').classList.toggle('active', isObjects);
@@ -46,7 +48,7 @@ function renderUserDashboard() {
   udContainer.innerHTML = '';
 
   if (visible.length === 0) {
-    udContainer.innerHTML = '<p class="ud-empty" style="padding:36px;">No users to display yet.</p>';
+    udContainer.innerHTML = '<p class="warning" style="padding:36px 20px;">No users found.</p>';
     return;
   }
 
@@ -56,12 +58,8 @@ function renderUserDashboard() {
   visible.forEach(u => {
     const card = document.createElement('div');
     card.className = 'ud-card';
-
-    const ctDisplay = u.caretakerName || 'N/A';
     const isAssignedToMe = u.assignedTo === session.username;
     const nameMatchesMe = (u.caretakerName || '').toLowerCase() === myUsername;
-    const hasNoPreference = !u.caretakerName;
-
     let btnHTML;
     if (isAssignedToMe) {
       btnHTML = `<button class="ud-btn ud-btn-unassign" onclick="unassignUser('${u.username}')">Unassign</button>`;
@@ -70,15 +68,13 @@ function renderUserDashboard() {
     } else {
       btnHTML = `<button class="ud-btn ud-btn-disabled" disabled>Assign</button>`;
     }
-
     card.innerHTML = `
-      <p class="ud-row"><span class="ud-label">Name:</span> <span class="ud-value">${u.username}</span></p>
-      <p class="ud-row"><span class="ud-label">Caretaker:</span> <span class="ud-value">${ctDisplay}</span></p>
+      <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.username}</span></p>
+      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.caretakerName || 'N/A'}</span></p>
       ${btnHTML}
     `;
     grid.appendChild(card);
   });
-
   udContainer.appendChild(grid);
 }
 
@@ -87,25 +83,16 @@ function assignUser(username) {
   if (!session) return;
   const users = getAllAppUsers();
   const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) {
-    user.assigned = true;
-    user.assignedTo = session.username;
-    saveAllAppUsers(users);
-    renderUserDashboard();
-  }
+  if (user) { user.assigned = true; user.assignedTo = session.username; saveAllAppUsers(users); renderUserDashboard(); }
 }
 
 function unassignUser(username) {
   const users = getAllAppUsers();
   const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) {
-    user.assigned = false;
-    user.assignedTo = '';
-    saveAllAppUsers(users);
-    renderUserDashboard();
-  }
+  if (user) { user.assigned = false; user.assignedTo = ''; saveAllAppUsers(users); renderUserDashboard(); }
 }
 
+// ── Object storage ────────────────────────────────────────────────────────────
 function loadObjects() {
   try { return JSON.parse(localStorage.getItem(getStorageKey())) || []; }
   catch { return []; }
@@ -133,20 +120,17 @@ const modalSave = document.getElementById('modal-save');
 function renderCards() {
   container.innerHTML = '';
 
+  // ── Scanner card — always first ──
   const scanCard = document.createElement('div');
-  scanCard.classList.add('object-card');
-  scanCard.style.cursor = 'pointer';
-  scanCard.style.justifyContent = 'center';
-  scanCard.innerHTML = `
-    <button class="btn-view" style="font-size:22px;padding:20px 0;font-weight:800;height:150px;width:85%;pointer-events:none;">${window.ctTranslations?.addObject || 'Add Object +'}</button>
-  `;
+  scanCard.classList.add('object-card', 'add-object-card');
+  scanCard.innerHTML = `<button class="btn-view">${window.ctTranslations?.addObject || '+ Add Object'}</button>`;
   scanCard.addEventListener('click', () => window.location.href = 'scanner.html');
   container.appendChild(scanCard);
 
   if (objects.length === 0) {
     const msg = document.createElement('p');
     msg.classList.add('warning');
-    msg.textContent = "No objects yet. Use the scanner to add one.";
+    msg.textContent = window.ctTranslations?.noObjects || 'No objects yet. Use the scanner to add one.';
     container.appendChild(msg);
     return;
   }
@@ -222,11 +206,11 @@ viewPopup.addEventListener('click', e => {
 function openModal(index = null) {
   editingIndex = index;
   if (index !== null) {
-    modalTitle.textContent = 'Edit Object';
+    modalTitle.textContent = window.ctTranslations?.editObjectModal || 'Edit Object';
     inputName.value = objects[index].name;
     inputInstr.value = objects[index].instructions;
   } else {
-    modalTitle.textContent = 'Add Object';
+    modalTitle.textContent = window.ctTranslations?.addObjectModal || 'Add Object';
     inputName.value = '';
     inputInstr.value = '';
   }
@@ -281,6 +265,7 @@ function getSpeechLang() {
   return SPEECH_LANG_MAP[code] || 'en-US';
 }
 
+// Stop the tracks right away — SpeechRecognition opens its own stream.
 async function ensureMicPermission() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   try {
@@ -312,13 +297,14 @@ function setupMic(btnId, targetInput) {
   const INITIAL_TIMEOUT_MS = 4000;
   const SILENCE_TIMEOUT_MS = 3000;
 
+  // Recreate per click — reusing one SpeechRecognition object can wedge it
+  // into a state where start() silently no-ops on Chrome.
   let activeRecognition = null;
   let silenceTimer = null;
   let baseText = '';
   let finalText = '';
 
   function clearSilenceTimer() {
-
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       silenceTimer = null;
@@ -329,6 +315,7 @@ function setupMic(btnId, targetInput) {
     clearSilenceTimer();
     silenceTimer = setTimeout(() => {
       if (activeRecognition) {
+        // Don't wait for `end` — it can be delayed or skipped on Chrome.
         stopVisuals();
         try { activeRecognition.stop(); } catch (_) { }
       }
@@ -350,6 +337,7 @@ function setupMic(btnId, targetInput) {
     const ok = await ensureMicPermission();
     if (!ok) return;
 
+    // Don't wait for `start` — give the user feedback the click registered.
     btn.classList.add('listening');
 
     const existing = targetInput.value.trim();
@@ -399,6 +387,7 @@ function setupMic(btnId, targetInput) {
       } else if (ev.error === 'language-not-supported') {
         alert('Your browser does not support speech recognition for the selected language.');
       } else if (ev.error === 'no-speech') {
+        // Engine's own silence timeout — stop quietly.
       } else if (ev.error === 'audio-capture') {
         alert('No microphone was found. Check your device settings.');
       } else if (ev.error === 'network') {
