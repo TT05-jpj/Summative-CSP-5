@@ -59,6 +59,10 @@
     .keep-signed { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; user-select: none; }
     .keep-signed input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
 
+    .phone-row { display: flex; gap: 8px; }
+    .phone-country { flex: 0 0 42%; }
+    .phone-number { flex: 1; min-width: 0; }
+
     .submit-btn {
       width: 100%; padding: 14px; font-size: 17px; font-weight: 700;
       background: var(--accent); color: var(--navy);
@@ -87,8 +91,8 @@
     <!-- Log In -->
     <div class="form-section" id="form-login">
       <div class="field">
-        <label class="field-label">Username</label>
-        <input class="field-input" type="text" id="login-username" placeholder="Your username" autocomplete="username" />
+        <label class="field-label">Full Name</label>
+        <input class="field-input" type="text" id="login-name" placeholder="Your full name" autocomplete="name" />
       </div>
       <div class="field">
         <label class="field-label">Password</label>
@@ -108,12 +112,11 @@
         <input class="field-input" type="text" id="signup-name" placeholder="Your full name" autocomplete="name" />
       </div>
       <div class="field">
-        <label class="field-label">Username</label>
-        <input class="field-input" type="text" id="signup-username" placeholder="Choose a username" autocomplete="username" />
-      </div>
-      <div class="field">
         <label class="field-label">Phone Number</label>
-        <input class="field-input" type="tel" id="signup-phone" placeholder="e.g. +1 555 000 1234" autocomplete="tel" />
+        <div class="phone-row">
+          <select class="field-input phone-country" id="signup-country"></select>
+          <input class="field-input phone-number" type="tel" id="signup-phone" inputmode="numeric" autocomplete="tel-national" />
+        </div>
       </div>
       <div class="field">
         <label class="field-label">Password</label>
@@ -129,7 +132,22 @@
     </div>
   </div>
 
+  <script src="phone.js"></script>
   <script>
+    // TEMP DEBUG — remove once issue is found
+    window.addEventListener('error', e => alert('JS Error: ' + e.message + '\n' + (e.filename || '') + ':' + e.lineno));
+    window.addEventListener('unhandledrejection', e => alert('Promise Error: ' + (e.reason && e.reason.message || e.reason)));
+
+    // One-time reset of old account data (old records lack the new "name" field)
+    if (!localStorage.getItem('auth_v2_reset')) {
+      localStorage.removeItem('auth_users');
+      localStorage.removeItem('auth_session');
+      sessionStorage.removeItem('auth_session');
+      localStorage.setItem('auth_v2_reset', '1');
+    }
+
+    setupPhoneInput(document.getElementById('signup-country'), document.getElementById('signup-phone'));
+
     function getSession() {
       try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
       catch { return null; }
@@ -166,37 +184,42 @@
 
     async function handleLogin() {
       hideMsg('login-error');
-      const username = document.getElementById('login-username').value.trim();
+      const name     = document.getElementById('login-name').value.trim();
       const password = document.getElementById('login-password').value;
       const keep     = document.getElementById('keep-in').checked;
-      if (!username || !password) { showMsg('login-error', 'Please fill in all fields.'); return; }
+      if (!name || !password) { showMsg('login-error', 'Please fill in all fields.'); return; }
       const hash  = await hashPassword(password);
-      const match = getUsers().find(u => u.username === username && u.passwordHash === hash);
-      if (!match) { showMsg('login-error', 'Username or password incorrect.'); return; }
+      const match = getUsers().find(u => u.name.toLowerCase() === name.toLowerCase() && u.passwordHash === hash);
+      if (!match) { showMsg('login-error', 'Name or password incorrect.'); return; }
       saveSession({ username: match.username, name: match.name, phone: match.phone }, keep);
       window.location.href = 'home.html';
     }
 
     async function handleSignup() {
       hideMsg('signup-error'); hideMsg('signup-success');
-      const name     = document.getElementById('signup-name').value.trim();
-      const username = document.getElementById('signup-username').value.trim();
-      const phone    = document.getElementById('signup-phone').value.trim();
-      const password = document.getElementById('signup-password').value;
-      const confirm  = document.getElementById('signup-confirm').value;
-      if (!name || !username || !password || !confirm) { showMsg('signup-error', 'Please fill in all fields.'); return; }
-      if (username.length < 3)                          { showMsg('signup-error', 'Username must be at least 3 characters.'); return; }
-      if (!/^[a-zA-Z0-9_]+$/.test(username))            { showMsg('signup-error', 'Username: letters, numbers and underscores only.'); return; }
+      const name          = document.getElementById('signup-name').value.trim();
+      const countrySelect = document.getElementById('signup-country');
+      const phoneInput    = document.getElementById('signup-phone');
+      const password      = document.getElementById('signup-password').value;
+      const confirm       = document.getElementById('signup-confirm').value;
+      if (!name || !password || !confirm)              { showMsg('signup-error', 'Please fill in all fields.'); return; }
+      if (name.length < 2)                              { showMsg('signup-error', 'Please enter your full name.'); return; }
+      if (!isPhoneValid(countrySelect, phoneInput)) {
+        const country = getPhoneCountry(countrySelect.value);
+        showMsg('signup-error', `Enter a valid ${country.digits}-digit phone number for ${country.name}.`);
+        return;
+      }
       if (password.length < 6)                          { showMsg('signup-error', 'Password must be at least 6 characters.'); return; }
       if (password !== confirm)                         { showMsg('signup-error', 'Passwords do not match.'); return; }
       const users = getUsers();
-      if (users.find(u => u.username === username))     { showMsg('signup-error', 'Username already taken.'); return; }
+      if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) { showMsg('signup-error', 'An account with that name already exists.'); return; }
       const hash = await hashPassword(password);
-      users.push({ username, name, phone, passwordHash: hash });
+      const phone = await encryptPhone(getFullPhone(countrySelect, phoneInput));
+      users.push({ username: name, name, phone, passwordHash: hash });
       saveUsers(users);
       showMsg('signup-success', 'Account created! Logging you in…');
       setTimeout(async () => {
-        saveSession({ username, name, phone }, false);
+        saveSession({ username: name, name, phone }, false);
         window.location.href = 'home.html';
       }, 1200);
     }

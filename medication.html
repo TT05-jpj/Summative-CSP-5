@@ -12,6 +12,8 @@
   <header>
     <h1>Medication Tracker</h1>
     <div class="header-btns">
+      <a id="msg-caretaker-btn" class="contact-btn" title="Message your caretaker">💬</a>
+      <a id="call-caretaker-btn" class="contact-btn" title="Call your caretaker">📞</a>
       <button id="buy-pills-btn">Buy Pills</button>
       <button id="print-btn">Print History</button>
     </div>
@@ -166,6 +168,45 @@
 
   <script src="medication.js"></script>
   <script src="tab-bar.js"></script>
+  <script src="phone.js"></script>
+  <script>
+    // ── Caretaker contact buttons ──────────────────────────────────────────
+    function getSession() {
+      try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
+      catch { return null; }
+    }
+    function getUsers() {
+      try { return JSON.parse(localStorage.getItem('auth_users')) || []; }
+      catch { return []; }
+    }
+
+    async function setupCaretakerContact() {
+      const msgBtn = document.getElementById('msg-caretaker-btn');
+      const callBtn = document.getElementById('call-caretaker-btn');
+      const session = getSession();
+      const users = getUsers();
+      const me = session ? users.find(u => u.username === session.username) : null;
+      const caretaker = me && me.assignedTo ? users.find(u => u.username === me.assignedTo) : null;
+
+      let phone = '';
+      if (caretaker && caretaker.phone) {
+        phone = await decryptPhone(caretaker.phone);
+        if (!phone && !caretaker.phone.includes(':')) phone = caretaker.phone;
+      }
+
+      if (phone) {
+        msgBtn.href = `sms:${phone}`;
+        callBtn.href = `tel:${phone}`;
+      } else {
+        msgBtn.classList.add('contact-disabled');
+        callBtn.classList.add('contact-disabled');
+        msgBtn.title = 'No caretaker assigned yet';
+        callBtn.title = 'No caretaker assigned yet';
+      }
+    }
+
+    setupCaretakerContact();
+  </script>
   <script src="side-panel.js"></script>
 </body>
 </html>

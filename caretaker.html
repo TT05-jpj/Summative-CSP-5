@@ -43,7 +43,7 @@
 
   <header>
     <div class="header-top">
-      <h1>My Objects</h1>
+      <h1>Dashboards</h1>
       <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
         <button class="header-info-btn" onclick="document.getElementById('info-overlay').style.display='flex'" aria-label="Help">i</button>
         <button onclick="logout()" style="background:none;border:1px solid rgba(255,255,255,0.35);color:rgba(255,255,255,0.75);font-size:13px;font-family:inherit;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;transition:border-color 0.15s,color 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.8)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.35)';this.style.color='rgba(255,255,255,0.75)'">Log Out</button>
@@ -117,7 +117,7 @@
 
     async function translateDashboard(lang) {
       const staticEls = [
-        { sel: 'header h1',     en: 'My Objects' },
+        { sel: 'header h1',     en: 'Dashboards' },
         { sel: '#modal-cancel', en: 'Cancel' },
         { sel: '#modal-save',   en: 'Save' },
         { sel: '#lang-label',   en: 'Languages', emoji: '🌐 ' },
@@ -236,6 +236,7 @@
   </script>
   <script src="caretaker.js"></script>
   <script src="tab-bar.js"></script>
+  <script src="phone.js"></script>
   <script src="side-panel.js"></script>
 </body>
 

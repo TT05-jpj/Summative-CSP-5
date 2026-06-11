@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   const THEMES = [
     { id: '',            name: 'Navy',       top: '#1e3060', bot: '#f0b830' },
     { id: 'watermelon',  name: 'Watermelon', top: '#3d7848', bot: '#f04898' },
@@ -187,6 +187,17 @@
       transition: border-color 0.15s;
     }
     .sp-ef input:focus { border-color: var(--navy); background: var(--surface); }
+    .sp-phone-row { display: flex; gap: 8px; }
+    .sp-phone-country { flex: 0 0 42%; }
+    .sp-phone-row input { flex: 1; min-width: 0; }
+    .sp-ef select {
+      padding: 11px 14px; font-size: 15px; font-family: var(--font, system-ui);
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text); outline: none;
+      transition: border-color 0.15s;
+    }
+    .sp-ef select:focus { border-color: var(--navy); background: var(--surface); }
+    .sp-msg.sp-error { color: #b91c1c; }
     .sp-edit-actions { display: flex; gap: 10px; justify-content: flex-end; }
     .sp-save-btn {
       padding: 11px 24px; font-size: 14px; font-weight: 700;
@@ -230,6 +241,11 @@
   const username  = session ? session.username : null;
   const name      = session ? (session.name  || '') : '';
   const phone     = session ? (session.phone || '') : '';
+  let phoneDecrypted = '';
+  if (phone) {
+    phoneDecrypted = await decryptPhone(phone);
+    if (!phoneDecrypted && !phone.includes(':')) phoneDecrypted = phone;
+  }
   const currentTheme = localStorage.getItem('app-theme') || '';
   const ctLang = localStorage.getItem('caretaker_lang') || 'en';
   const usLang = localStorage.getItem('user_lang') || 'en';
@@ -252,7 +268,7 @@
       ${username ? `
       <div class="sp-user-card">
         <span class="sp-user-name">${name || username}</span>
-        <span class="sp-user-sub">@${username}${phone ? ' · ' + phone : ''}</span>
+        <span class="sp-user-sub">@${username}${phoneDecrypted ? ' · ' + formatFullPhone(phoneDecrypted) : ''}</span>
         <button class="sp-edit-btn" id="sp-open-edit">Edit Profile</button>
       </div>` : ''}
 
@@ -294,8 +310,12 @@
       </div>
       <div class="sp-ef">
         <label>Phone Number</label>
-        <input type="tel" id="sp-edit-phone" value="${phone}" placeholder="e.g. +1 555 000 1234" />
+        <div class="sp-phone-row">
+          <select class="sp-phone-country" id="sp-edit-country"></select>
+          <input type="tel" id="sp-edit-phone" inputmode="numeric" />
+        </div>
       </div>
+      <p class="sp-msg sp-error" id="sp-edit-error"></p>
       <p class="sp-msg" id="sp-edit-msg">Saved!</p>
       <div class="sp-edit-actions">
         <button class="sp-cancel-btn" id="sp-edit-cancel">Cancel</button>
@@ -307,6 +327,13 @@
   document.body.appendChild(overlay);
   document.body.appendChild(panel);
   document.body.appendChild(editModal);
+
+  // ── Phone field ───────────────────────────────────────────────────────────
+  const splitPhone = phoneDecrypted ? splitFullPhone(phoneDecrypted) : null;
+  const editCountry = editModal.querySelector('#sp-edit-country');
+  const editPhone   = editModal.querySelector('#sp-edit-phone');
+  setupPhoneInput(editCountry, editPhone, splitPhone ? splitPhone.iso : 'US');
+  if (splitPhone) editPhone.value = formatPhoneDigits(splitPhone.digits);
 
   // ── Toggle panel ──────────────────────────────────────────────────────────
   let open = false;
@@ -348,9 +375,20 @@
   editModal.querySelector('#sp-edit-cancel').addEventListener('click', () => editModal.classList.remove('open'));
   editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('open'); });
 
-  editModal.querySelector('#sp-edit-save').addEventListener('click', () => {
+  editModal.querySelector('#sp-edit-save').addEventListener('click', async () => {
+    const errEl = editModal.querySelector('#sp-edit-error');
+    errEl.classList.remove('show');
+
+    if (!isPhoneValid(editCountry, editPhone)) {
+      const country = getPhoneCountry(editCountry.value);
+      errEl.textContent = `Enter a valid ${country.digits}-digit phone number for ${country.name}.`;
+      errEl.classList.add('show');
+      return;
+    }
+
     const newName  = editModal.querySelector('#sp-edit-name').value.trim();
-    const newPhone = editModal.querySelector('#sp-edit-phone').value.trim();
+    const fullPhone = getFullPhone(editCountry, editPhone);
+    const newPhone  = await encryptPhone(fullPhone);
     const s = getSession();
     if (s) {
       s.name = newName; s.phone = newPhone;
@@ -363,7 +401,7 @@
       const nameEl = panel.querySelector('.sp-user-name');
       const subEl  = panel.querySelector('.sp-user-sub');
       if (nameEl) nameEl.textContent = newName || s.username;
-      if (subEl)  subEl.textContent  = `@${s.username}${newPhone ? ' · ' + newPhone : ''}`;
+      if (subEl)  subEl.textContent  = `@${s.username} · ${formatFullPhone(fullPhone)}`;
     }
     const msg = editModal.querySelector('#sp-edit-msg');
     msg.classList.add('show');

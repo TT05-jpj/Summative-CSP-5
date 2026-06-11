@@ -464,6 +464,18 @@
   <p class="footer" id="footer-text">Select the option that applies to you</p>
 
   <script>
+    // TEMP DEBUG — remove once issue is found
+    window.addEventListener('error', e => alert('JS Error: ' + e.message + '\n' + (e.filename || '') + ':' + e.lineno));
+    window.addEventListener('unhandledrejection', e => alert('Promise Error: ' + (e.reason && e.reason.message || e.reason)));
+
+    // One-time reset of old account data (old records lack the new "name" field)
+    if (!localStorage.getItem('auth_v2_reset')) {
+      localStorage.removeItem('auth_users');
+      localStorage.removeItem('auth_session');
+      sessionStorage.removeItem('auth_session');
+      localStorage.setItem('auth_v2_reset', '1');
+    }
+
     const ctLangSel = document.getElementById('caretaker-lang');
     const userLangSel = document.getElementById('user-lang');
 
@@ -531,6 +543,7 @@
     swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === savedTheme));
     swatches.forEach(s => s.addEventListener('click', () => applyTheme(s.dataset.theme)));
   </script>
+  <script src="phone.js"></script>
   <script src="side-panel.js"></script>
 </body>
 

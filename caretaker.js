@@ -36,18 +36,11 @@ function switchDashTab(tab) {
 function renderUserDashboard() {
   const udContainer = document.getElementById('user-dashboard-container');
   const session = getCaretakerSession();
-  const myUsername = (session ? session.username : '').toLowerCase();
   const allUsers = getAllAppUsers().filter(u => u.role === 'user');
-
-  const visible = allUsers.filter(u =>
-    (u.caretakerName || '').toLowerCase() === myUsername ||
-    u.assignedTo === session.username ||
-    !u.caretakerName
-  );
 
   udContainer.innerHTML = '';
 
-  if (visible.length === 0) {
+  if (allUsers.length === 0) {
     udContainer.innerHTML = '<p class="warning" style="padding:36px 20px;">No users found.</p>';
     return;
   }
@@ -55,22 +48,22 @@ function renderUserDashboard() {
   const grid = document.createElement('div');
   grid.className = 'ud-grid';
 
-  visible.forEach(u => {
+  allUsers.forEach(u => {
     const card = document.createElement('div');
     card.className = 'ud-card';
     const isAssignedToMe = u.assignedTo === session.username;
-    const nameMatchesMe = (u.caretakerName || '').toLowerCase() === myUsername;
     let btnHTML;
     if (isAssignedToMe) {
       btnHTML = `<button class="ud-btn ud-btn-unassign" onclick="unassignUser('${u.username}')">Unassign</button>`;
-    } else if (nameMatchesMe && !u.assigned) {
+    } else if (!u.assignedTo) {
       btnHTML = `<button class="ud-btn ud-btn-assign" onclick="assignUser('${u.username}')">Assign</button>`;
     } else {
-      btnHTML = `<button class="ud-btn ud-btn-disabled" disabled>Assign</button>`;
+      btnHTML = `<button class="ud-btn ud-btn-disabled" disabled>Assigned</button>`;
     }
     card.innerHTML = `
-      <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.username}</span></p>
-      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.caretakerName || 'N/A'}</span></p>
+      <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.name || u.username}</span></p>
+      <p class="ud-row"><span class="ud-label">Username</span><span class="ud-value">${u.username}</span></p>
+      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.assignedTo || 'Unassigned'}</span></p>
       ${btnHTML}
     `;
     grid.appendChild(card);
@@ -83,13 +76,15 @@ function assignUser(username) {
   if (!session) return;
   const users = getAllAppUsers();
   const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) { user.assigned = true; user.assignedTo = session.username; saveAllAppUsers(users); renderUserDashboard(); }
+  if (user && !user.assignedTo) { user.assignedTo = session.username; saveAllAppUsers(users); renderUserDashboard(); }
 }
 
 function unassignUser(username) {
+  const session = getCaretakerSession();
+  if (!session) return;
   const users = getAllAppUsers();
-  const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) { user.assigned = false; user.assignedTo = ''; saveAllAppUsers(users); renderUserDashboard(); }
+  const user = users.find(u => u.username === username && u.role === 'user' && u.assignedTo === session.username);
+  if (user) { user.assignedTo = ''; saveAllAppUsers(users); renderUserDashboard(); }
 }
 
 // ── Object storage ────────────────────────────────────────────────────────────
