@@ -15,6 +15,7 @@ let editingId        = null;
 let editTimeSlots = [];
 let editSelectedDays = [];
 let editTimes        = [];
+let editTimesPerDay = 1;
 
 // ── DOM refs
 const container    = document.getElementById('med-container');
@@ -119,14 +120,20 @@ function updateDaysDisplay() {
   });
 }
 
-// ── Times per day +/-
-timesMinus.addEventListener('click', () => {
-  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; renderTimeSlots(); }
+timeSlotEls.forEach(slot => {
+  slot.addEventListener('click', () => {
+    const s = slot.dataset.slot;
+    if (editTimeSlots.includes(s)) {
+      editTimeSlots = editTimeSlots.filter(x => x !== s);
+      slot.classList.remove('selected');
+    } else {
+      editTimeSlots.push(s);
+      slot.classList.add('selected');
+    }
+    editTimesPerDay = editTimeSlots.length;
+    renderTimeSlots();
+  });
 });
-timesPlus.addEventListener('click', () => {
-  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; renderTimeSlots(); }
-});
-
 // ── Daily subtraction
 // For each med, store lastDeductDate per med id in localStorage
 // On load, figure out how many scheduled days have passed since lastDeductDate, subtract pills
