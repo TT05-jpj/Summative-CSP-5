@@ -62,8 +62,7 @@ function renderUserDashboard() {
     }
     card.innerHTML = `
       <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.name || u.username}</span></p>
-      <p class="ud-row"><span class="ud-label">Username</span><span class="ud-value">${u.username}</span></p>
-      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.assignedTo || 'Unassigned'}</span></p>
+      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.assignedTo || 'N/A'}</span></p>
       ${btnHTML}
     `;
     grid.appendChild(card);

@@ -130,6 +130,20 @@
       <div class="msg msg-success" id="signup-success"></div>
       <button class="submit-btn" onclick="handleSignup()">Create Account</button>
     </div>
+
+    <!-- User: name-only entry -->
+    <div class="form-section hidden" id="form-user">
+      <div class="field">
+        <label class="field-label">Full Name</label>
+        <input class="field-input" type="text" id="user-name" placeholder="Your full name" autocomplete="name" />
+      </div>
+      <div class="field">
+        <label class="field-label">Caretaker's Name (optional)</label>
+        <input class="field-input" type="text" id="user-caretaker-name" placeholder="Your caretaker's full name" autocomplete="off" />
+      </div>
+      <div class="msg msg-error" id="user-error"></div>
+      <button class="submit-btn" onclick="handleUserContinue()">Continue</button>
+    </div>
   </div>
 
   <script src="phone.js"></script>
@@ -152,8 +166,20 @@
       try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
       catch { return null; }
     }
-    // Already logged in → go to home for role selection
-    if (getSession()) window.location.replace('home.html');
+
+    // Already logged in → go straight to the matching dashboard
+    const existingSession = getSession();
+    if (existingSession && existingSession.role === 'caretaker') window.location.replace('caretaker.html');
+    else if (existingSession && existingSession.role === 'user') window.location.replace('user.html');
+
+    // ── Role-aware form ────────────────────────────────────────────────────
+    const role = new URLSearchParams(window.location.search).get('role') === 'user' ? 'user' : 'caretaker';
+    if (role === 'user') {
+      document.querySelector('.auth-tabs').style.display = 'none';
+      document.getElementById('form-login').classList.add('hidden');
+      document.getElementById('form-signup').classList.add('hidden');
+      document.getElementById('form-user').classList.remove('hidden');
+    }
 
     function getUsers() {
       try { return JSON.parse(localStorage.getItem('auth_users')) || []; } catch { return []; }
@@ -191,8 +217,8 @@
       const hash  = await hashPassword(password);
       const match = getUsers().find(u => u.name.toLowerCase() === name.toLowerCase() && u.passwordHash === hash);
       if (!match) { showMsg('login-error', 'Name or password incorrect.'); return; }
-      saveSession({ username: match.username, name: match.name, phone: match.phone }, keep);
-      window.location.href = 'home.html';
+      saveSession({ username: match.username, name: match.name, phone: match.phone, role: 'caretaker' }, keep);
+      window.location.href = 'caretaker.html';
     }
 
     async function handleSignup() {
@@ -215,17 +241,45 @@
       if (users.find(u => u.name.toLowerCase() === name.toLowerCase())) { showMsg('signup-error', 'An account with that name already exists.'); return; }
       const hash = await hashPassword(password);
       const phone = await encryptPhone(getFullPhone(countrySelect, phoneInput));
-      users.push({ username: name, name, phone, passwordHash: hash });
+      users.push({ username: name, name, phone, passwordHash: hash, role: 'caretaker' });
       saveUsers(users);
       showMsg('signup-success', 'Account created! Logging you in…');
       setTimeout(async () => {
-        saveSession({ username: name, name, phone }, false);
-        window.location.href = 'home.html';
+        saveSession({ username: name, name, phone, role: 'caretaker' }, false);
+        window.location.href = 'caretaker.html';
       }, 1200);
+    }
+
+    function handleUserContinue() {
+      hideMsg('user-error');
+      const name          = document.getElementById('user-name').value.trim();
+      const caretakerName = document.getElementById('user-caretaker-name').value.trim();
+      if (!name) { showMsg('user-error', 'Please enter your full name.'); return; }
+
+      const users = getUsers();
+      const caretaker = caretakerName
+        ? users.find(u => u.role === 'caretaker' && u.name.toLowerCase() === caretakerName.toLowerCase())
+        : null;
+
+      let user = users.find(u => u.role === 'user' && u.name.toLowerCase() === name.toLowerCase());
+
+      if (user) {
+        if (!user.assignedTo && caretaker) { user.assignedTo = caretaker.username; saveUsers(users); }
+      } else {
+        const taken = users.find(u => u.name.toLowerCase() === name.toLowerCase());
+        if (taken) { showMsg('user-error', 'That name is already in use by a caretaker account. Please use a different name.'); return; }
+        user = { username: name, name, role: 'user', assignedTo: caretaker ? caretaker.username : '' };
+        users.push(user);
+        saveUsers(users);
+      }
+
+      saveSession({ username: user.username, name: user.name, role: 'user' }, true);
+      window.location.href = 'user.html';
     }
 
     document.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
+      if (role === 'user') { handleUserContinue(); return; }
       const signingUp = !document.getElementById('form-signup').classList.contains('hidden');
       signingUp ? handleSignup() : handleLogin();
     });

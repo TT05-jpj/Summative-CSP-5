@@ -12,13 +12,13 @@
         catch { return null; }
       }
       const s = getSession();
-      if (!s) window.location.replace('login.html');
-      else if (s.role !== 'caretaker') window.location.replace('home.html');
+      if (!s) window.location.replace('index.html');
+      else if (s.role !== 'caretaker') window.location.replace('index.html');
     })();
     function logout() {
       localStorage.removeItem('auth_session');
       sessionStorage.removeItem('auth_session');
-      window.location.href = 'login.html';
+      window.location.href = 'index.html';
     }
   </script>
   <title>My Objects</title>
