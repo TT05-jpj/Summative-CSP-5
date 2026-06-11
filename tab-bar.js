@@ -65,9 +65,10 @@
   document.head.appendChild(style);
 
   const tabs = [
-    { label: 'Dashboard', icon: '', href: 'caretaker.html'  },
-    { label: 'Scanner',   icon: '', href: 'scanner.html'    },
-    { label: 'Medicine',  icon: '', href: 'medication.html' },
+    { label: 'Dashboard', href: 'caretaker.html'       },
+    { label: 'Users',     href: 'caretaker.html#users' },
+    { label: 'Scanner',   href: 'scanner.html'         },
+    { label: 'Medicine',  href: 'medication.html'      },
   ];
 
   const bar = document.createElement('nav');
@@ -75,11 +76,20 @@
   bar.setAttribute('role', 'navigation');
   bar.setAttribute('aria-label', 'Main navigation');
 
+  function tabIsActive(tabHref) {
+    const [tPage, tHash] = tabHref.includes('#') ? tabHref.split('#') : [tabHref, ''];
+    if (page !== tPage) return false;
+    if (tHash === 'users') return location.hash === '#users';
+    if (tPage === 'caretaker.html') return location.hash !== '#users';
+    return true;
+  }
+
   tabs.forEach(tab => {
     const a = document.createElement('a');
     a.href = tab.href;
-    a.className = 'ct-tab' + (page === tab.href ? ' active' : '');
-    a.setAttribute('aria-current', page === tab.href ? 'page' : 'false');
+    const active = tabIsActive(tab.href);
+    a.className = 'ct-tab' + (active ? ' active' : '');
+    a.setAttribute('aria-current', active ? 'page' : 'false');
     a.innerHTML = `<span>${tab.label}</span>`;
     bar.appendChild(a);
   });

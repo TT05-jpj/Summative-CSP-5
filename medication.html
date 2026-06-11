@@ -17,6 +17,8 @@
     </div>
   </header>
 
+  <div id="low-stock-banner" style="display:none"></div>
+
   <div id="med-container"></div>
 
   <!-- Card action popup (tap a med row) -->
@@ -154,8 +156,20 @@
     </div>
 
       <div class="field">
+        <label>Reminder times</label>
+        <div id="time-slots-container"></div>
+      </div>
+
+      <div class="field">
         <label>Pills remaining</label>
         <input id="pills-input" type="number" min="0" placeholder="e.g. 30" />
+      </div>
+
+      <div class="field">
+        <label>Assign to</label>
+        <select id="med-assign-select" class="assign-select">
+          <option value="everyone">Everyone</option>
+        </select>
       </div>
 
       <div id="modal-actions">

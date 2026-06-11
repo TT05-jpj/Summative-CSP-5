@@ -14,6 +14,7 @@ let history          = loadHistory();
 let editingId        = null;
 let editTimeSlots = [];
 let editSelectedDays = [];
+let editTimes        = [];
 
 // ── DOM refs
 const container    = document.getElementById('med-container');
@@ -49,6 +50,62 @@ dayOptions.forEach(option => {
     updateDaysDisplay();
   });
 });
+// ── Assign dropdown ──────────────────────────────────────────────────────────
+function getMyAddedUsersMed() {
+  try {
+    const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+    if (!session) return [];
+    const allUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+    return allUsers.filter(u => u.assignedTo === session.username);
+  } catch { return []; }
+}
+
+function populateMedAssignDropdown(select, currentValue) {
+  if (!select) return;
+  select.innerHTML = '<option value="everyone">Everyone</option>';
+  getMyAddedUsersMed().forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.username;
+    opt.textContent = u.name || u.username;
+    select.appendChild(opt);
+  });
+  if (currentValue) select.value = currentValue;
+}
+
+// ── Reminder times ────────────────────────────────────────────────────────────
+function defaultTimes(n) {
+  const presets = [
+    [],
+    ['09:00'],
+    ['08:00','20:00'],
+    ['08:00','14:00','20:00'],
+    ['08:00','12:00','16:00','20:00'],
+    ['08:00','11:00','14:00','17:00','20:00'],
+    ['08:00','10:30','13:00','15:30','18:00','21:00'],
+    ['08:00','10:00','12:00','14:00','16:00','18:00','21:00'],
+    ['07:00','09:00','11:00','13:00','15:00','17:00','19:00','21:00'],
+    ['07:00','09:00','11:00','13:00','14:00','16:00','18:00','20:00','22:00'],
+    ['06:00','08:00','10:00','12:00','13:00','14:00','16:00','17:00','19:00','21:00'],
+  ];
+  return presets[n] ? [...presets[n]] : [];
+}
+
+function renderTimeSlots() {
+  const container = document.getElementById('time-slots-container');
+  if (!container) return;
+  const defaults = defaultTimes(editTimesPerDay);
+  while (editTimes.length < editTimesPerDay) editTimes.push(defaults[editTimes.length] || '09:00');
+  editTimes = editTimes.slice(0, editTimesPerDay);
+  container.innerHTML = '';
+  editTimes.forEach((t, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'time-slot';
+    wrap.innerHTML = `<span class="time-slot-label">${editTimesPerDay > 1 ? 'Dose ' + (i + 1) : 'Time'}</span><input type="time" class="time-input" value="${t}" />`;
+    wrap.querySelector('input').addEventListener('change', e => { editTimes[i] = e.target.value; });
+    container.appendChild(wrap);
+  });
+}
+
 function updateDaysDisplay() {
   daysToggle.textContent = editSelectedDays.length
     ? `${editSelectedDays.length} day${editSelectedDays.length > 1 ? 's' : ''} selected ▾`
@@ -63,17 +120,11 @@ function updateDaysDisplay() {
 }
 
 // ── Times per day +/-
-timeSlotEls.forEach(slot => {
-  slot.addEventListener('click', () => {
-    const s = slot.dataset.slot;
-    if (editTimeSlots.includes(s)) {
-      editTimeSlots = editTimeSlots.filter(x => x !== s);
-      slot.classList.remove('selected');
-    } else {
-      editTimeSlots.push(s);
-      slot.classList.add('selected');
-    }
-  });
+timesMinus.addEventListener('click', () => {
+  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; renderTimeSlots(); }
+});
+timesPlus.addEventListener('click', () => {
+  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; renderTimeSlots(); }
 });
 
 // ── Daily subtraction
@@ -257,6 +308,7 @@ document.getElementById('restock-save').addEventListener('click', () => {
     active[idx].pillCount = (active[idx].pillCount || 0) + amount;
     saveActive(active);
     renderCards();
+    checkLowStockNotifications();
   }
   document.getElementById('restock-overlay').classList.remove('show');
   restockMed = null;
@@ -306,6 +358,7 @@ function openModal(med) {
     inputName.value  = med.name;
     editTimeSlots = [...(med.timeSlots || [])];
     editSelectedDays = [...med.days];
+    editTimes        = med.times ? [...med.times] : defaultTimes(med.timesPerDay);
     pillsInput.value = typeof med.pillCount === 'number' ? med.pillCount : '';
   } else {
     editingId        = null;
@@ -313,6 +366,7 @@ function openModal(med) {
     inputName.value  = '';
     editTimeSlots = [];
     editSelectedDays = [];
+    editTimes        = defaultTimes(1);
     pillsInput.value = '';
   }
 
@@ -325,6 +379,11 @@ function openModal(med) {
   });
 
   updateDaysDisplay();
+  renderTimeSlots();
+  populateMedAssignDropdown(
+    document.getElementById('med-assign-select'),
+    med ? (med.assignedTo || 'everyone') : 'everyone'
+  );
   modalOverlay.classList.add('show');
   inputName.focus();
 }
@@ -341,6 +400,9 @@ modalSave.addEventListener('click', () => {
   if (!editSelectedDays.length) { alert('Please select at least one day.'); return; }
   if (!editTimeSlots.length) { alert('Please select at least one time slot.'); return; }
   const editPillCount = Math.max(0, parseInt(pillsInput.value) || 0);
+  const timeInputs = document.querySelectorAll('#time-slots-container .time-input');
+  editTimes = Array.from(timeInputs).map(inp => inp.value || '09:00');
+  const assignedTo = document.getElementById('med-assign-select')?.value || 'everyone';
 
   if (editingId !== null) {
     // EDIT
@@ -366,7 +428,8 @@ modalSave.addEventListener('click', () => {
       modalOverlay.classList.remove('show');
       return;
     }
-    active[activeIndex] = { ...old, name, days: editSelectedDays, timeSlots: editTimeSlots, timesPerDay: editTimeSlots.length, pillCount: editPillCount };
+
+    active[activeIndex] = { ...old, name, days: editSelectedDays, timesPerDay: editTimesPerDay, times: [...editTimes], pillCount: editPillCount, assignedTo };
 
     const changeDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
     const sameDay    = histEntry && histEntry.startDate === changeDate;
@@ -398,7 +461,7 @@ modalSave.addEventListener('click', () => {
     const startDate = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
     const startDateISO = today.toISOString().split('T')[0];
     const id  = Date.now();
-    const med = { id, name, days: editSelectedDays, timeSlots: editTimeSlots, timesPerDay: editTimeSlots.length, pillCount: editPillCount, startDate, startDateISO, endDate: null, changeLog: [] };
+    const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, times: [...editTimes], pillCount: editPillCount, assignedTo, startDate, startDateISO, endDate: null, changeLog: [] };
 
     active.push(med);
     // history entry has no pillCount
@@ -612,6 +675,44 @@ If you cannot read the label clearly, still return your best guess. Always retur
   }
 });
 
+// ── Low-stock notifications (caretaker) ───────────────────────────────────────
+function checkLowStockNotifications() {
+  const lowMeds = active.filter(isLow);
+  const banner  = document.getElementById('low-stock-banner');
+  if (banner) {
+    if (lowMeds.length === 0) {
+      banner.style.display = 'none';
+    } else {
+      banner.style.display = 'flex';
+      banner.innerHTML = `<span style="font-size:18px">⚠️</span><span>Running low: <strong>${lowMeds.map(m => `${m.name} (${m.pillCount})`).join(', ')}</strong> — tap a medication to restock.</span>`;
+    }
+  }
+
+  if (!lowMeds.length) return;
+  let notified;
+  try { notified = JSON.parse(localStorage.getItem('med_low_notified') || '{}'); } catch { notified = {}; }
+  const today = new Date().toISOString().split('T')[0];
+  lowMeds.forEach(med => {
+    if (notified[med.id] === today) return;
+    notified[med.id] = today;
+    if (Notification.permission === 'granted') {
+      new Notification('Low Medication Stock', {
+        body: `${med.name} has only ${med.pillCount} pill${med.pillCount !== 1 ? 's' : ''} remaining. Please restock soon.`,
+      });
+    }
+  });
+  localStorage.setItem('med_low_notified', JSON.stringify(notified));
+}
+
 // ── Init
 runDailyDeduction();
 renderCards();
+checkLowStockNotifications();
+if (Notification.permission === 'default') Notification.requestPermission();
+window.addEventListener('storage', e => {
+  if (e.key === 'medications_active') {
+    active = loadActive();
+    renderCards();
+    checkLowStockNotifications();
+  }
+});

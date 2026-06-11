@@ -23,32 +23,52 @@ function saveAllAppUsers(users) {
   localStorage.setItem('auth_users', JSON.stringify(users));
 }
 
-// ── Dashboard tabs ────────────────────────────────────────────────────────────
+function getMyAddedUsers() {
+  const session = getCaretakerSession();
+  if (!session) return [];
+  return getAllAppUsers().filter(u => u.assignedTo === session.username);
+}
+
+// ── Hash-based tab routing ────────────────────────────────────────────────────
 function switchDashTab(tab) {
   const isObjects = tab === 'objects';
-  document.getElementById('tab-objects').classList.toggle('active', isObjects);
-  document.getElementById('tab-users').classList.toggle('active', !isObjects);
   document.getElementById('panel-objects').style.display = isObjects ? '' : 'none';
-  document.getElementById('panel-users').style.display = isObjects ? 'none' : 'block';
+  document.getElementById('panel-users').style.display   = isObjects ? 'none' : 'block';
+  // Keep bottom tab bar in sync
+  document.querySelectorAll('#ct-tab-bar .ct-tab').forEach(a => {
+    const href = a.getAttribute('href') || '';
+    const active = isObjects ? href === 'caretaker.html' : href === 'caretaker.html#users';
+    a.classList.toggle('active', active);
+    a.setAttribute('aria-current', active ? 'page' : 'false');
+  });
   if (!isObjects) renderUserDashboard();
 }
 
+window.addEventListener('hashchange', () => {
+  switchDashTab(location.hash === '#users' ? 'users' : 'objects');
+});
+
+// ── User dashboard ────────────────────────────────────────────────────────────
 function renderUserDashboard() {
   const udContainer = document.getElementById('user-dashboard-container');
   const session = getCaretakerSession();
   const myUsername = (session ? session.username : '').toLowerCase();
-  const allUsers = getAllAppUsers().filter(u => u.role === 'user');
+  const allUsers = getAllAppUsers();
 
+  // Users who listed me as caretaker OR are already added to me
   const visible = allUsers.filter(u =>
     (u.caretakerName || '').toLowerCase() === myUsername ||
-    u.assignedTo === session.username ||
-    !u.caretakerName
+    u.assignedTo === session.username
   );
 
   udContainer.innerHTML = '';
 
   if (visible.length === 0) {
-    udContainer.innerHTML = '<p class="warning" style="padding:36px 20px;">No users found.</p>';
+    udContainer.innerHTML = `
+      <div style="padding:48px 24px;text-align:center;">
+        <p style="font-size:17px;color:var(--muted);margin-bottom:8px;">No users yet.</p>
+        <p style="font-size:14px;color:var(--muted);opacity:0.7;">Users who link your username during sign-up will appear here.</p>
+      </div>`;
     return;
   }
 
@@ -58,38 +78,88 @@ function renderUserDashboard() {
   visible.forEach(u => {
     const card = document.createElement('div');
     card.className = 'ud-card';
-    const isAssignedToMe = u.assignedTo === session.username;
-    const nameMatchesMe = (u.caretakerName || '').toLowerCase() === myUsername;
-    let btnHTML;
-    if (isAssignedToMe) {
-      btnHTML = `<button class="ud-btn ud-btn-unassign" onclick="unassignUser('${u.username}')">Unassign</button>`;
-    } else if (nameMatchesMe && !u.assigned) {
-      btnHTML = `<button class="ud-btn ud-btn-assign" onclick="assignUser('${u.username}')">Assign</button>`;
-    } else {
-      btnHTML = `<button class="ud-btn ud-btn-disabled" disabled>Assign</button>`;
-    }
+    const isAdded = u.assignedTo === session.username;
+    const displayName = u.name || u.username;
+
     card.innerHTML = `
-      <p class="ud-row"><span class="ud-label">Name</span><span class="ud-value">${u.username}</span></p>
-      <p class="ud-row"><span class="ud-label">Caretaker</span><span class="ud-value">${u.caretakerName || 'N/A'}</span></p>
-      ${btnHTML}
+      <div class="ud-card-top">
+        <div class="ud-user-info">
+          <div class="ud-name">${displayName}</div>
+          <div class="ud-username">@${u.username}</div>
+        </div>
+        ${isAdded ? `<button class="ud-remove-x" onclick="confirmRemoveUser('${u.username}')" aria-label="Remove user">✕</button>` : ''}
+      </div>
+      ${isAdded
+        ? `<div class="ud-added-badge">Added</div>`
+        : `<button class="ud-add-btn" onclick="addUser('${u.username}')">Add User</button>`
+      }
     `;
     grid.appendChild(card);
   });
+
   udContainer.appendChild(grid);
 }
 
-function assignUser(username) {
+// ── Add / Remove user ─────────────────────────────────────────────────────────
+function addUser(username) {
   const session = getCaretakerSession();
   if (!session) return;
   const users = getAllAppUsers();
-  const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) { user.assigned = true; user.assignedTo = session.username; saveAllAppUsers(users); renderUserDashboard(); }
+  const user = users.find(u => u.username === username);
+  if (user) {
+    user.assigned   = true;
+    user.assignedTo = session.username;
+    user.role       = 'user';
+    saveAllAppUsers(users);
+    renderUserDashboard();
+    populateAssignDropdown(document.getElementById('obj-assign-select'));
+  }
 }
 
-function unassignUser(username) {
-  const users = getAllAppUsers();
-  const user = users.find(u => u.username === username && u.role === 'user');
-  if (user) { user.assigned = false; user.assignedTo = ''; saveAllAppUsers(users); renderUserDashboard(); }
+let confirmPendingUser = null;
+
+function confirmRemoveUser(username) {
+  confirmPendingUser = username;
+  document.getElementById('confirm-username').textContent = username;
+  document.getElementById('confirm-overlay').style.display = 'flex';
+}
+
+document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').style.display = 'none';
+  confirmPendingUser = null;
+});
+
+document.getElementById('confirm-remove-btn').addEventListener('click', () => {
+  if (confirmPendingUser) {
+    const users = getAllAppUsers();
+    const user = users.find(u => u.username === confirmPendingUser);
+    if (user) { user.assigned = false; user.assignedTo = ''; saveAllAppUsers(users); }
+    renderUserDashboard();
+    populateAssignDropdown(document.getElementById('obj-assign-select'));
+  }
+  document.getElementById('confirm-overlay').style.display = 'none';
+  confirmPendingUser = null;
+});
+
+document.getElementById('confirm-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirm-overlay')) {
+    document.getElementById('confirm-overlay').style.display = 'none';
+    confirmPendingUser = null;
+  }
+});
+
+// ── Assign dropdown helper ────────────────────────────────────────────────────
+function populateAssignDropdown(select, currentValue) {
+  if (!select) return;
+  const prev = currentValue !== undefined ? currentValue : select.value;
+  select.innerHTML = '<option value="everyone">Everyone</option>';
+  getMyAddedUsers().forEach(u => {
+    const opt = document.createElement('option');
+    opt.value = u.username;
+    opt.textContent = u.name || u.username;
+    select.appendChild(opt);
+  });
+  if (prev) select.value = prev;
 }
 
 // ── Object storage ────────────────────────────────────────────────────────────
@@ -105,17 +175,17 @@ function saveObjects() {
 let objects = loadObjects();
 let editingIndex = null;
 
-const container = document.getElementById('object-container');
-const viewPopup = document.getElementById('view-popup');
-const popupName = document.getElementById('popup-obj-name');
-const popupInstr = document.getElementById('popup-obj-instr');
-const closeView = document.getElementById('close-view');
+const container    = document.getElementById('object-container');
+const viewPopup    = document.getElementById('view-popup');
+const popupName    = document.getElementById('popup-obj-name');
+const popupInstr   = document.getElementById('popup-obj-instr');
+const closeView    = document.getElementById('close-view');
 const modalOverlay = document.getElementById('modal-overlay');
-const modalTitle = document.getElementById('modal-title');
-const inputName = document.getElementById('input-name');
-const inputInstr = document.getElementById('input-instr');
-const modalCancel = document.getElementById('modal-cancel');
-const modalSave = document.getElementById('modal-save');
+const modalTitle   = document.getElementById('modal-title');
+const inputName    = document.getElementById('input-name');
+const inputInstr   = document.getElementById('input-instr');
+const modalCancel  = document.getElementById('modal-cancel');
+const modalSave    = document.getElementById('modal-save');
 
 function renderCards() {
   container.innerHTML = '';
@@ -149,6 +219,13 @@ function renderCards() {
         .catch(() => { });
     }
 
+    // Assign badge
+    const assignBadge = document.createElement('div');
+    assignBadge.className = 'obj-assign-badge';
+    assignBadge.textContent = (!obj.assignedTo || obj.assignedTo === 'everyone')
+      ? 'Everyone'
+      : obj.assignedTo;
+
     const btnGroup = document.createElement('div');
     btnGroup.classList.add('card-btns');
 
@@ -178,12 +255,13 @@ function renderCards() {
     }) : null;
 
     card.appendChild(title);
+    card.appendChild(assignBadge);
     if (photoEl) card.appendChild(photoEl);
     card.appendChild(btnGroup);
     container.appendChild(card);
 
     viewBtn.addEventListener('click', () => {
-      popupName.textContent = obj.name;
+      popupName.textContent  = obj.name;
       popupInstr.textContent = obj.instructions || 'No instructions added.';
       viewPopup.classList.add('show');
     });
@@ -205,14 +283,19 @@ viewPopup.addEventListener('click', e => {
 
 function openModal(index = null) {
   editingIndex = index;
+  const assignSelect = document.getElementById('obj-assign-select');
+  populateAssignDropdown(assignSelect);
+
   if (index !== null) {
-    modalTitle.textContent = window.ctTranslations?.editObjectModal || 'Edit Object';
-    inputName.value = objects[index].name;
-    inputInstr.value = objects[index].instructions;
+    modalTitle.textContent  = window.ctTranslations?.editObjectModal || 'Edit Object';
+    inputName.value         = objects[index].name;
+    inputInstr.value        = objects[index].instructions;
+    assignSelect.value      = objects[index].assignedTo || 'everyone';
   } else {
-    modalTitle.textContent = window.ctTranslations?.addObjectModal || 'Add Object';
-    inputName.value = '';
-    inputInstr.value = '';
+    modalTitle.textContent  = window.ctTranslations?.addObjectModal || 'Add Object';
+    inputName.value         = '';
+    inputInstr.value        = '';
+    assignSelect.value      = 'everyone';
   }
   modalOverlay.classList.add('show');
   inputName.focus();
@@ -226,17 +309,16 @@ function closeModal() {
 modalCancel.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
-
-
 modalSave.addEventListener('click', () => {
-  const name = inputName.value.trim();
-  const instr = inputInstr.value.trim();
+  const name       = inputName.value.trim();
+  const instr      = inputInstr.value.trim();
+  const assignedTo = document.getElementById('obj-assign-select').value || 'everyone';
   if (!name) { inputName.focus(); return; }
 
   if (editingIndex !== null) {
-    objects[editingIndex] = { name, instructions: instr };
+    objects[editingIndex] = { name, instructions: instr, assignedTo };
   } else {
-    objects.push({ name, instructions: instr });
+    objects.push({ name, instructions: instr, assignedTo });
   }
 
   saveObjects();
@@ -265,7 +347,6 @@ function getSpeechLang() {
   return SPEECH_LANG_MAP[code] || 'en-US';
 }
 
-// Stop the tracks right away — SpeechRecognition opens its own stream.
 async function ensureMicPermission() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return true;
   try {
@@ -297,28 +378,19 @@ function setupMic(btnId, targetInput) {
   const INITIAL_TIMEOUT_MS = 4000;
   const SILENCE_TIMEOUT_MS = 3000;
 
-  // Recreate per click — reusing one SpeechRecognition object can wedge it
-  // into a state where start() silently no-ops on Chrome.
   let activeRecognition = null;
   let silenceTimer = null;
   let baseText = '';
   let finalText = '';
 
   function clearSilenceTimer() {
-    if (silenceTimer) {
-      clearTimeout(silenceTimer);
-      silenceTimer = null;
-    }
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
   }
 
   function scheduleSilenceTimeout(ms) {
     clearSilenceTimer();
     silenceTimer = setTimeout(() => {
-      if (activeRecognition) {
-        // Don't wait for `end` — it can be delayed or skipped on Chrome.
-        stopVisuals();
-        try { activeRecognition.stop(); } catch (_) { }
-      }
+      if (activeRecognition) { stopVisuals(); try { activeRecognition.stop(); } catch (_) { } }
     }, ms);
   }
 
@@ -328,81 +400,41 @@ function setupMic(btnId, targetInput) {
   }
 
   btn.addEventListener('click', async () => {
-    if (activeRecognition) {
-      stopVisuals();
-      try { activeRecognition.stop(); } catch (_) { }
-      return;
-    }
-
+    if (activeRecognition) { stopVisuals(); try { activeRecognition.stop(); } catch (_) { } return; }
     const ok = await ensureMicPermission();
     if (!ok) return;
-
-    // Don't wait for `start` — give the user feedback the click registered.
     btn.classList.add('listening');
-
     const existing = targetInput.value.trim();
     baseText = existing ? existing + ' ' : '';
     finalText = '';
-
     const r = new SpeechRecognition();
     r.interimResults = true;
     r.continuous = true;
     r.maxAlternatives = 1;
     r.lang = getSpeechLang();
-
-    r.addEventListener('start', () => {
-      scheduleSilenceTimeout(INITIAL_TIMEOUT_MS);
-    });
-
+    r.addEventListener('start', () => { scheduleSilenceTimeout(INITIAL_TIMEOUT_MS); });
     r.addEventListener('speechstart', () => btn.classList.add('speaking'));
-    r.addEventListener('speechend', () => btn.classList.remove('speaking'));
-
+    r.addEventListener('speechend',   () => btn.classList.remove('speaking'));
     r.addEventListener('result', (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          finalText += transcript;
-        } else {
-          interim += transcript;
-        }
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t; else interim += t;
       }
       targetInput.value = (baseText + finalText + interim).trim();
       scheduleSilenceTimeout(SILENCE_TIMEOUT_MS);
     });
-
-    r.addEventListener('end', () => {
-      activeRecognition = null;
-      stopVisuals();
-      clearSilenceTimer();
-    });
-
+    r.addEventListener('end', () => { activeRecognition = null; stopVisuals(); clearSilenceTimer(); });
     r.addEventListener('error', (ev) => {
-      activeRecognition = null;
-      stopVisuals();
-      clearSilenceTimer();
-      console.error('Speech error:', ev.error);
-      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-        alert('Microphone access was denied. Please allow it in your browser settings.');
-      } else if (ev.error === 'language-not-supported') {
-        alert('Your browser does not support speech recognition for the selected language.');
-      } else if (ev.error === 'no-speech') {
-        // Engine's own silence timeout — stop quietly.
-      } else if (ev.error === 'audio-capture') {
-        alert('No microphone was found. Check your device settings.');
-      } else if (ev.error === 'network') {
-        alert('Speech recognition needs a network connection and could not reach the service.');
-      }
+      activeRecognition = null; stopVisuals(); clearSilenceTimer();
+      if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') alert('Microphone access was denied.');
+      else if (ev.error === 'language-not-supported') alert('Speech recognition not supported for this language.');
+      else if (ev.error === 'audio-capture') alert('No microphone found.');
+      else if (ev.error === 'network') alert('Speech recognition needs a network connection.');
     });
-
     activeRecognition = r;
-    try {
-      r.start();
-    } catch (err) {
-      activeRecognition = null;
-      stopVisuals();
-      clearSilenceTimer();
-      console.error('Speech start failed:', err);
+    try { r.start(); } catch (err) {
+      activeRecognition = null; stopVisuals(); clearSilenceTimer();
       alert('Could not start speech recognition: ' + (err && err.message ? err.message : err));
     }
   });
@@ -411,4 +443,6 @@ function setupMic(btnId, targetInput) {
 setupMic('mic-name', document.getElementById('input-name'));
 setupMic('mic-instr', document.getElementById('input-instr'));
 
+// ── Init ──────────────────────────────────────────────────────────────────────
 renderCards();
+if (location.hash === '#users') switchDashTab('users');

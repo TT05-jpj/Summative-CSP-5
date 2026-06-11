@@ -16,6 +16,9 @@
       else if (s.role !== 'caretaker') window.location.replace('home.html');
     })();
     function logout() {
+      document.getElementById('logout-modal').style.display = 'flex';
+    }
+    function confirmLogout() {
       localStorage.removeItem('auth_session');
       sessionStorage.removeItem('auth_session');
       window.location.href = 'login.html';
@@ -41,6 +44,30 @@
     </div>
   </div>
 
+  <!-- Logout confirm modal -->
+  <div id="logout-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px);z-index:300;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 64px rgba(0,0,0,0.2);text-align:center;">
+      <h3 style="font-size:18px;font-weight:700;color:#1e3060;">Log Out?</h3>
+      <p style="font-size:15px;color:#60697a;line-height:1.5;">Are you sure you want to log out?</p>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('logout-modal').style.display='none'" style="flex:1;padding:13px;font-size:15px;font-weight:600;background:#f4f6fc;color:#60697a;border:none;border-radius:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+        <button onclick="confirmLogout()" style="flex:1;padding:13px;font-size:15px;font-weight:700;background:#b91c1c;color:#fff;border:none;border-radius:12px;cursor:pointer;font-family:inherit;">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Remove user confirm modal -->
+  <div id="confirm-overlay" class="confirm-overlay" style="display:none">
+    <div class="confirm-box">
+      <p class="confirm-msg">Remove <strong id="confirm-username"></strong> from your users?</p>
+      <p class="confirm-sub">They will need to re-link you if you remove them.</p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel-btn">Cancel</button>
+        <button id="confirm-remove-btn">Remove</button>
+      </div>
+    </div>
+  </div>
+
   <header>
     <div class="header-top">
       <h1>My Objects</h1>
@@ -50,11 +77,6 @@
       </div>
     </div>
   </header>
-
-  <div id="dashboard-tabs">
-    <button class="dash-tab active" id="tab-objects" onclick="switchDashTab('objects')">My Objects</button>
-    <button class="dash-tab" id="tab-users" onclick="switchDashTab('users')">Users</button>
-  </div>
 
   <div id="panel-objects">
     <div id="object-container"></div>
@@ -94,6 +116,12 @@
           </button>
         </div>
       </div>
+      <div class="field">
+        <label>Assign to</label>
+        <select id="obj-assign-select" class="assign-select">
+          <option value="everyone">Everyone</option>
+        </select>
+      </div>
       <div id="modal-actions">
         <button id="modal-cancel">Cancel</button>
         <button id="modal-save">Save</button>
@@ -124,7 +152,7 @@
       ];
 
       const fieldLabels = document.querySelectorAll('.field label');
-      const fieldLabelTexts = ['Object name', 'Instructions'];
+      const fieldLabelTexts = ['Object name', 'Instructions', 'Assign to'];
 
       const infoEls = [
         { id: 'info-title', en: 'How to use My Objects' },

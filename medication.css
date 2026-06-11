@@ -15,7 +15,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 14px 20px 14px 66px;
   padding-top: calc(14px + env(safe-area-inset-top));
   gap: 12px;
 }
@@ -390,6 +390,40 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
 }
 #scan-capture-btn:hover:not(:disabled) { opacity: 0.88; }
 #scan-capture-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Assign dropdown (shared with caretaker.css pattern) ── */
+.assign-select {
+  width: 100%; padding: 9px 12px; font-size: 15px;
+  font-family: var(--font); background: var(--bg);
+  color: var(--text); border: 1.5px solid var(--border);
+  border-radius: 9px; outline: none; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.assign-select:focus { border-color: var(--navy); }
+
+/* ── Time slots ── */
+#time-slots-container { display: flex; flex-direction: column; gap: 7px; }
+.time-slot { display: flex; align-items: center; gap: 10px; }
+.time-slot-label { font-size: 13px; color: var(--muted); font-weight: 600; min-width: 54px; }
+.time-input {
+  flex: 1; padding: 9px 12px; font-size: 15px;
+  font-family: var(--font); background: var(--bg);
+  color: var(--text); border: 1.5px solid var(--border);
+  border-radius: 9px; outline: none; transition: border-color 0.15s;
+}
+.time-input:focus { border-color: var(--navy); }
+
+/* ── Low-stock banner ── */
+#low-stock-banner {
+  align-items: center; gap: 10px;
+  background: #fef3c7; color: #92400e;
+  border-bottom: 2px solid #f59e0b;
+  padding: 10px 20px; font-size: 14px; font-weight: 500;
+  position: sticky; top: calc(51px + env(safe-area-inset-top)); z-index: 9;
+}
+
+/* ── Scrollable modal for many time slots ── */
+#modal { max-height: 90vh; overflow-y: auto; }
 
 @media (max-width: 600px) {
   header { padding: 14px 16px; }
