@@ -12,7 +12,7 @@ function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(li
 let active           = loadActive();
 let history          = loadHistory();
 let editingId        = null;
-let editTimesPerDay  = 1;
+let editTimeSlots = [];
 let editSelectedDays = [];
 
 // ── DOM refs
@@ -24,9 +24,7 @@ const modalCancel  = document.getElementById('modal-cancel');
 const modalSave    = document.getElementById('modal-save');
 const modalTitle   = document.getElementById('modal-title');
 const inputName    = document.getElementById('input-name');
-const timesDisplay = document.getElementById('times-display');
-const timesMinus   = document.getElementById('times-minus');
-const timesPlus    = document.getElementById('times-plus');
+const timeSlotEls = document.querySelectorAll('.time-slot');
 const daysToggle   = document.getElementById('days-toggle');
 const daysMenu     = document.getElementById('days-menu');
 const daysDisplay  = document.getElementById('days-selected-display');
@@ -65,11 +63,17 @@ function updateDaysDisplay() {
 }
 
 // ── Times per day +/-
-timesMinus.addEventListener('click', () => {
-  if (editTimesPerDay > 1) { editTimesPerDay--; timesDisplay.textContent = editTimesPerDay; }
-});
-timesPlus.addEventListener('click', () => {
-  if (editTimesPerDay < 10) { editTimesPerDay++; timesDisplay.textContent = editTimesPerDay; }
+timeSlotEls.forEach(slot => {
+  slot.addEventListener('click', () => {
+    const s = slot.dataset.slot;
+    if (editTimeSlots.includes(s)) {
+      editTimeSlots = editTimeSlots.filter(x => x !== s);
+      slot.classList.remove('selected');
+    } else {
+      editTimeSlots.push(s);
+      slot.classList.add('selected');
+    }
+  });
 });
 
 // ── Daily subtraction
@@ -300,19 +304,21 @@ function openModal(med) {
     editingId        = med.id;
     modalTitle.textContent = 'Change Medication';
     inputName.value  = med.name;
-    editTimesPerDay  = med.timesPerDay;
+    editTimeSlots = [...(med.timeSlots || [])];
     editSelectedDays = [...med.days];
     pillsInput.value = typeof med.pillCount === 'number' ? med.pillCount : '';
   } else {
     editingId        = null;
     modalTitle.textContent = 'Add Medication';
     inputName.value  = '';
-    editTimesPerDay  = 1;
+    editTimeSlots = [];
     editSelectedDays = [];
     pillsInput.value = '';
   }
 
-  timesDisplay.textContent = editTimesPerDay;
+  timeSlotEls.forEach(s => {
+    editTimeSlots.includes(s.dataset.slot) ? s.classList.add('selected') : s.classList.remove('selected');
+  });
 
   dayOptions.forEach(o => {
     editSelectedDays.includes(o.dataset.day) ? o.classList.add('selected') : o.classList.remove('selected');
@@ -333,6 +339,7 @@ modalSave.addEventListener('click', () => {
   const name = inputName.value.trim();
   if (!name)                    { inputName.focus(); return; }
   if (!editSelectedDays.length) { alert('Please select at least one day.'); return; }
+  if (!editTimeSlots.length) { alert('Please select at least one time slot.'); return; }
   const editPillCount = Math.max(0, parseInt(pillsInput.value) || 0);
 
   if (editingId !== null) {
@@ -347,8 +354,8 @@ modalSave.addEventListener('click', () => {
     if (old.name !== name) changes.push(`Name: "${old.name}" → "${name}"`);
     if ([...old.days].sort().join(',') !== [...editSelectedDays].sort().join(','))
       changes.push(`Days: ${old.days.join(', ')} → ${editSelectedDays.join(', ')}`);
-    if (old.timesPerDay !== editTimesPerDay)
-      changes.push(`Frequency: ${old.timesPerDay}x/day → ${editTimesPerDay}x/day`);
+   if ([...(old.timeSlots||[])].sort().join(',') !== [...editTimeSlots].sort().join(','))
+  changes.push(`Time slots: ${(old.timeSlots||[]).join(', ')} → ${editTimeSlots.join(', ')}`);
     // pill count changes are NOT tracked in history
 
     if (changes.length === 0) {
@@ -359,8 +366,7 @@ modalSave.addEventListener('click', () => {
       modalOverlay.classList.remove('show');
       return;
     }
-
-    active[activeIndex] = { ...old, name, days: editSelectedDays, timesPerDay: editTimesPerDay, pillCount: editPillCount };
+    active[activeIndex] = { ...old, name, days: editSelectedDays, timeSlots: editTimeSlots, timesPerDay: editTimeSlots.length, pillCount: editPillCount };
 
     const changeDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
     const sameDay    = histEntry && histEntry.startDate === changeDate;
@@ -368,13 +374,13 @@ modalSave.addEventListener('click', () => {
     if (sameDay) {
       histEntry.name        = name;
       histEntry.days        = editSelectedDays;
-      histEntry.timesPerDay = editTimesPerDay;
+      histEntry.timesPerDay = editTimeSlots.length;
       // pillCount intentionally not written to history
     } else {
       if (histEntry) histEntry.endDate = changeDate;
       history.unshift({
         id: editingId, _histId: Date.now(),
-        name, days: editSelectedDays, timesPerDay: editTimesPerDay,
+        name, days: editSelectedDays, timesPerDay: editTimeSlots.length,
         startDate: changeDate, endDate: null,
         changeLog: [{ date: changeDate, description: changes.join(' | ') }]
         // no pillCount in history
@@ -392,7 +398,7 @@ modalSave.addEventListener('click', () => {
     const startDate = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
     const startDateISO = today.toISOString().split('T')[0];
     const id  = Date.now();
-    const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, pillCount: editPillCount, startDate, startDateISO, endDate: null, changeLog: [] };
+    const med = { id, name, days: editSelectedDays, timeSlots: editTimeSlots, timesPerDay: editTimeSlots.length, pillCount: editPillCount, startDate, startDateISO, endDate: null, changeLog: [] };
 
     active.push(med);
     // history entry has no pillCount
@@ -572,8 +578,12 @@ If you cannot read the label clearly, still return your best guess. Always retur
     if (parsed.name)  inputName.value = parsed.name;
 
     if (parsed.timesPerDay && Number.isInteger(parsed.timesPerDay)) {
-      editTimesPerDay = Math.min(10, Math.max(1, parsed.timesPerDay));
-      timesDisplay.textContent = editTimesPerDay;
+      // Map times per day to slots automatically
+      const slotMap = { 1: ['Morning'], 2: ['Morning', 'Night'], 3: ['Morning', 'Afternoon', 'Night'], 4: ['Morning', 'Afternoon', 'Evening', 'Night'] };
+      editTimeSlots = slotMap[Math.min(4, parsed.timesPerDay)] || ['Morning'];
+      timeSlotEls.forEach(s => {
+        editTimeSlots.includes(s.dataset.slot) ? s.classList.add('selected') : s.classList.remove('selected');
+      });
     }
 
     if (parsed.days) {

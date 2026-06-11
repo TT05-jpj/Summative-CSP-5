@@ -395,3 +395,29 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
   header { padding: 14px 16px; }
   #med-container { padding: 16px; }
 }
+.time-slots {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.time-slot {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: #f8fafc;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font);
+}
+
+.time-slot.selected {
+  background: var(--navy);
+  color: var(--yellow);
+  border-color: var(--navy);
+}
