@@ -71,6 +71,25 @@
     .msg.show { display: block; }
     .msg-error   { color: #f87171; background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.3); }
     .msg-success { color: #4ade80; background: rgba(22,163,74,0.15);  border: 1px solid rgba(22,163,74,0.3); }
+
+    .opt-label { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.38); text-transform: none; letter-spacing: 0; }
+    .role-picker { display: flex; background: rgba(0,0,0,0.25); border-radius: 10px; overflow: hidden; }
+    .role-btn {
+      flex: 1; padding: 11px; font-size: 15px; font-weight: 600;
+      background: none; border: none; color: rgba(255,255,255,0.5);
+      cursor: pointer; transition: background 0.2s, color 0.2s; font-family: var(--font);
+    }
+    .role-btn.active { background: var(--accent); color: var(--navy); }
+    .role-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
+    .link-ct-title { font-size: 18px; font-weight: 700; color: var(--accent); text-align: center; padding: 4px 0; }
+    .link-ct-desc { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.65; }
+    .skip-btn {
+      width: 100%; padding: 13px; font-size: 15px; font-weight: 600;
+      background: transparent; color: rgba(255,255,255,0.45);
+      border: 1.5px solid rgba(255,255,255,0.15); border-radius: 12px;
+      cursor: pointer; font-family: var(--font); transition: all 0.15s;
+    }
+    .skip-btn:hover { color: rgba(255,255,255,0.8); border-color: rgba(255,255,255,0.3); }
   </style>
 </head>
 <body>
@@ -79,10 +98,12 @@
   <p class="tagline">Accessibility Tool</p>
 
   <div class="card">
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="auth-tabs">
       <button class="tab-btn active" id="tab-login"  onclick="showTab('login')">Log In</button>
       <button class="tab-btn"        id="tab-signup" onclick="showTab('signup')">Sign Up</button>
     </div>
+
+    <p class="link-ct-title" id="link-ct-title" style="display:none">🔗 Link your caretaker</p>
 
     <!-- Log In -->
     <div class="form-section" id="form-login">
@@ -112,8 +133,15 @@
         <input class="field-input" type="text" id="signup-username" placeholder="Choose a username" autocomplete="username" />
       </div>
       <div class="field">
-        <label class="field-label">Phone Number</label>
-        <input class="field-input" type="tel" id="signup-phone" placeholder="e.g. +1 555 000 1234" autocomplete="tel" />
+        <label class="field-label">I am a</label>
+        <div class="role-picker">
+          <button type="button" class="role-btn" id="role-btn-user"      onclick="selectRole('user')">User</button>
+          <button type="button" class="role-btn" id="role-btn-caretaker" onclick="selectRole('caretaker')">Caretaker</button>
+        </div>
+      </div>
+      <div class="field" id="caretaker-field" style="display:none;">
+        <label class="field-label">Caretaker's username</label>
+        <input class="field-input" type="text" id="signup-caretaker" placeholder="Your caretaker's username" autocomplete="off" />
       </div>
       <div class="field">
         <label class="field-label">Password</label>
@@ -123,9 +151,25 @@
         <label class="field-label">Confirm Password</label>
         <input class="field-input" type="password" id="signup-confirm" placeholder="Repeat your password" autocomplete="new-password" />
       </div>
+      <div class="field">
+        <label class="field-label">Phone Number</label>
+        <input class="field-input" type="tel" id="signup-phone" placeholder="e.g. +1 555 000 1234" autocomplete="tel" />
+      </div>
       <div class="msg msg-error"   id="signup-error"></div>
       <div class="msg msg-success" id="signup-success"></div>
       <button class="submit-btn" onclick="handleSignup()">Create Account</button>
+    </div>
+
+    <!-- Link caretaker — shown after login when no caretaker is set yet -->
+    <div class="form-section hidden" id="form-link-caretaker">
+      <p class="link-ct-desc">Enter your caretaker's username to link your accounts. Ask them for their username — their account must already exist.</p>
+      <div class="field">
+        <label class="field-label">Caretaker's username</label>
+        <input class="field-input" type="text" id="link-ct-input" placeholder="e.g. nurse_alice" autocomplete="off" />
+      </div>
+      <div class="msg msg-error" id="link-ct-error"></div>
+      <button class="submit-btn" onclick="handleLinkCaretaker()">Link Caretaker</button>
+      <button class="skip-btn"   onclick="skipLinkCaretaker()">Skip for now</button>
     </div>
   </div>
 
@@ -164,6 +208,58 @@
       document.getElementById('form-signup').classList.toggle('hidden', isLogin);
     }
 
+    let selectedRole = null;
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('role-btn-user').classList.toggle('active', role === 'user');
+      document.getElementById('role-btn-caretaker').classList.toggle('active', role === 'caretaker');
+      document.getElementById('caretaker-field').style.display = role === 'user' ? '' : 'none';
+      if (role !== 'user') document.getElementById('signup-caretaker').value = '';
+    }
+
+    // ── Link-caretaker state ─────────────────────────────────────────────────
+    let pendingSession  = null;
+    let pendingUsername = null;
+    let pendingPersist  = false;
+
+    function showLinkCaretakerForm(session, username, persist) {
+      pendingSession  = session;
+      pendingUsername = username;
+      pendingPersist  = persist;
+      document.getElementById('auth-tabs').style.display       = 'none';
+      document.getElementById('link-ct-title').style.display   = '';
+      document.getElementById('form-login').classList.add('hidden');
+      document.getElementById('form-signup').classList.add('hidden');
+      document.getElementById('form-link-caretaker').classList.remove('hidden');
+      document.getElementById('link-ct-input').focus();
+    }
+
+    function handleLinkCaretaker() {
+      hideMsg('link-ct-error');
+      const ctUsername = document.getElementById('link-ct-input').value.trim();
+      if (!ctUsername) { showMsg('link-ct-error', 'Please enter a username or tap Skip.'); return; }
+      const users = getUsers();
+      const caretaker = users.find(u => u.username.toLowerCase() === ctUsername.toLowerCase());
+      if (!caretaker) { showMsg('link-ct-error', 'No account found with that username. Check the spelling.'); return; }
+      if (caretaker.username.toLowerCase() === pendingUsername.toLowerCase()) {
+        showMsg('link-ct-error', 'You cannot link yourself as your caretaker.'); return;
+      }
+      const idx = users.findIndex(u => u.username === pendingUsername);
+      if (idx !== -1) {
+        users[idx].caretakerName = caretaker.username;
+        users[idx].role = 'user';
+        saveUsers(users);
+      }
+      pendingSession.caretakerName = caretaker.username;
+      saveSession(pendingSession, pendingPersist);
+      window.location.href = 'home.html';
+    }
+
+    function skipLinkCaretaker() {
+      saveSession(pendingSession, pendingPersist);
+      window.location.href = 'home.html';
+    }
+
     async function handleLogin() {
       hideMsg('login-error');
       const username = document.getElementById('login-username').value.trim();
@@ -173,7 +269,8 @@
       const hash  = await hashPassword(password);
       const match = getUsers().find(u => u.username === username && u.passwordHash === hash);
       if (!match) { showMsg('login-error', 'Username or password incorrect.'); return; }
-      saveSession({ username: match.username, name: match.name, phone: match.phone }, keep);
+      const session = { username: match.username, name: match.name, phone: match.phone, caretakerName: match.caretakerName || null };
+      saveSession(session, keep);
       window.location.href = 'home.html';
     }
 
@@ -182,29 +279,43 @@
       const name     = document.getElementById('signup-name').value.trim();
       const username = document.getElementById('signup-username').value.trim();
       const phone    = document.getElementById('signup-phone').value.trim();
+      const ctInput  = document.getElementById('signup-caretaker').value.trim();
       const password = document.getElementById('signup-password').value;
       const confirm  = document.getElementById('signup-confirm').value;
       if (!name || !username || !password || !confirm) { showMsg('signup-error', 'Please fill in all fields.'); return; }
+      if (!selectedRole)                                { showMsg('signup-error', 'Please select whether you are a User or Caretaker.'); return; }
+      if (selectedRole === 'user' && !ctInput)          { showMsg('signup-error', 'Please enter your caretaker\'s username.'); return; }
       if (username.length < 3)                          { showMsg('signup-error', 'Username must be at least 3 characters.'); return; }
       if (!/^[a-zA-Z0-9_]+$/.test(username))            { showMsg('signup-error', 'Username: letters, numbers and underscores only.'); return; }
       if (password.length < 6)                          { showMsg('signup-error', 'Password must be at least 6 characters.'); return; }
       if (password !== confirm)                         { showMsg('signup-error', 'Passwords do not match.'); return; }
       const users = getUsers();
       if (users.find(u => u.username === username))     { showMsg('signup-error', 'Username already taken.'); return; }
-      const hash = await hashPassword(password);
-      users.push({ username, name, phone, passwordHash: hash });
+      if (ctInput) {
+        const ct = users.find(u => u.username.toLowerCase() === ctInput.toLowerCase());
+        if (!ct)                                                   { showMsg('signup-error', 'Caretaker username not found.'); return; }
+        if (ct.username.toLowerCase() === username.toLowerCase())  { showMsg('signup-error', 'You cannot link yourself as your caretaker.'); return; }
+      }
+      const hash    = await hashPassword(password);
+      const newUser = { username, name, phone, passwordHash: hash, role: selectedRole };
+      if (ctInput) newUser.caretakerName = ctInput;
+      users.push(newUser);
       saveUsers(users);
       showMsg('signup-success', 'Account created! Logging you in…');
-      setTimeout(async () => {
-        saveSession({ username, name, phone }, false);
+      setTimeout(() => {
+        const session = { username, name, phone, caretakerName: ctInput || null };
+        saveSession(session, false);
         window.location.href = 'home.html';
       }, 1200);
     }
 
     document.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
+      const linking   = !document.getElementById('form-link-caretaker').classList.contains('hidden');
       const signingUp = !document.getElementById('form-signup').classList.contains('hidden');
-      signingUp ? handleSignup() : handleLogin();
+      if (linking)   handleLinkCaretaker();
+      else if (signingUp) handleSignup();
+      else handleLogin();
     });
   </script>
 </body>

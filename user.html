@@ -30,18 +30,6 @@
       flex-shrink: 0;
     }
 
-    .back-btn {
-      background: var(--surface);
-      border: 1.5px solid var(--border);
-      color: var(--text);
-      font-size: 18px;
-      font-family: var(--font);
-      cursor: pointer;
-      padding: 7px 14px;
-      border-radius: 8px;
-      transition: background 0.15s;
-    }
-    .back-btn:hover { background: var(--border); }
 
     .topbar h1 {
       font-size: 18px;
@@ -165,14 +153,35 @@
       font-family: var(--font); transition: opacity 0.15s;
     }
     #speak-again-btn:hover { opacity: 0.88; }
+
+    /* ── Med reminder banner ── */
+    #med-reminder {
+      display: none; width: 100%; max-width: 640px;
+      margin-top: 10px; flex-shrink: 0;
+      background: var(--navy); border: 2px solid var(--accent);
+      border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    #med-reminder.show { display: block; }
+    #med-reminder-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    #med-reminder-label { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    #med-reminder-names { font-size: 15px; font-weight: 600; color: #fff; }
+    #med-taken-btn {
+      padding: 12px 16px; font-size: 14px; font-weight: 700;
+      background: var(--accent); color: var(--navy);
+      border: none; border-radius: 10px; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      font-family: var(--font); transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #med-taken-btn:active { opacity: 0.8; }
   </style>
 </head>
 
 <body>
 
   <div class="topbar">
-    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
-    <h1>Object Scanner</h1>
+<h1>Object Scanner</h1>
   </div>
 
   <div id="cam-wrap">
@@ -200,6 +209,16 @@
 
   <div id="controls">
     <button id="scan-btn" disabled>Scan Object</button>
+  </div>
+
+  <div id="med-reminder">
+    <div id="med-reminder-inner">
+      <div>
+        <div id="med-reminder-label">💊 Time to take your meds</div>
+        <div id="med-reminder-names"></div>
+      </div>
+      <button id="med-taken-btn">Meds Taken ✓</button>
+    </div>
   </div>
 
   <div id="how-to">
@@ -323,10 +342,18 @@
     }
     speakAgainBtn.addEventListener('click', () => { if (currentSpeakText) speak(currentSpeakText); });
 
-    // ── Load caretaker objects ────────────────────────────────────────────────
+    // ── Load caretaker objects (filtered by assignedTo) ───────────────────────
     function getCaretakerObjects() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-      catch { return []; }
+      try {
+        const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        const myUsername     = session ? session.username    : null;
+        const caretakerName  = session ? session.caretakerName : null;
+        const key = caretakerName ? ('objects_' + caretakerName) : STORAGE_KEY;
+        const all = JSON.parse(localStorage.getItem(key) || '[]');
+        return all.filter(obj =>
+          !obj.assignedTo || obj.assignedTo === 'everyone' || obj.assignedTo === myUsername
+        );
+      } catch { return []; }
     }
 
     function checkMatches(detections) {
@@ -521,7 +548,6 @@
         { el: scanBtn,                                 text: 'Scan Object' },
         { el: document.querySelector('#cam-start p'),  text: 'Allow camera access to start scanning' },
         { el: speakAgainBtn,                           text: '🔊 Speak again' },
-        { el: document.querySelector('.back-btn'),     text: '←' },
       ];
 
       const howToSteps = [
@@ -549,6 +575,129 @@
 
     initUserTranslations();
   </script>
+
+  <script>
+  // ── Medication reminder ──────────────────────────────────────────────────────
+  (function () {
+    const LOW_STOCK = 7;
+    if (Notification.permission === 'default') Notification.requestPermission();
+
+    // Clean up taken records from previous days
+    const todayStr = new Date().toISOString().split('T')[0];
+    try {
+      const taken = JSON.parse(localStorage.getItem('med_doses_taken') || '{}');
+      const cleaned = {};
+      Object.entries(taken).forEach(([k, v]) => { if (v === todayStr) cleaned[k] = v; });
+      localStorage.setItem('med_doses_taken', JSON.stringify(cleaned));
+    } catch {}
+
+    function isTimeDue(schedTime, nowMins) {
+      const [h, m] = schedTime.split(':').map(Number);
+      const schedMins = h * 60 + m;
+      return nowMins >= schedMins && nowMins < schedMins + 5;
+    }
+
+    let pendingDoses = [];
+
+    function checkMedReminders() {
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+
+      let session;
+      try { session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); } catch { session = null; }
+      const myUsername = session ? session.username : null;
+
+      let meds, taken;
+      try {
+        const allMeds = JSON.parse(localStorage.getItem('medications_active') || '[]');
+        meds = allMeds.filter(m => !m.assignedTo || m.assignedTo === 'everyone' || m.assignedTo === myUsername);
+      } catch { meds = []; }
+      try { taken = JSON.parse(localStorage.getItem('med_doses_taken')    || '{}'); } catch { taken = {}; }
+
+      const due = [];
+      for (const med of meds) {
+        if (!med.times || !med.days || !med.days.includes(dayName)) continue;
+        for (const time of med.times) {
+          const key = `${med.id}_${time}`;
+          if (taken[key] === today) continue;
+          if (isTimeDue(time, nowMins)) due.push({ med, time, key });
+        }
+      }
+
+      pendingDoses = due;
+      updateReminderUI(due);
+
+      if (due.length > 0) {
+        const newDue = due.filter(d => !sessionStorage.getItem('notif_' + d.key));
+        if (newDue.length > 0) {
+          newDue.forEach(d => sessionStorage.setItem('notif_' + d.key, '1'));
+          if (Notification.permission === 'granted') {
+            const names = [...new Set(newDue.map(d => d.med.name))].join(', ');
+            new Notification('Time to take your medication', { body: names });
+          }
+        }
+      }
+    }
+
+    function updateReminderUI(due) {
+      const banner = document.getElementById('med-reminder');
+      const namesEl = document.getElementById('med-reminder-names');
+      if (!banner || !namesEl) return;
+      if (due.length === 0) { banner.classList.remove('show'); return; }
+      banner.classList.add('show');
+      namesEl.textContent = [...new Set(due.map(d => d.med.name))].join(' · ');
+    }
+
+    document.getElementById('med-taken-btn').addEventListener('click', () => {
+      if (!pendingDoses.length) return;
+      const today = new Date().toISOString().split('T')[0];
+      let meds, taken;
+      try { meds  = JSON.parse(localStorage.getItem('medications_active') || '[]'); } catch { meds  = []; }
+      try { taken = JSON.parse(localStorage.getItem('med_doses_taken')    || '{}'); } catch { taken = {}; }
+
+      const deductedIds = new Set();
+      const lowMeds = [];
+
+      pendingDoses.forEach(({ med, key }) => {
+        taken[key] = today;
+        if (!deductedIds.has(med.id)) {
+          deductedIds.add(med.id);
+          const idx = meds.findIndex(m => m.id === med.id);
+          if (idx !== -1 && typeof meds[idx].pillCount === 'number') {
+            meds[idx].pillCount = Math.max(0, meds[idx].pillCount - 1);
+            if (meds[idx].pillCount <= LOW_STOCK) lowMeds.push(meds[idx]);
+          }
+        }
+      });
+
+      localStorage.setItem('medications_active', JSON.stringify(meds));
+      localStorage.setItem('med_doses_taken', JSON.stringify(taken));
+
+      if (lowMeds.length && Notification.permission === 'granted') {
+        let notified;
+        try { notified = JSON.parse(localStorage.getItem('med_low_notified') || '{}'); } catch { notified = {}; }
+        lowMeds.forEach(med => {
+          if (notified[med.id] !== today) {
+            notified[med.id] = today;
+            new Notification('Caretaker: Low Medication Stock', {
+              body: `${med.name} is running low (${med.pillCount} pill${med.pillCount !== 1 ? 's' : ''} left). Please restock.`,
+            });
+          }
+        });
+        localStorage.setItem('med_low_notified', JSON.stringify(notified));
+      }
+
+      pendingDoses = [];
+      updateReminderUI([]);
+    });
+
+    checkMedReminders();
+    setInterval(checkMedReminders, 60000);
+  })();
+  </script>
+
   <script src="side-panel.js"></script>
 </body>
 
