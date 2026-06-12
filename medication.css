@@ -186,7 +186,18 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
 .changelog-desc { font-size: 14px; color: var(--text); line-height: 1.5; }
 
 /* ── Add/Edit modal ── */
-#modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
 #modal-overlay.show { display: flex; }
 
 #modal {
