@@ -392,7 +392,7 @@ function openModal(med) {
     med ? (med.assignedTo || 'everyone') : 'everyone'
   );
   modalOverlay.classList.add('show');
-  document.body.style.overflow = 'hidden';
+ 
   inputName.focus();
 }
 
