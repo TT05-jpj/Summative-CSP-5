@@ -34,6 +34,8 @@ function switchDashTab(tab) {
   const isObjects = tab === 'objects';
   document.getElementById('panel-objects').style.display = isObjects ? '' : 'none';
   document.getElementById('panel-users').style.display   = isObjects ? 'none' : 'block';
+  const h1 = document.querySelector('header h1');
+  if (h1) h1.textContent = isObjects ? 'My Objects' : 'Users';
   // Keep bottom tab bar in sync
   document.querySelectorAll('#ct-tab-bar .ct-tab').forEach(a => {
     const href = a.getAttribute('href') || '';
