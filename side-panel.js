@@ -207,6 +207,36 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
     #sp-edit-close:hover { background: var(--border); }
+
+    /* Logout confirm modal */
+    #sp-logout-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+      z-index: 800; align-items: center; justify-content: center; padding: 20px;
+    }
+    #sp-logout-modal.open { display: flex; }
+    #sp-logout-box {
+      background: var(--surface); border-radius: 20px; padding: 28px 24px;
+      width: 100%; max-width: 340px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.2); text-align: center;
+    }
+    #sp-logout-box h3 { font-size: 18px; font-weight: 700; color: var(--navy); }
+    #sp-logout-box p  { font-size: 15px; color: var(--muted); line-height: 1.5; }
+    #sp-logout-actions { display: flex; gap: 10px; }
+    #sp-logout-confirm {
+      flex: 1; padding: 13px; font-size: 15px; font-weight: 700;
+      background: #b91c1c; color: #fff;
+      border: none; border-radius: 12px; cursor: pointer; font-family: var(--font, system-ui);
+      transition: opacity 0.15s;
+    }
+    #sp-logout-confirm:hover { opacity: 0.88; }
+    #sp-logout-cancel {
+      flex: 1; padding: 13px; font-size: 15px; font-weight: 600;
+      background: var(--bg); color: var(--muted);
+      border: none; border-radius: 12px; cursor: pointer; font-family: var(--font, system-ui);
+    }
+    #sp-logout-cancel:hover { background: var(--border); }
   `;
 
   const swatchStyle = document.createElement('style');
@@ -303,15 +333,39 @@
       </div>
     </div>`;
 
+  // Logout confirm modal
+  const logoutModal = document.createElement('div');
+  logoutModal.id = 'sp-logout-modal';
+  logoutModal.innerHTML = `
+    <div id="sp-logout-box">
+      <h3>Log Out?</h3>
+      <p>Are you sure you want to log out?</p>
+      <div id="sp-logout-actions">
+        <button id="sp-logout-cancel">Cancel</button>
+        <button id="sp-logout-confirm">Log Out</button>
+      </div>
+    </div>`;
+
   document.body.appendChild(btn);
   document.body.appendChild(overlay);
   document.body.appendChild(panel);
   document.body.appendChild(editModal);
+  document.body.appendChild(logoutModal);
 
   // ── Toggle panel ──────────────────────────────────────────────────────────
   let open = false;
-  function openPanel()  { open = true;  panel.classList.add('sp-open'); overlay.classList.add('sp-open'); btn.textContent = '✕'; }
-  function closePanel() { open = false; panel.classList.remove('sp-open'); overlay.classList.remove('sp-open'); btn.textContent = '≡'; }
+  function openPanel()  {
+    open = true;
+    panel.classList.add('sp-open');
+    overlay.classList.add('sp-open');
+    btn.style.display = 'none';   // hide hamburger so it doesn't cover the panel title
+  }
+  function closePanel() {
+    open = false;
+    panel.classList.remove('sp-open');
+    overlay.classList.remove('sp-open');
+    btn.style.display = '';       // show hamburger again
+  }
 
   btn.addEventListener('click', () => open ? closePanel() : openPanel());
   overlay.addEventListener('click', closePanel);
@@ -323,18 +377,31 @@
   );
 
   // ── Languages ────────────────────────────────────────────────────────────
+  function triggerTranslation() {
+    const ct = localStorage.getItem('caretaker_lang') || 'en';
+    const us = localStorage.getItem('user_lang') || 'en';
+    if (typeof translatePage === 'function') translatePage(ct, us);
+    else if (typeof initTranslations === 'function') initTranslations();
+    else if (typeof translateDashboard === 'function') translateDashboard(ct);
+  }
+
   panel.querySelector('#sp-ct-lang').addEventListener('change', e => {
     localStorage.setItem('caretaker_lang', e.target.value);
-    // trigger re-translation if the page has the function
-    if (typeof initTranslations === 'function') initTranslations();
-    else if (typeof translateDashboard === 'function') translateDashboard(e.target.value);
+    triggerTranslation();
   });
   panel.querySelector('#sp-us-lang').addEventListener('change', e => {
     localStorage.setItem('user_lang', e.target.value);
+    triggerTranslation();
   });
 
   // ── Logout ────────────────────────────────────────────────────────────────
-  panel.querySelector('#sp-logout').addEventListener('click', doLogout);
+  panel.querySelector('#sp-logout').addEventListener('click', () => {
+    closePanel();
+    logoutModal.classList.add('open');
+  });
+  logoutModal.querySelector('#sp-logout-confirm').addEventListener('click', doLogout);
+  logoutModal.querySelector('#sp-logout-cancel').addEventListener('click',  () => logoutModal.classList.remove('open'));
+  logoutModal.addEventListener('click', e => { if (e.target === logoutModal) logoutModal.classList.remove('open'); });
 
   // ── Edit profile ─────────────────────────────────────────────────────────
   if (username) {

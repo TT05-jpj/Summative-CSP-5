@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>A-TEN</title>
   <script>
-    (function(){
+    (function () {
       try {
         const s = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
-        if (!s) window.location.replace('login.html');
-      } catch { window.location.replace('login.html'); }
+        if (s && s.role === 'caretaker') window.location.replace('caretaker.html');
+        else if (s && s.role === 'user') window.location.replace('user.html');
+      } catch {}
     })();
   </script>
   <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
@@ -19,9 +21,6 @@
   eb-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="A-TEN">
   <link rel="stylesheet" href="shared.css" />
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="A-TEN">
   <style>
     body {
       background: var(--navy);
@@ -34,13 +33,13 @@
       overflow-y: auto;
     }
 
-    .logo {
+    .app-name {
       font-size: 72px;
       font-weight: 900;
       color: var(--accent);
       letter-spacing: 0.04em;
-      margin-bottom: 12px;
       line-height: 1;
+      margin-bottom: 12px;
     }
 
     h1 {
@@ -327,7 +326,7 @@
 
 <body>
 
-  <p class="logo" id="logo-text">A-TEN</p>
+  <p class="app-name">A-TEN</p>
   <h1 id="title-text">Who are you?</h1>
   <p class="subtitle" id="subtitle-text">Choose your role to get started</p>
 
@@ -445,20 +444,20 @@
   </div>
 
   <div class="btn-group">
-    <button class="btn btn-user" onclick="selectRole('user')">
+    <a href="login.html?role=user" class="btn btn-user">
       <div class="btn-left">
         <span class="btn-label" id="user-btn-label">I am a User</span>
         <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
       </div>
       <span class="btn-arrow">→</span>
-    </button>
-    <button class="btn btn-caretaker" onclick="selectRole('caretaker')">
+    </a>
+    <a href="login.html?role=caretaker" class="btn btn-caretaker">
       <div class="btn-left">
         <span class="btn-label" id="ct-btn-label">I am a Caretaker</span>
         <span class="btn-desc" id="ct-btn-desc">Manage objects &amp; instructions</span>
       </div>
       <span class="btn-arrow">→</span>
-    </button>
+    </a>
   </div>
 
   <p class="footer" id="footer-text">Select the option that applies to you</p>
@@ -493,18 +492,6 @@
       }
       document.getElementById('user-btn-label').textContent = await translateText('I am a User', userLang);
       document.getElementById('user-btn-desc').textContent = await translateText('Scan objects around me', userLang);
-    }
-
-    // ── Role selection — saves role to session then navigates
-    function selectRole(role) {
-      try {
-        const raw = localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session');
-        const s = raw ? JSON.parse(raw) : {};
-        const updated = JSON.stringify({ ...s, role });
-        if (localStorage.getItem('auth_session')) localStorage.setItem('auth_session', updated);
-        else sessionStorage.setItem('auth_session', updated);
-      } catch {}
-      window.location.href = role === 'caretaker' ? 'caretaker.html' : 'user.html';
     }
 
     translatePage(ctLangSel.value, userLangSel.value);

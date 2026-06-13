@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A-TEN</title>
+  <script>
+    // index.html is no longer the entry point — redirect to login
+    (function(){
+      try {
+        const s = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        window.location.replace(s ? 'home.html' : 'login.html');
+      } catch { window.location.replace('login.html'); }
+    })();
+  </script>
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="A-TEN">
+  <link rel="stylesheet" href="shared.css" />
+  <style>
+    body {
+      background: var(--navy);
+      color: #e2e8f0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: calc(40px + env(safe-area-inset-top)) 24px calc(48px + env(safe-area-inset-bottom));
+      overflow-y: auto;
+    }
+
+    .logo {
+      font-size: 72px;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #e2e8f0;
+      text-align: center;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: rgba(255,255,255,0.55);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    /* ── Theme picker ── */
+    .theme-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .theme-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #a0aec0;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .theme-swatches {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px 0;
+      width: 100%;
+    }
+
+    .swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 16px;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s;
+    }
+    .swatch:active { transform: scale(0.92); }
+
+    .swatch-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      position: relative;
+      overflow: hidden;
+      border: 3px solid rgba(255,255,255,0.65);
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.45);
+      transition: border-color 0.15s;
+    }
+    .swatch-circle::before,
+    .swatch-circle::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+    }
+    .swatch-circle::before { top: 0; height: 55%; }
+    .swatch-circle::after  { bottom: 0; height: 45%; }
+
+    .swatch.active .swatch-circle {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.45);
+    }
+
+    .swatch-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .swatch.active .swatch-name { color: #e2e8f0; }
+
+    /* Individual swatch colors — match shared.css theme values */
+    .swatch[data-theme=""]       .swatch-circle::before { background: #1e3060; }
+    .swatch[data-theme=""]       .swatch-circle::after  { background: #f0b830; }
+    .swatch[data-theme="watermelon"] .swatch-circle::before { background: #3d7848; }
+    .swatch[data-theme="watermelon"] .swatch-circle::after  { background: #f04898; }
+    .swatch[data-theme="rose"]       .swatch-circle::before { background: #8a1258; }
+    .swatch[data-theme="rose"]       .swatch-circle::after  { background: #ffaad6; }
+    .swatch[data-theme="ocean"]      .swatch-circle::before { background: #1a6870; }
+    .swatch[data-theme="ocean"]      .swatch-circle::after  { background: #cfe8ef; }
+    .swatch[data-theme="sunset"]     .swatch-circle::before { background: #c0128a; }
+    .swatch[data-theme="sunset"]     .swatch-circle::after  { background: #ffa028; }
+    .swatch[data-theme="sage"]       .swatch-circle::before { background: #2e5a3a; }
+    .swatch[data-theme="sage"]       .swatch-circle::after  { background: #d4f0c0; }
+    .swatch[data-theme="grape"]      .swatch-circle::before { background: #57467b; }
+    .swatch[data-theme="grape"]      .swatch-circle::after  { background: #ea7af4; }
+    .swatch[data-theme="calm"]       .swatch-circle::before { background: #4a4858; }
+    .swatch[data-theme="calm"]       .swatch-circle::after  { background: #c4cad0; }
+
+    /* ── Language selectors ── */
+    .lang-selectors {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .lang-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .lang-group label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 600;
+    }
+
+    .lang-group select {
+      background: var(--accent);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      outline: none;
+    }
+
+    /* ── Role buttons ── */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px;
+      border-radius: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+    }
+
+    .btn-label { font-size: 19px; font-weight: 700; }
+    .btn-desc  { font-size: 14px; opacity: 0.7; }
+    .btn-arrow { font-size: 22px; opacity: 0.8; }
+
+    .btn-user {
+      background: #ffffff;
+      color: var(--navy);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .btn-user:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.4); }
+
+    .btn-caretaker {
+      background: var(--accent);
+      color: var(--navy);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .btn-caretaker:hover { box-shadow: 0 6px 28px rgba(0,0,0,0.35); }
+
+    .footer {
+      margin-top: 28px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+    }
+  </style>
+</head>
+
+<body>
+
+  <p class="logo" id="logo-text">A-TEN</p>
+  <h1 id="title-text">Who are you?</h1>
+  <p class="subtitle" id="subtitle-text">Choose your role to get started</p>
+
+  <!-- Theme picker — above the fold so it's always visible -->
+  <div class="theme-section">
+    <p class="theme-label">Colour Scheme</p>
+    <div class="theme-swatches">
+      <button class="swatch" data-theme="">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Navy</span>
+      </button>
+      <button class="swatch" data-theme="watermelon">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Watermelon</span>
+      </button>
+      <button class="swatch" data-theme="rose">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Rose</span>
+      </button>
+      <button class="swatch" data-theme="ocean">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Ocean</span>
+      </button>
+      <button class="swatch" data-theme="sunset">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Sunset</span>
+      </button>
+      <button class="swatch" data-theme="sage">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Sage</span>
+      </button>
+      <button class="swatch" data-theme="grape">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Grape</span>
+      </button>
+      <button class="swatch" data-theme="calm">
+        <span class="swatch-circle"></span>
+        <span class="swatch-name">Calm</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Language selectors -->
+  <div class="lang-selectors">
+    <div class="lang-group">
+      <label id="ct-lang-label">Caretaker language</label>
+      <select id="caretaker-lang">
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="zh">Chinese</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="ar">Arabic</option>
+        <option value="hi">Hindi</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="bn">Bengali</option>
+        <option value="ur">Urdu</option>
+        <option value="ru">Russian</option>
+        <option value="tr">Turkish</option>
+        <option value="vi">Vietnamese</option>
+        <option value="th">Thai</option>
+        <option value="pl">Polish</option>
+        <option value="nl">Dutch</option>
+        <option value="sv">Swedish</option>
+        <option value="ro">Romanian</option>
+        <option value="el">Greek</option>
+        <option value="he">Hebrew</option>
+        <option value="fa">Persian</option>
+        <option value="sw">Swahili</option>
+        <option value="tl">Filipino</option>
+        <option value="ms">Malay</option>
+        <option value="id">Indonesian</option>
+      </select>
+    </div>
+    <div class="lang-group">
+      <label id="user-lang-label">User language</label>
+      <select id="user-lang">
+        <option value="en">English</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt">Portuguese</option>
+        <option value="zh">Chinese</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="ar">Arabic</option>
+        <option value="hi">Hindi</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+        <option value="bn">Bengali</option>
+        <option value="ur">Urdu</option>
+        <option value="ru">Russian</option>
+        <option value="tr">Turkish</option>
+        <option value="vi">Vietnamese</option>
+        <option value="th">Thai</option>
+        <option value="pl">Polish</option>
+        <option value="nl">Dutch</option>
+        <option value="sv">Swedish</option>
+        <option value="ro">Romanian</option>
+        <option value="el">Greek</option>
+        <option value="he">Hebrew</option>
+        <option value="fa">Persian</option>
+        <option value="sw">Swahili</option>
+        <option value="tl">Filipino</option>
+        <option value="ms">Malay</option>
+        <option value="id">Indonesian</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <a href="user.html" class="btn btn-user" onclick="localStorage.setItem('role','user')">
+      <div class="btn-left">
+        <span class="btn-label" id="user-btn-label">I am a User</span>
+        <span class="btn-desc" id="user-btn-desc">Scan objects around me</span>
+      </div>
+      <span class="btn-arrow">→</span>
+    </a>
+    <a href="caretaker.html" class="btn btn-caretaker" onclick="localStorage.setItem('role','caretaker')">
+      <div class="btn-left">
+        <span class="btn-label" id="ct-btn-label">I am a Caretaker</span>
+        <span class="btn-desc" id="ct-btn-desc">Manage objects &amp; instructions</span>
+      </div>
+      <span class="btn-arrow">→</span>
+    </a>
+  </div>
+
+  <p class="footer" id="footer-text">Select the option that applies to you</p>
+
+  <script>
+    const ctLangSel = document.getElementById('caretaker-lang');
+    const userLangSel = document.getElementById('user-lang');
+
+    // load saved
+    ctLangSel.value = localStorage.getItem('caretaker_lang') || 'en';
+    userLangSel.value = localStorage.getItem('user_lang') || 'en';
+
+    // translate a piece of text using Google Translate free endpoint
+    function translateText(text, targetLang) {
+      if (targetLang === 'en') return Promise.resolve(text);
+      return fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(data => data[0].map(x => x[0]).join(''))
+        .catch(() => text);
+    }
+
+    // translate all caretaker-facing text
+    async function translatePage(ctLang, userLang) {
+      // caretaker language texts
+      const ctTexts = [
+        { id: 'title-text', en: 'Who are you?' },
+        { id: 'subtitle-text', en: 'Choose your role to get started' },
+        { id: 'ct-lang-label', en: 'Caretaker language' },
+        { id: 'user-lang-label', en: 'User language' },
+        { id: 'ct-btn-label', en: 'I am a Caretaker' },
+        { id: 'ct-btn-desc', en: 'Manage objects & instructions' },
+        { id: 'footer-text', en: 'Select the option that applies to you' },
+      ];
+
+      for (const item of ctTexts) {
+        const translated = await translateText(item.en, ctLang);
+        document.getElementById(item.id).textContent = translated;
+      }
+
+      // user button in user language
+      const userBtnLabel = await translateText('I am a User', userLang);
+      const userBtnDesc = await translateText('Scan objects around me', userLang);
+      document.getElementById('user-btn-label').textContent = userBtnLabel;
+      document.getElementById('user-btn-desc').textContent = userBtnDesc;
+    }
+
+    // run on load
+    translatePage(ctLangSel.value, userLangSel.value);
+
+    // run when changed
+    ctLangSel.addEventListener('change', () => {
+      localStorage.setItem('caretaker_lang', ctLangSel.value);
+      translatePage(ctLangSel.value, userLangSel.value);
+    });
+
+    userLangSel.addEventListener('change', () => {
+      localStorage.setItem('user_lang', userLangSel.value);
+      translatePage(ctLangSel.value, userLangSel.value);
+    });
+
+    // ── Theme picker ─────────────────────────────────────────────────────────
+    const swatches = document.querySelectorAll('.swatch');
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      localStorage.setItem('app-theme', theme);
+      swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+    }
+
+    // Mark current theme on load
+    const savedTheme = localStorage.getItem('app-theme') || '';
+    swatches.forEach(s => s.classList.toggle('active', s.dataset.theme === savedTheme));
+
+    swatches.forEach(s => s.addEventListener('click', () => applyTheme(s.dataset.theme)));
+  </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -12,29 +13,40 @@
   <style>
     body {
       background: var(--navy);
-      color: #e2e8f0;
+      color: var(--accent);
       min-height: 100dvh;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       padding: calc(40px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom));
-      overflow-y: auto;
       font-family: var(--font);
     }
-    .logo { font-size: 72px; font-weight: 900; color: var(--accent); letter-spacing: 0.04em; margin-bottom: 4px; line-height: 1; }
-    .tagline { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 28px; letter-spacing: 0.07em; text-transform: uppercase; }
+
+    .logo {
+      font-size: 72px; font-weight: 900;
+      color: var(--accent); letter-spacing: 0.04em;
+      line-height: 1; margin-bottom: 6px;
+    }
+
+    .role-badge {
+      font-size: 13px; font-weight: 700;
+      color: rgba(255,255,255,0.5); letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 28px;
+    }
 
     .card {
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 18px; padding: 28px 24px;
-      width: 100%; max-width: 380px;
+      width: 100%; max-width: 420px;
       display: flex; flex-direction: column; gap: 16px;
     }
 
-    .auth-tabs {
-      display: flex; background: rgba(0,0,0,0.25);
+    .tabs {
+      display: flex;
+      background: rgba(0,0,0,0.25);
       border-radius: 10px; overflow: hidden;
     }
+
     .tab-btn {
       flex: 1; padding: 11px; font-size: 15px; font-weight: 600;
       background: none; border: none; color: rgba(255,255,255,0.5);
@@ -45,25 +57,37 @@
 
     .form-section { display: flex; flex-direction: column; gap: 14px; }
     .form-section.hidden { display: none; }
+
     .field { display: flex; flex-direction: column; gap: 5px; }
-    .field-label { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.07em; }
+    .field-label {
+      font-size: 12px; font-weight: 700;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+
     .field-input {
       width: 100%; padding: 12px 14px; font-size: 16px;
-      background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,255,255,0.12);
-      border-radius: 10px; color: #e2e8f0; outline: none; font-family: var(--font);
-      transition: border-color 0.15s;
+      background: rgba(0,0,0,0.3);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px; color: #e2e8f0;
+      outline: none; font-family: var(--font); transition: border-color 0.15s;
     }
     .field-input:focus { border-color: var(--accent); }
     .field-input::placeholder { color: rgba(255,255,255,0.22); }
 
-    .keep-signed { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; user-select: none; }
-    .keep-signed input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+    .keep-signed {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; user-select: none;
+    }
+    .keep-signed input[type="checkbox"] {
+      width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+    }
 
     .submit-btn {
       width: 100%; padding: 14px; font-size: 17px; font-weight: 700;
       background: var(--accent); color: var(--navy);
-      border: none; border-radius: 12px; cursor: pointer; font-family: var(--font);
-      transition: opacity 0.15s; margin-top: 2px;
+      border: none; border-radius: 12px; cursor: pointer;
+      transition: opacity 0.15s; font-family: var(--font); margin-top: 2px;
     }
     .submit-btn:hover { opacity: 0.88; }
 
@@ -71,57 +95,84 @@
     .msg.show { display: block; }
     .msg-error   { color: #f87171; background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.3); }
     .msg-success { color: #4ade80; background: rgba(22,163,74,0.15);  border: 1px solid rgba(22,163,74,0.3); }
+
+    .back-link {
+      font-size: 15px; color: rgba(255,255,255,0.45);
+      text-decoration: none; margin-top: 16px; text-align: center;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: rgba(255,255,255,0.8); }
+
+    .field-hint { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 4px; line-height: 1.4; }
   </style>
 </head>
+
 <body>
 
   <p class="logo">A-TEN</p>
-  <p class="tagline">Accessibility Tool</p>
+  <p class="role-badge" id="role-badge">Sign in as User</p>
 
   <div class="card">
-    <div class="auth-tabs">
+    <div class="tabs" id="auth-tabs">
       <button class="tab-btn active" id="tab-login"  onclick="showTab('login')">Log In</button>
       <button class="tab-btn"        id="tab-signup" onclick="showTab('signup')">Sign Up</button>
     </div>
 
-    <!-- Log In -->
-    <div class="form-section" id="form-login">
+    <!-- User login (no password) -->
+    <div class="form-section hidden" id="form-user-login">
       <div class="field">
         <label class="field-label">Username</label>
-        <input class="field-input" type="text" id="login-username" placeholder="Your username" autocomplete="username" />
+        <input class="field-input" type="text" id="user-username"
+          placeholder="Your username" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label class="field-label">Caretaker Name</label>
+        <input class="field-input" type="text" id="user-caretaker"
+          placeholder="Your caretaker's username (optional)" autocomplete="off" />
+        <p class="field-hint">Enter your caretaker's username, or leave blank if unsure.</p>
+      </div>
+      <label class="keep-signed">
+        <input type="checkbox" id="keep-signed-user" /> Keep me signed in
+      </label>
+      <div class="msg msg-error" id="user-error"></div>
+      <button class="submit-btn" onclick="handleUserLogin()">Continue</button>
+    </div>
+
+    <!-- Caretaker login (with password) -->
+    <div class="form-section hidden" id="form-login">
+      <div class="field">
+        <label class="field-label">Username</label>
+        <input class="field-input" type="text" id="login-identity"
+          placeholder="Your username" autocomplete="username" />
       </div>
       <div class="field">
         <label class="field-label">Password</label>
-        <input class="field-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+        <input class="field-input" type="password" id="login-password"
+          placeholder="••••••••" autocomplete="current-password" />
       </div>
       <label class="keep-signed">
-        <input type="checkbox" id="keep-in" /> Keep me signed in
+        <input type="checkbox" id="keep-signed-in" /> Keep me signed in
       </label>
       <div class="msg msg-error" id="login-error"></div>
       <button class="submit-btn" onclick="handleLogin()">Log In</button>
     </div>
 
-    <!-- Sign Up -->
+    <!-- Caretaker sign up -->
     <div class="form-section hidden" id="form-signup">
       <div class="field">
-        <label class="field-label">Full Name</label>
-        <input class="field-input" type="text" id="signup-name" placeholder="Your full name" autocomplete="name" />
-      </div>
-      <div class="field">
         <label class="field-label">Username</label>
-        <input class="field-input" type="text" id="signup-username" placeholder="Choose a username" autocomplete="username" />
-      </div>
-      <div class="field">
-        <label class="field-label">Phone Number</label>
-        <input class="field-input" type="tel" id="signup-phone" placeholder="e.g. +1 555 000 1234" autocomplete="tel" />
+        <input class="field-input" type="text" id="signup-username"
+          placeholder="Choose a username (letters, numbers, _)" autocomplete="username" />
       </div>
       <div class="field">
         <label class="field-label">Password</label>
-        <input class="field-input" type="password" id="signup-password" placeholder="At least 6 characters" autocomplete="new-password" />
+        <input class="field-input" type="password" id="signup-password"
+          placeholder="At least 6 characters" autocomplete="new-password" />
       </div>
       <div class="field">
         <label class="field-label">Confirm Password</label>
-        <input class="field-input" type="password" id="signup-confirm" placeholder="Repeat your password" autocomplete="new-password" />
+        <input class="field-input" type="password" id="signup-confirm"
+          placeholder="Repeat your password" autocomplete="new-password" />
       </div>
       <div class="msg msg-error"   id="signup-error"></div>
       <div class="msg msg-success" id="signup-success"></div>
@@ -129,18 +180,29 @@
     </div>
   </div>
 
+  <a class="back-link" href="home.html">← Back to role selection</a>
+
   <script>
+    const params = new URLSearchParams(location.search);
+    const role   = params.get('role') === 'caretaker' ? 'caretaker' : 'user';
+    const isUser = role === 'user';
+    const destPage = isUser ? 'user.html' : 'caretaker.html';
+
+    document.getElementById('role-badge').textContent =
+      isUser ? 'Sign in as User' : 'Sign in as Caretaker';
+
+    if (isUser) {
+      document.getElementById('auth-tabs').style.display = 'none';
+      document.getElementById('form-user-login').classList.remove('hidden');
+    } else {
+      document.getElementById('form-login').classList.remove('hidden');
+    }
+
+    // ── Session helpers ──────────────────────────────────────────────────────
     function getSession() {
       try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
       catch { return null; }
     }
-    // Already logged in → go to home for role selection
-    if (getSession()) window.location.replace('home.html');
-
-    function getUsers() {
-      try { return JSON.parse(localStorage.getItem('auth_users')) || []; } catch { return []; }
-    }
-    function saveUsers(u) { localStorage.setItem('auth_users', JSON.stringify(u)); }
 
     function saveSession(session, persist) {
       const data = JSON.stringify(session);
@@ -148,9 +210,16 @@
       else { sessionStorage.setItem('auth_session', data); localStorage.removeItem('auth_session'); }
     }
 
-    async function hashPassword(p) {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    // Already logged in with the right role → skip login
+    const existing = getSession();
+    if (existing && existing.role === role) window.location.replace(destPage);
+
+    function getUsers()       { try { return JSON.parse(localStorage.getItem('auth_users')) || []; } catch { return []; } }
+    function saveUsers(users) { localStorage.setItem('auth_users', JSON.stringify(users)); }
+
+    async function hashPassword(password) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     function showMsg(id, text) { const el = document.getElementById(id); el.textContent = text; el.classList.add('show'); }
@@ -158,54 +227,105 @@
 
     function showTab(tab) {
       const isLogin = tab === 'login';
-      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-login').classList.toggle('active',  isLogin);
       document.getElementById('tab-signup').classList.toggle('active', !isLogin);
-      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-login').classList.toggle('hidden',  !isLogin);
       document.getElementById('form-signup').classList.toggle('hidden', isLogin);
     }
 
-    async function handleLogin() {
-      hideMsg('login-error');
-      const username = document.getElementById('login-username').value.trim();
-      const password = document.getElementById('login-password').value;
-      const keep     = document.getElementById('keep-in').checked;
-      if (!username || !password) { showMsg('login-error', 'Please fill in all fields.'); return; }
-      const hash  = await hashPassword(password);
-      const match = getUsers().find(u => u.username === username && u.passwordHash === hash);
-      if (!match) { showMsg('login-error', 'Username or password incorrect.'); return; }
-      saveSession({ username: match.username, name: match.name, phone: match.phone }, keep);
-      window.location.href = 'home.html';
+    // ── User login (no password required) ───────────────────────────────────
+    function handleUserLogin() {
+      hideMsg('user-error');
+      const username      = document.getElementById('user-username').value.trim();
+      const caretakerName = document.getElementById('user-caretaker').value.trim();
+      const keep          = document.getElementById('keep-signed-user').checked;
+
+      if (!username)                          { showMsg('user-error', 'Please enter your username.'); return; }
+      if (username.length < 3)                { showMsg('user-error', 'Username must be at least 3 characters.'); return; }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) { showMsg('user-error', 'Username can only contain letters, numbers, and underscores.'); return; }
+
+      const users = getUsers();
+      let user = users.find(u => u.username === username && u.role === 'user');
+
+      if (!user) {
+        user = { username, role: 'user', caretakerName: caretakerName || '', assigned: false, assignedTo: '' };
+        users.push(user);
+      } else {
+        // Update caretaker link if they provided one and aren't already assigned
+        if (caretakerName && !user.assigned) user.caretakerName = caretakerName;
+      }
+
+      saveUsers(users);
+      saveSession({ username: user.username, role: 'user', caretakerName: user.caretakerName || '' }, keep);
+      window.location.href = destPage;
     }
 
+    // ── Caretaker login (password required) ─────────────────────────────────
+    async function handleLogin() {
+      hideMsg('login-error');
+      const identity = document.getElementById('login-identity').value.trim();
+      const password = document.getElementById('login-password').value;
+      const keep     = document.getElementById('keep-signed-in').checked;
+
+      if (!identity || !password) { showMsg('login-error', 'Please fill in all fields.'); return; }
+
+      const hash  = await hashPassword(password);
+      const users = getUsers();
+      const match = users.find(u => u.username === identity && u.passwordHash === hash && u.role === role);
+
+      if (!match) {
+        const wrongRole = users.find(u => u.username === identity && u.passwordHash === hash);
+        if (wrongRole) {
+          showMsg('login-error',
+            `This account is a ${wrongRole.role === 'user' ? 'User' : 'Caretaker'} account. Go back and choose the correct role.`);
+        } else {
+          showMsg('login-error', 'Username or password is incorrect.');
+        }
+        return;
+      }
+
+      saveSession({ username: match.username, role: match.role, name: match.name || '' }, keep);
+      window.location.href = destPage;
+    }
+
+    // ── Caretaker sign up ────────────────────────────────────────────────────
     async function handleSignup() {
       hideMsg('signup-error'); hideMsg('signup-success');
-      const name     = document.getElementById('signup-name').value.trim();
       const username = document.getElementById('signup-username').value.trim();
-      const phone    = document.getElementById('signup-phone').value.trim();
       const password = document.getElementById('signup-password').value;
       const confirm  = document.getElementById('signup-confirm').value;
-      if (!name || !username || !password || !confirm) { showMsg('signup-error', 'Please fill in all fields.'); return; }
-      if (username.length < 3)                          { showMsg('signup-error', 'Username must be at least 3 characters.'); return; }
-      if (!/^[a-zA-Z0-9_]+$/.test(username))            { showMsg('signup-error', 'Username: letters, numbers and underscores only.'); return; }
-      if (password.length < 6)                          { showMsg('signup-error', 'Password must be at least 6 characters.'); return; }
-      if (password !== confirm)                         { showMsg('signup-error', 'Passwords do not match.'); return; }
+
+      if (!username || !password || !confirm) { showMsg('signup-error', 'Please fill in all fields.'); return; }
+      if (username.length < 3)                { showMsg('signup-error', 'Username must be at least 3 characters.'); return; }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) { showMsg('signup-error', 'Username can only contain letters, numbers, and underscores.'); return; }
+      if (password.length < 6)               { showMsg('signup-error', 'Password must be at least 6 characters.'); return; }
+      if (password !== confirm)              { showMsg('signup-error', 'Passwords do not match.'); return; }
+
       const users = getUsers();
-      if (users.find(u => u.username === username))     { showMsg('signup-error', 'Username already taken.'); return; }
+      if (users.find(u => u.username === username && u.role === role)) {
+        showMsg('signup-error', 'This username is already taken.'); return;
+      }
+
       const hash = await hashPassword(password);
-      users.push({ username, name, phone, passwordHash: hash });
+      users.push({ username, passwordHash: hash, role });
       saveUsers(users);
-      showMsg('signup-success', 'Account created! Logging you in…');
-      setTimeout(async () => {
-        saveSession({ username, name, phone }, false);
-        window.location.href = 'home.html';
-      }, 1200);
+
+      showMsg('signup-success', 'Account created! You can now log in.');
+      setTimeout(() => {
+        showTab('login');
+        document.getElementById('login-identity').value = username;
+        document.getElementById('login-password').value = '';
+        hideMsg('signup-success');
+      }, 1400);
     }
 
     document.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
-      const signingUp = !document.getElementById('form-signup').classList.contains('hidden');
-      signingUp ? handleSignup() : handleLogin();
+      if (isUser) { handleUserLogin(); return; }
+      const loginHidden = document.getElementById('form-login').classList.contains('hidden');
+      loginHidden ? handleSignup() : handleLogin();
     });
   </script>
+
 </body>
 </html>
