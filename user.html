@@ -224,7 +224,6 @@
 <body>
 
   <div class="topbar">
-    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
     <h1>Object Scanner</h1>
     <div class="contact-btns">
       <a id="msg-caretaker-btn"  class="contact-btn" title="Message your caretaker">💬</a>
@@ -305,6 +304,7 @@
     </div>
   </div>
 
+  <script src="phone.js"></script>
   <script>
     const STORAGE_KEY = 'accessibility_objects';
 
@@ -646,19 +646,33 @@
       const msgBtn  = document.getElementById('msg-caretaker-btn');
       const callBtn = document.getElementById('call-caretaker-btn');
       try {
-        const session   = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
-        const allUsers  = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const me        = session ? allUsers.find(u => u.username === session.username) : null;
-        const caretaker = me && me.assignedTo ? allUsers.find(u => u.username === me.assignedTo) : null;
-        const phone     = caretaker && caretaker.phone ? caretaker.phone : '';
+        const session  = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        const allUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const me       = session ? allUsers.find(u => u.username === session.username) : null;
+
+        // Find caretaker by any link: assignedTo, caretakerName on user record, or caretakerName in session
+        const ctUsername = (me && me.assignedTo)
+          || (me && me.caretakerName)
+          || (session && session.caretakerName);
+        const caretaker = ctUsername ? allUsers.find(u => u.username === ctUsername) : null;
+        let phone = '';
+        if (caretaker && caretaker.phone) {
+          // Decrypt if stored encrypted (contains ':'), otherwise use as-is
+          phone = caretaker.phone.includes(':')
+            ? (await decryptPhone(caretaker.phone) || '')
+            : caretaker.phone;
+        }
+
         if (phone) {
           msgBtn.href  = `sms:${phone}`;
           callBtn.href = `tel:${phone}`;
+          msgBtn.classList.remove('contact-disabled');
+          callBtn.classList.remove('contact-disabled');
         } else {
           msgBtn.classList.add('contact-disabled');
           callBtn.classList.add('contact-disabled');
-          msgBtn.title  = 'No caretaker phone on file';
-          callBtn.title = 'No caretaker phone on file';
+          msgBtn.title  = caretaker ? 'Caretaker has no phone number set' : 'No caretaker linked';
+          callBtn.title = caretaker ? 'Caretaker has no phone number set' : 'No caretaker linked';
         }
       } catch {}
     }
@@ -695,8 +709,6 @@
     document.getElementById('danger-msg-btn').addEventListener('click',  () => document.getElementById('danger-popup').classList.remove('show'));
     document.getElementById('danger-call-btn').addEventListener('click', () => document.getElementById('danger-popup').classList.remove('show'));
   </script>
-
-  <script src="phone.js"></script>
 
   <script>
   // ── Medication reminder ──────────────────────────────────────────────────────
