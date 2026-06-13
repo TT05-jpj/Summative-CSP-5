@@ -192,18 +192,14 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(3px);
   z-index: 100;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
-  touch-action: pan-y;
 }
 
 #modal-overlay.show {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
 }
 
 #modal {
@@ -212,12 +208,13 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
   padding: 28px;
   width: 100%;
   max-width: 540px;
+  max-height: calc(90vh - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 18px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
-  margin: auto;
-  /* Remove any max-height or overflow here — let the overlay scroll */
 }
 #modal h2 { font-size: 18px; font-weight: 700; color: var(--navy); }
 
