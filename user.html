@@ -77,17 +77,29 @@
     }
     #status-dot { background: var(--border); }
 
-    #controls { width: 100%; max-width: 640px; margin-top: 10px; }
-    #scan-btn {
-      width: 100%; padding: 18px;
-      font-size: 22px; font-weight: 700;
-      background: var(--navy); color: var(--accent);
-      border: none; border-radius: 14px;
-      cursor: pointer; font-family: var(--font);
-      transition: opacity 0.15s;
+    #controls {
+      width: 100%; max-width: 640px; margin-top: 14px;
+      display: flex; justify-content: center;
     }
-    #scan-btn:hover:not(:disabled) { opacity: 0.88; }
-    #scan-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    #scan-btn {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: #fff;
+      border: 5px solid var(--navy);
+      box-shadow: 0 0 0 3px #fff, 0 0 0 6px var(--navy);
+      cursor: pointer; position: relative;
+      transition: transform 0.1s, opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #scan-btn::after {
+      content: '';
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--navy);
+      transition: background 0.15s;
+    }
+    #scan-btn:hover:not(:disabled) { transform: scale(1.06); }
+    #scan-btn:active:not(:disabled) { transform: scale(0.94); }
+    #scan-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     #how-to {
       width: 100%; max-width: 640px; margin-top: 12px;
@@ -269,7 +281,7 @@
   </div>
 
   <div id="controls">
-    <button id="scan-btn" disabled>Scan Object</button>
+    <button id="scan-btn" disabled aria-label="Scan Object"></button>
   </div>
 
   <div id="med-reminder">
@@ -611,7 +623,7 @@
       const items = [
         { el: document.querySelector('.topbar h1'),    text: 'Object Scanner' },
         { el: startBtn,                                text: 'Start' },
-        { el: scanBtn,                                 text: 'Scan Object' },
+        { el: null,                                    text: 'Scan Object' }, // aria-label only — button is visual
         { el: document.querySelector('#cam-start p'),  text: 'Allow camera access to start scanning' },
         { el: speakAgainBtn,                           text: '🔊 Speak again' },
       ];
