@@ -472,6 +472,136 @@ document.getElementById('print-btn').addEventListener('click', () => {
 
 setupMic('mic-name', document.getElementById('input-name'));
 
+// ── Label scanner ────────────────────────────────────────────────────────────
+const scanOverlay    = document.getElementById('scan-overlay');
+const scanVideo      = document.getElementById('scan-video');
+const scanCanvas     = document.getElementById('scan-canvas');
+const scanCamStart   = document.getElementById('scan-cam-start');
+const scanAnalyzing  = document.getElementById('scan-analyzing');
+const scanStartBtn   = document.getElementById('scan-start-cam-btn');
+const scanCaptureBtn = document.getElementById('scan-capture-btn');
+const scanCloseBtn   = document.getElementById('scan-close-btn');
+let   scanStream     = null;
+
+document.getElementById('scan-label-btn').addEventListener('click', openScanOverlay);
+
+function openScanOverlay() {
+  modalOverlay.classList.remove('show');
+  scanOverlay.classList.add('show');
+  scanCamStart.style.display = '';
+  scanAnalyzing.style.display = 'none';
+  scanCaptureBtn.disabled = true;
+}
+
+function closeScanOverlay() {
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  scanOverlay.classList.remove('show');
+  modalOverlay.classList.add('show');
+}
+
+scanCloseBtn.addEventListener('click', closeScanOverlay);
+
+scanStartBtn.addEventListener('click', async () => {
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    scanVideo.srcObject = scanStream;
+    scanCamStart.style.display = 'none';
+    scanCaptureBtn.disabled = false;
+  } catch {
+    alert('Camera access denied. Please allow it in browser settings.');
+  }
+});
+
+scanCaptureBtn.addEventListener('click', async () => {
+  if (!scanStream) return;
+
+  // Capture frame
+  const w = scanVideo.videoWidth || 640;
+  const h = scanVideo.videoHeight || 480;
+  scanCanvas.width = w;
+  scanCanvas.height = h;
+  scanCanvas.getContext('2d').drawImage(scanVideo, 0, 0, w, h);
+  const base64 = scanCanvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+  // Stop camera, show spinner
+  scanStream.getTracks().forEach(t => t.stop());
+  scanStream = null;
+  scanCaptureBtn.disabled = true;
+  scanAnalyzing.style.display = 'flex';
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+            { type: 'text', text: `You are reading a medication bottle label or pharmacy information slip. Extract the following and respond ONLY with raw JSON, no markdown, no explanation:
+{
+  "name": "medication name (brand or generic)",
+  "timesPerDay": <integer 1-10, how many times per day to take it>,
+  "days": <"daily" if every day, or an array like ["Monday","Wednesday","Friday"] if specific days are listed>,
+  "pillCount": <integer if a quantity or count is shown on the label, otherwise null>,
+  "dosageNote": "brief dosage note e.g. '500mg with food' or empty string"
+}
+If you cannot read the label clearly, still return your best guess. Always return valid JSON.` }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    const raw  = data.choices?.[0]?.message?.content || '';
+    let parsed;
+    try { parsed = JSON.parse(raw.replace(/```json|```/g, '').trim()); }
+    catch { parsed = null; }
+
+    scanAnalyzing.style.display = 'none';
+    closeScanOverlay();
+
+    if (!parsed) {
+      alert('Could not read the label clearly. Please fill in the fields manually.');
+      return;
+    }
+
+    // ── Autofill the form ──────────────────────────────────────────────────
+    if (parsed.name)  inputName.value = parsed.name;
+
+    if (parsed.timesPerDay && Number.isInteger(parsed.timesPerDay)) {
+      editTimesPerDay = Math.min(10, Math.max(1, parsed.timesPerDay));
+      timesDisplay.textContent = editTimesPerDay;
+    }
+
+    if (parsed.days) {
+      const ALL_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+      editSelectedDays = parsed.days === 'daily' ? [...ALL_DAYS]
+        : ALL_DAYS.filter(d => (parsed.days || []).map(x => x.toLowerCase()).includes(d.toLowerCase()));
+      dayOptions.forEach(o => {
+        editSelectedDays.includes(o.dataset.day) ? o.classList.add('selected') : o.classList.remove('selected');
+      });
+      updateDaysDisplay();
+    }
+
+    if (parsed.pillCount != null && !isNaN(Number(parsed.pillCount))) {
+      pillsInput.value = Number(parsed.pillCount);
+    }
+
+    if (parsed.dosageNote && !inputName.value.includes(parsed.dosageNote)) {
+      inputName.placeholder = parsed.dosageNote;
+    }
+
+  } catch (err) {
+    scanAnalyzing.style.display = 'none';
+    closeScanOverlay();
+    alert('Scan failed. Check your internet connection and try again.');
+    console.error(err);
+  }
+});
+
 // ── Init
 runDailyDeduction();
 renderCards();

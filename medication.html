@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
   <title>Medication Tracker</title>
   <link rel="stylesheet" href="medication.css" />
 </head>
@@ -81,10 +82,41 @@
     </div>
   </div>
 
+  <!-- Camera scan overlay -->
+  <div id="scan-overlay">
+    <div id="scan-overlay-inner">
+      <div id="scan-topbar">
+        <button id="scan-close-btn">✕ Cancel</button>
+        <span id="scan-label-title">Point at the medication label</span>
+        <div></div>
+      </div>
+      <div id="scan-cam-wrap">
+        <video id="scan-video" autoplay playsinline muted></video>
+        <canvas id="scan-canvas"></canvas>
+        <div id="scan-frame">
+          <div class="corner tl"></div><div class="corner tr"></div>
+          <div class="corner bl"></div><div class="corner br"></div>
+        </div>
+        <div id="scan-cam-start">
+          <button id="scan-start-cam-btn">Enable Camera</button>
+          <p>Allow camera access to scan the label</p>
+        </div>
+        <div id="scan-analyzing" style="display:none">
+          <div class="scan-spinner"></div>
+          <p>Reading label…</p>
+        </div>
+      </div>
+      <div id="scan-controls">
+        <button id="scan-capture-btn" disabled>📷 Capture Label</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add / Edit modal -->
   <div id="modal-overlay">
     <div id="modal">
       <h2 id="modal-title">Add Medication</h2>
+      <button id="scan-label-btn" type="button">📷 Scan Label</button>
 
       <div class="field">
         <label>Medication name</label>
@@ -133,5 +165,7 @@
   </div>
 
   <script src="medication.js"></script>
+  <script src="tab-bar.js"></script>
+  <script src="side-panel.js"></script>
 </body>
 </html>

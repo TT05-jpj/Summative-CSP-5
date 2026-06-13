@@ -3,107 +3,66 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Caretaker Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <script>document.documentElement.dataset.theme = localStorage.getItem('app-theme') || '';</script>
+  <script>
+    (function () {
+      function getSession() {
+        try { return JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null'); }
+        catch { return null; }
+      }
+      const s = getSession();
+      if (!s) window.location.replace('login.html');
+      else if (s.role !== 'caretaker') window.location.replace('home.html');
+    })();
+    function logout() {
+      localStorage.removeItem('auth_session');
+      sessionStorage.removeItem('auth_session');
+      window.location.href = 'login.html';
+    }
+  </script>
+  <title>My Objects</title>
+  <link rel="stylesheet" href="shared.css" />
   <link rel="stylesheet" href="caretaker.css" />
 </head>
 
 <body>
 
   <!-- Info popup -->
-  <div id="info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#03114F;border:1px solid #0a2070;border-radius:16px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:16px;">
-      <button onclick="document.getElementById('info-overlay').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:30px;color:#7a8ab0;cursor:pointer;line-height:1;">×</button>
-      <h2 id="info-title" style="font-size:24px;font-weight:700;color:#facc15;">How to use the Caretaker Dashboard</h2>
-      <p id="info-p1" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Add an object</strong> — Click the yellow <em>Add Object +</em> card to open the scanner. Point the camera at an object, tap <em>Scan Object</em>, then save it with a name and optional instructions.</p>
-      <p id="info-p2" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">View Instructions</strong> — See exactly what the user will read when they scan that object.</p>
-      <p id="info-p3" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Edit Instructions</strong> — Update the name or instructions for an existing object.</p>
-      <p id="info-p4" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Delete</strong> — Permanently remove an object from the list.</p>
-      <p id="info-p5" style="font-size:17px;color:#aab0cc;line-height:1.7;"><strong style="color:#fff;">Languages</strong> — Use the dropdowns at the top to set the caretaker display language and the language the user will see.</p>
+  <div id="info-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(2px);z-index:200;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;border-radius:20px;padding:36px 30px;width:100%;max-width:520px;position:relative;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <button onclick="document.getElementById('info-overlay').style.display='none'" style="position:absolute;top:14px;right:14px;background:#f1f5f9;border:none;border-radius:50%;width:36px;height:36px;font-size:20px;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+      <h2 id="info-title" style="font-size:22px;font-weight:700;color:#0f1f4a;letter-spacing:-0.02em;">How to use My Objects</h2>
+      <p id="info-p1" style="font-size:15px;color:#475569;line-height:1.7;"><strong style="color:#0f1f4a;">Add an object</strong> — Tap the yellow <em>Add Object</em> card to open the scanner. Point the camera at an object, tap Scan, then save it with a name and instructions.</p>
+      <p id="info-p2" style="font-size:15px;color:#475569;line-height:1.7;"><strong style="color:#0f1f4a;">View Instructions</strong> — See exactly what the user will read when they scan that object.</p>
+      <p id="info-p3" style="font-size:15px;color:#475569;line-height:1.7;"><strong style="color:#0f1f4a;">Edit</strong> — Update the name or instructions for an existing object.</p>
+      <p id="info-p4" style="font-size:15px;color:#475569;line-height:1.7;"><strong style="color:#0f1f4a;">Delete</strong> — Permanently remove an object from the list.</p>
+      <p id="info-p5" style="font-size:15px;color:#475569;line-height:1.7;"><strong style="color:#0f1f4a;">Languages</strong> — Use the dropdowns at the top to set the caretaker and user languages.</p>
     </div>
   </div>
 
   <header>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <h1>Caretaker Dashboard</h1>
-      <button onclick="document.getElementById('info-overlay').style.display='flex'" style="background:none;border:2px solid #facc15;color:#facc15;border-radius:50%;width:34px;height:34px;font-size:18px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</button>
-    </div>
-    <!-- Language Settings -->
-    <div id="lang-bar"
-      style="display:flex;align-items:center;gap:20px;padding:22px 36px;background:#142054;border-bottom:1px solid #0a2070;font-size:22px;color:#aab0cc;">
-      <span id="lang-label">🌐 Languages:</span>
-      <select id="caretaker-lang" 
-      style="background:#020d3a;color:#fff;border:1px solid #0a2070;border-radius:8px;padding:12px 18px;font-size:18px;">
-        <option value="en">Caretaker: English</option>
-        <option value="es">Caretaker: Spanish</option>
-        <option value="fr">Caretaker: French</option>
-        <option value="de">Caretaker: German</option>
-        <option value="it">Caretaker: Italian</option>
-        <option value="pt">Caretaker: Portuguese</option>
-        <option value="zh">Caretaker: Chinese</option>
-        <option value="ja">Caretaker: Japanese</option>
-        <option value="ko">Caretaker: Korean</option>
-        <option value="ar">Caretaker: Arabic</option>
-        <option value="hi">Caretaker: Hindi</option>
-        <option value="ta">Caretaker: Tamil</option>
-        <option value="te">Caretaker: Telugu</option>
-        <option value="bn">Caretaker: Bengali</option>
-        <option value="ur">Caretaker: Urdu</option>
-        <option value="ru">Caretaker: Russian</option>
-        <option value="tr">Caretaker: Turkish</option>
-        <option value="vi">Caretaker: Vietnamese</option>
-        <option value="th">Caretaker: Thai</option>
-        <option value="pl">Caretaker: Polish</option>
-        <option value="nl">Caretaker: Dutch</option>
-        <option value="sv">Caretaker: Swedish</option>
-        <option value="ro">Caretaker: Romanian</option>
-        <option value="el">Caretaker: Greek</option>
-        <option value="he">Caretaker: Hebrew</option>
-        <option value="fa">Caretaker: Persian</option>
-        <option value="sw">Caretaker: Swahili</option>
-        <option value="tl">Caretaker: Filipino</option>
-        <option value="ms">Caretaker: Malay</option>
-        <option value="id">Caretaker: Indonesian</option>
-      </select>
-
-      <select id="user-lang"
-        style="background:#020d3a;color:#fff;border:1px solid #0a2070;border-radius:8px;padding:12px 18px;font-size:18px;">
-        <option value="en">User: English</option>
-        <option value="es">User: Spanish</option>
-        <option value="fr">User: French</option>
-        <option value="de">User: German</option>
-        <option value="it">User: Italian</option>
-        <option value="pt">User: Portuguese</option>
-        <option value="zh">User: Chinese</option>
-        <option value="ja">User: Japanese</option>
-        <option value="ko">User: Korean</option>
-        <option value="ar">User: Arabic</option>
-        <option value="hi">User: Hindi</option>
-        <option value="ta">User: Tamil</option>
-        <option value="te">User: Telugu</option>
-        <option value="bn">User: Bengali</option>
-        <option value="ur">User: Urdu</option>
-        <option value="ru">User: Russian</option>
-        <option value="tr">User: Turkish</option>
-        <option value="vi">User: Vietnamese</option>
-        <option value="th">User: Thai</option>
-        <option value="pl">User: Polish</option>
-        <option value="nl">User: Dutch</option>
-        <option value="sv">User: Swedish</option>
-        <option value="ro">User: Romanian</option>
-        <option value="el">User: Greek</option>
-        <option value="he">User: Hebrew</option>
-        <option value="fa">User: Persian</option>
-        <option value="sw">User: Swahili</option>
-        <option value="tl">User: Filipino</option>
-        <option value="ms">User: Malay</option>
-        <option value="id">User: Indonesian</option>
-      </select>
-      <span id="lang-saved" style="color:#4ade80;display:none;">✓ Saved</span>
+    <div class="header-top">
+      <h1>My Objects</h1>
+      <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+        <button class="header-info-btn" onclick="document.getElementById('info-overlay').style.display='flex'" aria-label="Help">i</button>
+        <button onclick="logout()" style="background:none;border:1px solid rgba(255,255,255,0.35);color:rgba(255,255,255,0.75);font-size:13px;font-family:inherit;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;transition:border-color 0.15s,color 0.15s;" onmouseover="this.style.borderColor='rgba(255,255,255,0.8)';this.style.color='#fff'" onmouseout="this.style.borderColor='rgba(255,255,255,0.35)';this.style.color='rgba(255,255,255,0.75)'">Log Out</button>
+      </div>
     </div>
   </header>
 
-  <div id="object-container"></div>
+  <div id="dashboard-tabs">
+    <button class="dash-tab active" id="tab-objects" onclick="switchDashTab('objects')">My Objects</button>
+    <button class="dash-tab" id="tab-users" onclick="switchDashTab('users')">Users</button>
+  </div>
+
+  <div id="panel-objects">
+    <div id="object-container"></div>
+  </div>
+
+  <div id="panel-users" style="display:none;">
+    <div id="user-dashboard-container"></div>
+  </div>
 
   <div class="popup-overlay" id="view-popup">
     <div class="popup-box">
@@ -158,7 +117,7 @@
 
     async function translateDashboard(lang) {
       const staticEls = [
-        { sel: 'header h1',     en: 'Caretaker Dashboard' },
+        { sel: 'header h1',     en: 'My Objects' },
         { sel: '#modal-cancel', en: 'Cancel' },
         { sel: '#modal-save',   en: 'Save' },
         { sel: '#lang-label',   en: 'Languages', emoji: '🌐 ' },
@@ -168,7 +127,7 @@
       const fieldLabelTexts = ['Object name', 'Instructions'];
 
       const infoEls = [
-        { id: 'info-title', en: 'How to use the Caretaker Dashboard' },
+        { id: 'info-title', en: 'How to use My Objects' },
         { id: 'info-p1', en: 'Add an object — Click the yellow Add Object + card to open the scanner. Point the camera at an object, tap Scan Object, then save it with a name and optional instructions.' },
         { id: 'info-p2', en: 'View Instructions — See exactly what the user will read when they scan that object.' },
         { id: 'info-p3', en: 'Edit Instructions — Update the name or instructions for an existing object.' },
@@ -276,6 +235,8 @@
     });
   </script>
   <script src="caretaker.js"></script>
+  <script src="tab-bar.js"></script>
+  <script src="side-panel.js"></script>
 </body>
 
 </html>

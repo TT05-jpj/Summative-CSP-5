@@ -1,0 +1,366 @@
+/* ── Default: Navy + Bright Gold ── */
+:root {
+  --navy:       #1e3060;
+  --navy-mid:   #283e7c;
+  --navy-light: #344e98;
+  --accent:     #f0b830;
+  --accent-dim: #d49e20;
+  --bg:         #f4f6fc;
+  --surface:    #ffffff;
+  --border:     #dde3f0;
+  --text:       #111827;
+  --muted:      #60697a;
+  --danger:     #b91c1c;
+  --danger-bg:  #fef2f2;
+  --success:    #15803d;
+  --font:       -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+
+  --yellow:     var(--accent);
+  --yellow-dim: var(--accent-dim);
+}
+
+/* ── Watermelon: green rind header + pink flesh accent ── */
+:root[data-theme="watermelon"] {
+  --navy:       #3d7848;   /* watermelon green rind */
+  --navy-mid:   #4e8858;
+  --navy-light: #5e9868;
+  --accent:     #f04898;   /* watermelon pink flesh */
+  --accent-dim: #d83080;
+  --bg:         #fff2f8;   /* very light pink page */
+  --surface:    #ffffff;
+  --border:     #f8c8e4;
+  --text:       #1a0818;
+  --muted:      #8a4070;
+}
+
+/* ── Sage: white background + high-contrast sage green ── */
+:root[data-theme="sage"] {
+  --navy:       #2e5a3a;
+  --navy-mid:   #3c7048;
+  --navy-light: #4a8258;
+  --accent:     #d4f0c0;   /* light sage — clearly readable on dark green header */
+  --accent-dim: #b0d89a;
+  --bg:         #ffffff;
+  --surface:    #ffffff;
+  --border:     #c0dcc8;
+  --text:       #1a2e1e;
+  --muted:      #4e6858;
+}
+
+/* ── Grape: lavender background + deep purple ── */
+:root[data-theme="grape"] {
+  --navy:       #57467b;
+  --navy-mid:   #6a5890;
+  --navy-light: #7e6aa6;
+  --accent:     #f0c8fc;   /* light lavender — readable on deep purple header */
+  --accent-dim: #d8a0f0;
+  --bg:         #ea7af4;
+  --surface:    #ffffff;
+  --border:     #d8a0f0;
+  --text:       #2a1840;
+  --muted:      #7a60a0;
+}
+
+/* ── Calm: cool grey background + warm muted purple ── */
+:root[data-theme="calm"] {
+  --navy:       #4a4858;
+  --navy-mid:   #5a5870;
+  --navy-light: #6a6882;
+  --accent:     #e8e0f0;   /* very light lavender — readable on dark slate */
+  --accent-dim: #c8b8e0;
+  --bg:         #c4cad0;
+  --surface:    #ffffff;
+  --border:     #a8b0ba;
+  --text:       #655560;
+  --muted:      #7a7088;
+}
+
+/* ── Rose: baby pink background + magenta, light pink text on dark ── */
+:root[data-theme="rose"] {
+  --navy:       #8a1258;
+  --navy-mid:   #a41870;
+  --navy-light: #be2088;
+  --accent:     #ffaad6;   /* light blush pink — clearly readable on deep magenta */
+  --accent-dim: #f080b8;
+  --bg:         #fff0f7;
+  --surface:    #ffffff;
+  --border:     #f8c8e6;
+  --text:       #280820;
+  --muted:      #8a4070;
+}
+
+/* ── Ocean: deep teal + warm sandy gold ── */
+:root[data-theme="ocean"] {
+  --navy:       #1a6870;
+  --navy-mid:   #228090;
+  --navy-light: #2a98a8;
+  --accent:     #cfe8ef;
+  --accent-dim: #a8d0dc;
+  --bg:         #4d7298;
+  --surface:    #ffffff;
+  --border:     #b8e4dc;
+  --text:       #0a2028;
+  --muted:      #3e7880;
+}
+
+/* ── Sunset: hot magenta + bright orange ── */
+:root[data-theme="sunset"] {
+  --navy:       #c0128a;   /* deep hot magenta */
+  --navy-mid:   #d818a0;
+  --navy-light: #ee1eb4;
+  --accent:     #ffa028;   /* bright warm orange */
+  --accent-dim: #e08018;
+  --bg:         #fff4f0;
+  --surface:    #ffffff;
+  --border:     #ffd8c0;
+  --text:       #2a0818;
+  --muted:      #8a3068;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ── */
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Shared header ── */
+.page-header {
+  background: var(--navy);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+
+.page-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  gap: 12px;
+}
+
+.page-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: -0.02em;
+}
+
+/* ── Info button ── */
+.info-btn {
+  background: none;
+  border: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--yellow);
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: var(--font);
+}
+.info-btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); }
+
+/* ── Overlay backdrop ── */
+.overlay-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.overlay-bg.show { display: flex; }
+
+/* ── Shared modal box ── */
+.modal-box {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  position: relative;
+}
+
+.modal-box h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.02em;
+}
+
+/* ── Close button ── */
+.close-btn {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: var(--bg);
+  border: none;
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  font-size: 20px; color: var(--muted);
+  cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  font-family: var(--font);
+}
+.close-btn:hover { background: var(--border); color: var(--text); }
+
+/* ── Field label ── */
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 7px;
+}
+
+/* ── Inputs ── */
+input[type=text], input[type=number], textarea, select.styled {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 16px;
+  font-family: var(--font);
+  background: #f8fafc;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type=text]:focus, input[type=number]:focus, textarea:focus { border-color: var(--navy); background: var(--surface); }
+textarea { resize: vertical; min-height: 90px; }
+
+/* ── Primary button ── */
+.btn-primary {
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font);
+  background: var(--navy);
+  color: var(--yellow);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--navy-mid); }
+
+/* ── Secondary button ── */
+.btn-secondary {
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--muted);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-secondary:hover { background: var(--border); color: var(--text); }
+
+/* ── Danger button ── */
+.btn-danger {
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger:hover { background: #fee2e2; }
+
+/* ── Modal action row ── */
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* ── Mic button ── */
+.mic-btn {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mic-btn:hover { background: var(--border); }
+.mic-btn.listening { background: #fef2f2; border-color: #f87171; animation: pulse 1s infinite; }
+.mic-btn.listening.speaking { animation: micPulse 0.7s ease-in-out infinite; }
+.mic-icon { width: 20px; height: 20px; object-fit: contain; pointer-events: none; filter: brightness(0) saturate(100%) invert(13%) sepia(50%) saturate(800%) hue-rotate(200deg); }
+
+/* ── Status dot ── */
+#status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+#status-dot.active   { background: var(--yellow); }
+#status-dot.scanning { background: var(--yellow); animation: pulse 1s infinite; }
+
+/* ── Animations ── */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+@keyframes micPulse {
+  0%   { transform:scale(1);    box-shadow:0 0 0 0 rgba(74,222,128,0.9); }
+  50%  { transform:scale(1.18); box-shadow:0 0 0 14px rgba(74,222,128,0); }
+  100% { transform:scale(1);    box-shadow:0 0 0 0 rgba(74,222,128,0); }
+}
+
+/* ── Scan line ── */
+#scan-line {
+  position: absolute; left: 20px; right: 20px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  top: 20px; display: none;
+  animation: scandown 1.5s ease-in-out infinite;
+}
+#scan-line.active { display: block; }
+@keyframes scandown {
+  0%   { top: 20px;              opacity: 1; }
+  90%  { top: calc(100% - 22px); opacity: 1; }
+  100% { top: calc(100% - 22px); opacity: 0; }
+}
+
+/* ── Scan frame corners ── */
+#scan-frame { position: absolute; inset: 0; pointer-events: none; }
+#scan-frame .corner { position: absolute; width: 32px; height: 32px; border-color: var(--yellow); border-style: solid; border-width: 0; }
+#scan-frame .tl { top:20px; left:20px;  border-top-width:3px;    border-left-width:3px;  border-top-left-radius:4px; }
+#scan-frame .tr { top:20px; right:20px; border-top-width:3px;    border-right-width:3px; border-top-right-radius:4px; }
+#scan-frame .bl { bottom:20px; left:20px;  border-bottom-width:3px; border-left-width:3px;  border-bottom-left-radius:4px; }
+#scan-frame .br { bottom:20px; right:20px; border-bottom-width:3px; border-right-width:3px; border-bottom-right-radius:4px; }
+
+/* ── Info popup (shared) ── */
+.info-popup-box {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 36px 28px;
+  width: 100%; max-width: 520px;
+  position: relative;
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+}
+.info-popup-box h2 { font-size: 20px; font-weight: 700; color: var(--navy); }
+.info-popup-box p  { font-size: 15px; color: var(--muted); line-height: 1.75; }
+.info-popup-box strong { color: var(--navy); font-weight: 600; }
