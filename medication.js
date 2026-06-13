@@ -392,12 +392,19 @@ function openModal(med) {
     med ? (med.assignedTo || 'everyone') : 'everyone'
   );
   modalOverlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
   inputName.focus();
 }
 
-modalCancel.addEventListener('click', () => modalOverlay.classList.remove('show'));
+modalCancel.addEventListener('click', () => {
+  modalOverlay.classList.remove('show');
+  document.body.style.overflow = '';
+});
 modalOverlay.addEventListener('click', e => {
-  if (e.target === modalOverlay) modalOverlay.classList.remove('show');
+  if (e.target === modalOverlay) {
+    modalOverlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
 });
 
 // ── Save (add or edit)
@@ -433,6 +440,7 @@ modalSave.addEventListener('click', () => {
       saveActive(active);
       renderCards();
       modalOverlay.classList.remove('show');
+      document.body.style.overflow = '';
       return;
     }
 
@@ -461,13 +469,14 @@ modalSave.addEventListener('click', () => {
     saveHistory(history);
     renderCards();
     modalOverlay.classList.remove('show');
+    document.body.style.overflow = '';    // ← ADD
 
   } else {
     // ADD
-    const today     = new Date();
-    const startDate = today.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+    const today = new Date();
+    const startDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     const startDateISO = today.toISOString().split('T')[0];
-    const id  = Date.now();
+    const id = Date.now();
     const med = { id, name, days: editSelectedDays, timesPerDay: editTimesPerDay, times: [...editTimes], pillCount: editPillCount, assignedTo, startDate, startDateISO, endDate: null, changeLog: [] };
 
     active.push(med);
@@ -477,6 +486,7 @@ modalSave.addEventListener('click', () => {
     saveHistory(history);
     renderCards();
     modalOverlay.classList.remove('show');
+    document.body.style.overflow = '';    // ← ADD
   }
 });
 
