@@ -175,13 +175,75 @@
       -webkit-tap-highlight-color: transparent;
     }
     #med-taken-btn:active { opacity: 0.8; }
+
+    /* ── Call / Message caretaker ── */
+    .contact-btns { display: flex; gap: 8px; margin-left: auto; }
+    .contact-btn {
+      width: 38px; height: 38px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; font-size: 20px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .contact-btn:hover { background: var(--border); }
+    .contact-btn.contact-disabled { opacity: 0.35; pointer-events: none; }
+    .contact-btn.contact-btn-danger { background: #b91c1c; border-color: #b91c1c; }
+    .contact-btn.contact-btn-danger:hover { background: #991b1b; }
+
+    /* ── Danger popup ── */
+    #danger-popup {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82); backdrop-filter: blur(4px);
+      z-index: 500; align-items: center; justify-content: center; padding: 24px;
+    }
+    #danger-popup.show { display: flex; }
+    #danger-box {
+      background: #fff; border-radius: 24px;
+      padding: 36px 28px; width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    #danger-icon  { font-size: 56px; line-height: 1; }
+    #danger-title { font-size: 26px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.05em; }
+    #danger-text  { font-size: 18px; color: #1f2937; line-height: 1.6; }
+    #danger-instr { font-size: 15px; color: #7f1d1d; font-weight: 600; line-height: 1.5; }
+    #danger-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 6px; }
+    .danger-btn {
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; font-size: 18px; font-weight: 700;
+      background: #b91c1c; color: #fff;
+      border-radius: 14px; text-decoration: none;
+      transition: opacity 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .danger-btn:hover { opacity: 0.88; }
   </style>
 </head>
 
 <body>
 
   <div class="topbar">
-<h1>Object Scanner</h1>
+    <button class="back-btn" onclick="window.location.href='home.html'">←</button>
+    <h1>Object Scanner</h1>
+    <div class="contact-btns">
+      <a id="msg-caretaker-btn"  class="contact-btn" title="Message your caretaker">💬</a>
+      <a id="call-caretaker-btn" class="contact-btn" title="Call your caretaker">📞</a>
+    </div>
+  </div>
+
+  <!-- Danger popup (shown when AI detects a hazardous object) -->
+  <div id="danger-popup">
+    <div id="danger-box">
+      <div id="danger-icon">⚠️</div>
+      <h2 id="danger-title">Warning</h2>
+      <p id="danger-text"></p>
+      <p id="danger-instr"></p>
+      <div id="danger-actions">
+        <a id="danger-msg-btn"  class="danger-btn">💬 Message Caretaker</a>
+        <a id="danger-call-btn" class="danger-btn">📞 Call Caretaker</a>
+      </div>
+    </div>
   </div>
 
   <div id="cam-wrap">
@@ -490,7 +552,7 @@
               role: 'user',
               content: [
                 { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
-                { type: 'text', text: 'You are an accessibility assistant. Identify ONLY the single most prominent object — the one closest to the camera or most centered in the frame. Ignore background objects. Respond ONLY with raw JSON: {"objects": ["name of object"], "description": "one friendly sentence about that object"}' }
+                { type: 'text', text: 'You are an accessibility assistant helping an elderly user safely identify everyday objects. Identify ONLY the single most prominent object — the one closest to the camera or most centered in the frame. Ignore background objects. Then decide: can this object cause harm to an elderly person if mishandled (e.g. knives, scissors, toxic chemicals, medications, hot surfaces, firearms)? Respond ONLY with raw JSON: {"objects": ["name of object"], "description": "one friendly sentence about that object", "danger": true or false, "dangerReason": "short one-sentence safety warning if danger is true, otherwise empty string"}' }
               ]
             }]
           })
@@ -505,6 +567,10 @@
         lastDetections = parsed.objects || [];
         const matches = checkMatches(lastDetections);
         showOverlayLabels(matches);
+
+        if (parsed.danger) {
+          showDangerPopup(lastDetections[0] || (matches[0] && matches[0].name) || '', parsed.dangerReason || '');
+        }
 
         if (matches.length) {
           const withInstr = matches.find(m => m.instructions);
@@ -574,7 +640,63 @@
     }
 
     initUserTranslations();
+
+    // ── Caretaker contact buttons (Call / Message) ────────────────────────────
+    async function setupCaretakerContact() {
+      const msgBtn  = document.getElementById('msg-caretaker-btn');
+      const callBtn = document.getElementById('call-caretaker-btn');
+      try {
+        const session   = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        const allUsers  = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const me        = session ? allUsers.find(u => u.username === session.username) : null;
+        const caretaker = me && me.assignedTo ? allUsers.find(u => u.username === me.assignedTo) : null;
+        const phone     = caretaker && caretaker.phone ? caretaker.phone : '';
+        if (phone) {
+          msgBtn.href  = `sms:${phone}`;
+          callBtn.href = `tel:${phone}`;
+        } else {
+          msgBtn.classList.add('contact-disabled');
+          callBtn.classList.add('contact-disabled');
+          msgBtn.title  = 'No caretaker phone on file';
+          callBtn.title = 'No caretaker phone on file';
+        }
+      } catch {}
+    }
+    setupCaretakerContact();
+
+    // ── Danger popup ──────────────────────────────────────────────────────────
+    async function showDangerPopup(objectName, reason) {
+      const popup   = document.getElementById('danger-popup');
+      const textEl  = document.getElementById('danger-text');
+      const instrEl = document.getElementById('danger-instr');
+      const msgBtn  = document.getElementById('danger-msg-btn');
+      const callBtn = document.getElementById('danger-call-btn');
+      const topMsg  = document.getElementById('msg-caretaker-btn');
+      const topCall = document.getElementById('call-caretaker-btn');
+
+      const baseText = reason
+        ? (objectName ? `${objectName}: ${reason}` : reason)
+        : `${objectName || 'This object'} may be dangerous. Please be careful.`;
+
+      const [tText, tInstr] = await Promise.all([
+        translateForUser(baseText),
+        translateForUser('Please message or call your caretaker before touching this object.'),
+      ]);
+      textEl.textContent  = tText;
+      instrEl.textContent = tInstr;
+
+      if (topMsg.href)  msgBtn.href  = topMsg.href;  else msgBtn.removeAttribute('href');
+      if (topCall.href) callBtn.href = topCall.href; else callBtn.removeAttribute('href');
+
+      popup.classList.add('show');
+      speak('Warning! ' + tText);
+    }
+
+    document.getElementById('danger-msg-btn').addEventListener('click',  () => document.getElementById('danger-popup').classList.remove('show'));
+    document.getElementById('danger-call-btn').addEventListener('click', () => document.getElementById('danger-popup').classList.remove('show'));
   </script>
+
+  <script src="phone.js"></script>
 
   <script>
   // ── Medication reminder ──────────────────────────────────────────────────────

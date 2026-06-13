@@ -102,8 +102,22 @@ function renderTimeSlots() {
   editTimes.forEach((t, i) => {
     const wrap = document.createElement('div');
     wrap.className = 'time-slot';
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'time-slot-delete';
+    delBtn.textContent = '×';
+    delBtn.style.visibility = editTimesPerDay > 1 ? '' : 'hidden';
+    delBtn.addEventListener('click', () => {
+      const inp = wrap.querySelector('.time-input');
+      editTimes[i] = inp.value || editTimes[i];
+      editTimes.splice(i, 1);
+      editTimesPerDay--;
+      timesDisplay.textContent = editTimesPerDay;
+      renderTimeSlots();
+    });
     wrap.innerHTML = `<span class="time-slot-label">${editTimesPerDay > 1 ? 'Dose ' + (i + 1) : 'Time'}</span><input type="time" class="time-input" value="${t}" />`;
     wrap.querySelector('input').addEventListener('change', e => { editTimes[i] = e.target.value; });
+    wrap.appendChild(delBtn);
     container.appendChild(wrap);
   });
 }

@@ -35,6 +35,20 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
 }
 #buy-pills-btn:hover, #print-btn:hover { background: rgba(250,204,21,0.22); }
 
+.contact-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-family: var(--font);
+  background: rgba(250,204,21,0.12);
+  color: var(--yellow);
+  border: 1px solid rgba(250,204,21,0.25);
+  border-radius: 8px; cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.contact-btn:hover { background: rgba(250,204,21,0.22); }
+.contact-btn.contact-disabled { opacity: 0.4; pointer-events: none; }
+
 /* ── Med list ── */
 #med-container {
   display: flex; flex-direction: column;
@@ -412,6 +426,14 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
   border-radius: 9px; outline: none; transition: border-color 0.15s;
 }
 .time-input:focus { border-color: var(--navy); }
+.time-slot-delete {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 18px; line-height: 1;
+  padding: 4px 6px; border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.time-slot-delete:hover { color: #b91c1c; background: #fef2f2; }
 
 /* ── Low-stock banner ── */
 #low-stock-banner {
