@@ -5,7 +5,13 @@ const HISTORY_KEY  = 'medications_history';
 // ── Load / save helpers
 function loadActive()  { try { return JSON.parse(localStorage.getItem(DISPLAY_KEY))  || []; } catch { return []; } }
 function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; } }
-function saveActive(list)  { localStorage.setItem(DISPLAY_KEY,  JSON.stringify(list)); }
+function saveActive(list) {
+  localStorage.setItem(DISPLAY_KEY, JSON.stringify(list));
+  const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+  if (session && session.username) {
+    window.syncMedsToFirestore && window.syncMedsToFirestore(session.username, list);
+  }
+}
 function saveHistory(list) { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
 
 // ── State
@@ -722,8 +728,27 @@ function checkLowStockNotifications() {
 }
 
 // ── Init
-runDailyDeduction();
-renderCards();
+// ── Init
+(async () => {
+  const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+  if (session && session.caretakerName) {
+    // User device — load meds from caretaker's Firestore
+    const remoteMeds = await window.loadMedsFromFirestore(session.caretakerName);
+    if (remoteMeds.length) {
+      active = remoteMeds;
+      saveActive(active);
+    }
+    window.listenToMeds && window.listenToMeds(session.caretakerName, (meds) => {
+      active = meds;
+      localStorage.setItem(DISPLAY_KEY, JSON.stringify(meds));
+      renderCards();
+      checkLowStockNotifications();
+    });
+  }
+  runDailyDeduction();
+  renderCards();
+  checkLowStockNotifications();
+})();
 checkLowStockNotifications();
 if (Notification.permission === 'default') Notification.requestPermission();
 window.addEventListener('storage', e => {
