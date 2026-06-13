@@ -206,7 +206,7 @@ header h1 { font-size: 22px; font-weight: 700; color: var(--yellow); letter-spac
   background: var(--surface);
   border-radius: 20px;
   padding: 28px;
-  padding-bottom: 55px;
+  padding-bottom: 80px;
   width: 100%;
   max-width: 540px;
   max-height: calc(90vh - env(safe-area-inset-bottom));
