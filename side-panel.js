@@ -274,7 +274,7 @@
   const isUser    = session ? session.role === 'user' : false;
   let phoneDecrypted = '';
   if (phone) {
-    phoneDecrypted = await decryptPhone(phone);
+    phoneDecrypted = await decryptPhone(phone) || '';
     if (!phoneDecrypted && !phone.includes(':')) phoneDecrypted = phone;
   }
   const currentTheme = localStorage.getItem('app-theme') || '';
