@@ -129,11 +129,9 @@
     </div>
   </div>
   <script>
-    const ctLang = document.getElementById('caretaker-lang');
-    const usLang = document.getElementById('user-lang');
-    const langSaved = document.getElementById('lang-saved');
-    ctLang.value = localStorage.getItem('caretaker_lang') || 'en';
-    usLang.value = localStorage.getItem('user_lang') || 'en';
+    // Language is managed by the side panel; read from localStorage directly
+    const ctLangVal = () => localStorage.getItem('caretaker_lang') || 'en';
+    const usLangVal = () => localStorage.getItem('user_lang') || 'en';
 
     function translateText(text, targetLang) {
       if (targetLang === 'en') return Promise.resolve(text);
@@ -242,25 +240,12 @@
     }
 
     async function initTranslations() {
-      const lang = ctLang.value;
+      const lang = ctLangVal();
       await Promise.all([translateDashboard(lang), loadTranslations(lang)]);
       if (typeof renderCards === 'function') renderCards();
     }
 
     initTranslations();
-
-    ctLang.addEventListener('change', () => {
-      localStorage.setItem('caretaker_lang', ctLang.value);
-      langSaved.style.display = 'inline';
-      setTimeout(() => langSaved.style.display = 'none', 2000);
-      initTranslations();
-    });
-
-    usLang.addEventListener('change', () => {
-      localStorage.setItem('user_lang', usLang.value);
-      langSaved.style.display = 'inline';
-      setTimeout(() => langSaved.style.display = 'none', 2000);
-    });
   </script>
   <script src="caretaker.js"></script>
   <script src="tab-bar.js"></script>
