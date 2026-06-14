@@ -54,6 +54,7 @@ window.registerFCMToken = async function (caretakerUsername, userUsername) {
 };
 
 // ── Save pill count update back to Firestore ──────────────────────────────────
+// ── Save pill count update back to Firestore ──────────────────────────────────
 window.updatePillCountInFirestore = async function (caretakerUsername, medId, newCount) {
     try {
         const snap = await db.collection('caretakers').doc(caretakerUsername).get();
@@ -65,4 +66,14 @@ window.updatePillCountInFirestore = async function (caretakerUsername, medId, ne
             await db.collection('caretakers').doc(caretakerUsername).set({ medications: meds }, { merge: true });
         }
     } catch (e) { console.error('Firestore pill update error:', e); }
-};
+};  // <-- close the function HERE
+
+// ── Handle foreground notifications ──────────────────────────────────────────
+if (messaging) {
+    messaging.onMessage((payload) => {
+        const { title, body } = payload.notification;
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body, icon: '/miclcon.png' });
+        }
+    });
+}

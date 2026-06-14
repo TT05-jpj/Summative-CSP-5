@@ -1,7 +1,6 @@
-const { initializeApp, cert, getApps } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { getMessaging } = require('firebase-admin/messaging');
-
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
 function getApp() {
     if (getApps().length) return getApps()[0];
     return initializeApp({

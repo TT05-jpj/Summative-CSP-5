@@ -1,25 +1,21 @@
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore } = require('firebase-admin/firestore');
-const { getMessaging } = require('firebase-admin/messaging');
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
 
-let app;
 function getApp() {
-    if (!app) {
-        app = initializeApp({
-            credential: cert({
-                projectId: process.env.FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            })
-        });
-    }
-    return app;
+    if (getApps().length) return getApps()[0];
+    return initializeApp({
+        credential: cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        })
+    });
 }
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
 
-    const { caretakerUsername, medName, userUsername, token } = req.body;
+    const { token, medName } = req.body;
 
     try {
         getApp();
@@ -33,7 +29,7 @@ export default async function handler(req, res) {
             },
             webpush: {
                 fcmOptions: {
-                    link: 'https://summative-csp-5-rho.vercel.app/scanner.html'
+                    link: 'https://summative-csp-5-rho.vercel.app/user.html'
                 }
             }
         });
