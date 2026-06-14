@@ -747,8 +747,9 @@
         document.getElementById('notif-banner').style.display = 'none';
       }
     }
-    if (Notification.permission === 'default') {
-      document.getElementById('notif-banner').style.display = 'block';
+   const _nb = document.getElementById('notif-banner');
+    if (_nb && Notification.permission !== 'granted') {
+      _nb.style.display = 'block';
     }
   </script>
 <div id="notif-banner"
