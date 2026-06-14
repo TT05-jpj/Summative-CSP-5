@@ -647,9 +647,13 @@
         const newDue = due.filter(d => !sessionStorage.getItem('notif_' + d.key));
         if (newDue.length > 0) {
           newDue.forEach(d => sessionStorage.setItem('notif_' + d.key, '1'));
-          if (Notification.permission === 'granted') {
-            const names = [...new Set(newDue.map(d => d.med.name))].join(', ');
-            new Notification('Time to take your medication', { body: names });
+         if (Notification.permission === 'granted') {
+            newDue.forEach(d => {
+              new Notification('💊 Time to take your medication', {
+                body: `${d.med.name} — take ${d.med.timesPerDay > 1 ? '1 pill' : '1 pill'} now`,
+                icon: '/aten_app_icon.png'
+              });
+            });
           }
         }
       }
