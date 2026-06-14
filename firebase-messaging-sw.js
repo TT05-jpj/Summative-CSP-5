@@ -20,6 +20,6 @@ messaging.onBackgroundMessage(function (payload) {
     const { title, body } = payload.notification;
     self.registration.showNotification(title, {
         body,
-        icon: '/miclcon.png'
+        icon: '/aten_app_icon.png'
     });
 });
