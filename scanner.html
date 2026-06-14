@@ -747,10 +747,8 @@
         document.getElementById('notif-banner').style.display = 'none';
       }
     }
-   const _nb = document.getElementById('notif-banner');
-    if (_nb && Notification.permission !== 'granted') {
-      _nb.style.display = 'block';
-    }
+ const _nb = document.getElementById('notif-banner');
+  if (_nb) _nb.style.display = 'block';
   </script>
 </body>
 
