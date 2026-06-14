@@ -710,10 +710,7 @@
  checkMedReminders();
     setInterval(checkMedReminders, 60000);
     window.checkMedReminders = checkMedReminders;
-    setTimeout(() => {
-      const meds = JSON.parse(localStorage.getItem('medications_active') || '[]');
-      alert('Meds loaded: ' + meds.length + ' | ' + JSON.stringify(meds.map(m => m.name + ' ' + m.times)));
-    }, 3000);
+
   })();
   </script>
 
