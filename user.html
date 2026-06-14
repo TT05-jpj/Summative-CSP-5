@@ -188,21 +188,6 @@
     }
     #med-taken-btn:active { opacity: 0.8; }
 
-    /* ── Call / Message caretaker ── */
-    .contact-btns { display: flex; gap: 8px; margin-left: auto; }
-    .contact-btn {
-      width: 38px; height: 38px;
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 10px; font-size: 20px; line-height: 1;
-      display: flex; align-items: center; justify-content: center;
-      text-decoration: none; transition: background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .contact-btn:hover { background: var(--border); }
-    .contact-btn.contact-disabled { opacity: 0.35; pointer-events: none; }
-    .contact-btn.contact-btn-danger { background: #b91c1c; border-color: #b91c1c; }
-    .contact-btn.contact-btn-danger:hover { background: #991b1b; }
-
     /* ── Danger popup ── */
     #danger-popup {
       display: none; position: fixed; inset: 0;
@@ -237,10 +222,6 @@
 
   <div class="topbar">
     <h1>Object Scanner</h1>
-    <div class="contact-btns">
-      <a id="msg-caretaker-btn"  class="contact-btn" title="Message your caretaker">💬</a>
-      <a id="call-caretaker-btn" class="contact-btn" title="Call your caretaker">📞</a>
-    </div>
   </div>
 
   <!-- Danger popup (shown when AI detects a hazardous object) -->
@@ -653,43 +634,6 @@
 
     initUserTranslations();
 
-    // ── Caretaker contact buttons (Call / Message) ────────────────────────────
-    async function setupCaretakerContact() {
-      const msgBtn  = document.getElementById('msg-caretaker-btn');
-      const callBtn = document.getElementById('call-caretaker-btn');
-      try {
-        const session  = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
-        const allUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
-        const me       = session ? allUsers.find(u => u.username === session.username) : null;
-
-        // Find caretaker by any link: assignedTo, caretakerName on user record, or caretakerName in session
-        const ctUsername = (me && me.assignedTo)
-          || (me && me.caretakerName)
-          || (session && session.caretakerName);
-        const caretaker = ctUsername ? allUsers.find(u => u.username === ctUsername) : null;
-        let phone = '';
-        if (caretaker && caretaker.phone) {
-          // Decrypt if stored encrypted (contains ':'), otherwise use as-is
-          phone = caretaker.phone.includes(':')
-            ? (await decryptPhone(caretaker.phone) || '')
-            : caretaker.phone;
-        }
-
-        if (phone) {
-          msgBtn.href  = `sms:${phone}`;
-          callBtn.href = `tel:${phone}`;
-          msgBtn.classList.remove('contact-disabled');
-          callBtn.classList.remove('contact-disabled');
-        } else {
-          msgBtn.classList.add('contact-disabled');
-          callBtn.classList.add('contact-disabled');
-          msgBtn.title  = caretaker ? 'Caretaker has no phone number set' : 'No caretaker linked';
-          callBtn.title = caretaker ? 'Caretaker has no phone number set' : 'No caretaker linked';
-        }
-      } catch {}
-    }
-    setupCaretakerContact();
-
     // ── Danger popup ──────────────────────────────────────────────────────────
     async function showDangerPopup(objectName, reason) {
       const popup   = document.getElementById('danger-popup');
@@ -697,8 +641,6 @@
       const instrEl = document.getElementById('danger-instr');
       const msgBtn  = document.getElementById('danger-msg-btn');
       const callBtn = document.getElementById('danger-call-btn');
-      const topMsg  = document.getElementById('msg-caretaker-btn');
-      const topCall = document.getElementById('call-caretaker-btn');
 
       const baseText = reason
         ? (objectName ? `${objectName}: ${reason}` : reason)
@@ -706,13 +648,25 @@
 
       const [tText, tInstr] = await Promise.all([
         translateForUser(baseText),
-        translateForUser('Please message or call your caretaker before touching this object.'),
+        translateForUser('Please contact your caretaker before touching this object.'),
       ]);
       textEl.textContent  = tText;
       instrEl.textContent = tInstr;
 
-      if (topMsg.href)  msgBtn.href  = topMsg.href;  else msgBtn.removeAttribute('href');
-      if (topCall.href) callBtn.href = topCall.href; else callBtn.removeAttribute('href');
+      // Wire up contact buttons from stored caretaker data
+      try {
+        const session  = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+        const allUsers = JSON.parse(localStorage.getItem('auth_users') || '[]');
+        const me       = session ? allUsers.find(u => u.username === session.username) : null;
+        const ctUser   = (me && (me.assignedTo || me.caretakerName || (session && session.caretakerName)));
+        const caretaker = ctUser ? allUsers.find(u => u.username === ctUser) : null;
+        let phone = '';
+        if (caretaker && caretaker.phone) {
+          phone = caretaker.phone.includes(':') ? (await decryptPhone(caretaker.phone) || '') : caretaker.phone;
+        }
+        if (phone) { msgBtn.href = `sms:${phone}`; callBtn.href = `tel:${phone}`; }
+        else { msgBtn.removeAttribute('href'); callBtn.removeAttribute('href'); }
+      } catch {}
 
       popup.classList.add('show');
       speak('Warning! ' + tText);
