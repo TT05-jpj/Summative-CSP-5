@@ -714,8 +714,9 @@
 
   <script src="side-panel.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+<script src="firebase.js"></script>
   <script>
     (async () => {
       try {
@@ -741,10 +742,19 @@
     }
   </script>
 <div id="notif-banner"
-  style="display:block; position:fixed; top:0; left:0; right:0; z-index:9999; background:var(--navy); color:var(--accent); padding:10px 16px; text-align:center; font-size:14px; font-weight:600;">
-  💊 Tap to enable medication reminders
-  <button onclick="enableNotifs()"
-    style="margin-left:10px; padding:6px 14px; background:var(--accent); color:var(--navy); border:none; border-radius:8px; font-weight:700; cursor:pointer;">Enable</button>
+  style="display:block; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:20px;">
+  <div
+    style="background:var(--navy); border-radius:20px; padding:28px 24px; max-width:340px; width:100%; text-align:center; display:flex; flex-direction:column; gap:16px;">
+    <div style="font-size:40px;">💊</div>
+    <div style="font-size:18px; font-weight:700; color:var(--accent);">Enable Medication Reminders</div>
+    <div style="font-size:14px; color:rgba(255,255,255,0.7);">Get notified when it's time to take your medication</div>
+    <button onclick="enableNotifs()"
+      style="padding:14px; background:var(--accent); color:var(--navy); border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; font-family:var(--font);">Enable
+      Notifications</button>
+    <button onclick="document.getElementById('notif-banner').style.display='none'"
+      style="padding:10px; background:transparent; color:rgba(255,255,255,0.5); border:none; font-size:14px; cursor:pointer; font-family:var(--font);">Not
+      now</button>
+  </div>
 </div>
 </body>
 
