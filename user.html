@@ -707,8 +707,9 @@
       updateReminderUI([]);
     });
 
-    checkMedReminders();
+ checkMedReminders();
     setInterval(checkMedReminders, 60000);
+    window.checkMedReminders = checkMedReminders;
   })();
   </script>
 
@@ -734,8 +735,8 @@
         if (session && session.caretakerName && window.loadMedsFromFirestore) {
           const remoteMeds = await window.loadMedsFromFirestore(session.caretakerName);
           if (remoteMeds.length) {
-            localStorage.setItem('medications_active', JSON.stringify(remoteMeds));
-            checkMedReminders();
+           localStorage.setItem('medications_active', JSON.stringify(remoteMeds));
+            if (window.checkMedReminders) window.checkMedReminders();
           }
         }
       } catch (e) { console.error(e); }
