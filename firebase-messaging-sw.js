@@ -12,6 +12,10 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// FORCE SERVICE WORKER TO UPDATE LATEST CODE IMMEDIATELY
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
 messaging.onBackgroundMessage(function (payload) {
     const { title, body } = payload.notification;
     self.registration.showNotification(title, {
