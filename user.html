@@ -733,18 +733,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <script src="firebase.js"></script>
   <script>
-  (async () => {
-      try {
-        const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
-        if (session && session.caretakerName && window.loadMedsFromFirestore) {
-          const remoteMeds = await window.loadMedsFromFirestore(session.caretakerName);
-          if (remoteMeds.length) {
-           localStorage.setItem('medications_active', JSON.stringify(remoteMeds));
-            if (window.checkMedReminders) window.checkMedReminders();
-          }
+  function loadMedsWhenReady() {
+    if (!window.loadMedsFromFirestore) {
+      setTimeout(loadMedsWhenReady, 500);
+      return;
+    }
+    const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+    if (session && session.caretakerName) {
+      window.loadMedsFromFirestore(session.caretakerName).then(remoteMeds => {
+        if (remoteMeds.length) {
+          localStorage.setItem('medications_active', JSON.stringify(remoteMeds));
+          if (window.checkMedReminders) window.checkMedReminders();
         }
-      } catch (e) { console.error(e); }
-    })();
+      }).catch(e => console.error(e));
+    }
+  }
+  loadMedsWhenReady();
 
  async function enableNotifs() {
     try {
