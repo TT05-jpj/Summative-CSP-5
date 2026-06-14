@@ -730,6 +730,28 @@
   </script>
   <script src="tab-bar.js"></script>
   <script src="side-panel.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script>
+    async function enableNotifs() {
+      const session = JSON.parse(localStorage.getItem('auth_session') || sessionStorage.getItem('auth_session') || 'null');
+      if (session && session.caretakerName && window.registerFCMToken) {
+        await window.registerFCMToken(session.caretakerName, session.username);
+        document.getElementById('notif-banner').style.display = 'none';
+      }
+    }
+    if (Notification.permission === 'default') {
+      document.getElementById('notif-banner').style.display = 'block';
+    }
+  </script>
+<div id="notif-banner"
+  style="display:none; background:var(--navy); color:var(--accent); padding:12px 16px; text-align:center; font-size:14px; font-weight:600;">
+  💊 Tap to enable medication reminders
+  <button onclick="enableNotifs()"
+    style="margin-left:10px; padding:6px 14px; background:var(--accent); color:var(--navy); border:none; border-radius:8px; font-weight:700; cursor:pointer;">Enable</button>
+</div>
 </body>
 
 </html>
